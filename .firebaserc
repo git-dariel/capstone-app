@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "bloom-5748a"
+  },
+  "targets": {
+    "bloom-5748a": {
+      "hosting": {
+        "bloom": [
+          "bloom"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
