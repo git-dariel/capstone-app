@@ -1,21 +1,29 @@
-import { HomePage } from "@/pages/HomePage";
-import { SignInPage } from "@/pages/SignInPage";
-import { SignUpPage } from "@/pages/SignUpPage";
-import { DashboardPage } from "@/pages/DashboardPage";
-import { ReportsPage } from "@/pages/ReportsPage";
-import { Route, BrowserRouter as Router, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  HomePage,
+  SignInPage,
+  SignUpPage,
+  DashboardPage,
+  ReportsPage,
+  ResourcesPage,
+  HelpSupportPage,
+} from "@/pages";
 
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/reports" element={<ReportsPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/signin" element={<SignInPage />} />
-        <Route path="/" element={<Navigate to="/signin" replace />} />
-      </Routes>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Navigate to="/signin" replace />} />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/help-support" element={<HelpSupportPage />} />
+        </Routes>
+      </div>
     </Router>
   );
 }

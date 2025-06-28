@@ -34,7 +34,7 @@ export const SidebarNavigation: React.FC = () => {
     { icon: <BarChart3 className="w-5 h-5" />, label: "Dashboard", path: "/dashboard" },
     { icon: <FileText className="w-5 h-5" />, label: "Reports", path: "/reports" },
     { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
-    { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help" },
+    { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },
   ];
 
   const bottomItems = [
