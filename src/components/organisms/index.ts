@@ -1,2 +1,5 @@
-export * from "./SignUpCard";
-export * from "./SignInCard";
+export { SignInCard } from "./SignInCard";
+export { SignUpCard } from "./SignUpCard";
+export { MainContent } from "./MainContent";
+export { DashboardContent } from "./DashboardContent";
+export { ReportsContent } from "./ReportsContent";

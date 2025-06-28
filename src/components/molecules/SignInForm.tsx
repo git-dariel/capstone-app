@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { FormField } from "@/components/atoms/FormField";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +13,7 @@ interface SignInFormProps {
 }
 
 export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
+  const navigate = useNavigate();
   const [formData, setFormData] = React.useState<SignInFormData>({
     email: "",
     password: "",
@@ -20,6 +22,8 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
+    // Navigate to home page after sign in
+    navigate("/home");
   };
 
   const handleChange = (name: keyof SignInFormData, value: string) => {
