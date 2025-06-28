@@ -47,7 +47,6 @@ export const ContactSupportForm: React.FC<ContactSupportFormProps> = ({ onBack }
   };
 
   const categories = [
-    { value: "", label: "Select a category" },
     { value: "technical", label: "Technical Issues" },
     { value: "assessments", label: "Assessment Questions" },
     { value: "account", label: "Account Problems" },
@@ -117,6 +116,7 @@ export const ContactSupportForm: React.FC<ContactSupportFormProps> = ({ onBack }
               options={categories}
               value={formData.category}
               onChange={(value) => handleChange("category", value)}
+              placeholder="Select a category"
             />
 
             <FormSelect
