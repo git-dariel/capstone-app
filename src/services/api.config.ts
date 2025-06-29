@@ -155,22 +155,19 @@ export class HttpClient {
         credentials: "include", // Include cookies in requests
       });
 
-      // Handle 401 Unauthorized globally
+      // Handle 401 Unauthorized - clear auth data but don't redirect
       if (response.status === 401) {
         // Clear user data and token
         TokenManager.removeUser();
 
-        // Only redirect if we're not already on the signin page
-        if (typeof window !== "undefined" && !window.location.pathname.includes("/signin")) {
-          window.location.href = "/signin";
-        }
+        // Don't redirect automatically - let the component handle the error
         throw new Error("Unauthorized - Please log in again");
       }
 
       // Handle other error responses
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "API request failed");
+        throw new Error(errorData.message || `API request failed with status ${response.status}`);
       }
 
       // Return the response data directly
