@@ -7,7 +7,7 @@ import { AuthService, type LoginRequest } from "@/services";
 interface SignInFormData {
   email: string;
   password: string;
-  type: "student" | "employee";
+  type: "student" | "guidance";
 }
 
 export const EnhancedSignInForm: React.FC = () => {
@@ -89,12 +89,12 @@ export const EnhancedSignInForm: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700">Account Type</label>
         <select
           value={formData.type}
-          onChange={(e) => handleChange("type", e.target.value as "student" | "employee")}
+          onChange={(e) => handleChange("type", e.target.value as "student" | "guidance")}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           disabled={loading}
         >
           <option value="student">Student</option>
-          <option value="employee">Employee</option>
+          <option value="guidance">Guidance Counselor</option>
         </select>
       </div>
 
