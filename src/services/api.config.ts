@@ -52,17 +52,42 @@ export class TokenManager {
   private static readonly USER_KEY = "user_data";
   private static readonly TOKEN_KEY = "auth_token";
 
+  private static isLocalStorageAvailable(): boolean {
+    try {
+      if (typeof window === "undefined" || !window.localStorage) {
+        return false;
+      }
+      const test = "__localStorage_test__";
+      localStorage.setItem(test, test);
+      localStorage.removeItem(test);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
   static getUser(): any | null {
+    if (!this.isLocalStorageAvailable()) {
+      return null;
+    }
+
     try {
       const userData = localStorage.getItem(this.USER_KEY);
       return userData ? JSON.parse(userData) : null;
     } catch (error) {
       console.error("Error parsing user data:", error);
+      // Clear corrupted data
+      this.removeUser();
       return null;
     }
   }
 
   static setUser(user: any): void {
+    if (!this.isLocalStorageAvailable()) {
+      console.warn("localStorage not available, user data not persisted");
+      return;
+    }
+
     try {
       localStorage.setItem(this.USER_KEY, JSON.stringify(user));
     } catch (error) {
@@ -71,16 +96,42 @@ export class TokenManager {
   }
 
   static removeUser(): void {
-    localStorage.removeItem(this.USER_KEY);
-    localStorage.removeItem(this.TOKEN_KEY);
+    if (!this.isLocalStorageAvailable()) {
+      return;
+    }
+
+    try {
+      localStorage.removeItem(this.USER_KEY);
+      localStorage.removeItem(this.TOKEN_KEY);
+    } catch (error) {
+      console.error("Error removing user data:", error);
+    }
   }
 
   static getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    if (!this.isLocalStorageAvailable()) {
+      return null;
+    }
+
+    try {
+      return localStorage.getItem(this.TOKEN_KEY);
+    } catch (error) {
+      console.error("Error getting token:", error);
+      return null;
+    }
   }
 
   static setToken(token: string): void {
-    localStorage.setItem(this.TOKEN_KEY, token);
+    if (!this.isLocalStorageAvailable()) {
+      console.warn("localStorage not available, token not persisted");
+      return;
+    }
+
+    try {
+      localStorage.setItem(this.TOKEN_KEY, token);
+    } catch (error) {
+      console.error("Error storing token:", error);
+    }
   }
 }
 
@@ -110,7 +161,7 @@ export class HttpClient {
         TokenManager.removeUser();
 
         // Only redirect if we're not already on the signin page
-        if (!window.location.pathname.includes("/signin")) {
+        if (typeof window !== "undefined" && !window.location.pathname.includes("/signin")) {
           window.location.href = "/signin";
         }
         throw new Error("Unauthorized - Please log in again");

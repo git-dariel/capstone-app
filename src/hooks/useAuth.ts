@@ -7,6 +7,7 @@ interface AuthState {
   user: any | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
 interface SignUpFormData {
@@ -27,17 +28,33 @@ export const useAuth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [authState, setAuthState] = useState<AuthState>({
-    user: AuthService.getCurrentUser(),
+    user: null,
     loading: false,
     error: null,
+    initialized: false,
   });
 
   // Initialize authentication state on mount
   useEffect(() => {
-    const user = AuthService.getCurrentUser();
-    if (user) {
-      setAuthState((prev) => ({ ...prev, user }));
-    }
+    const initializeAuth = async () => {
+      try {
+        const user = AuthService.getCurrentUser();
+        setAuthState((prev) => ({
+          ...prev,
+          user,
+          initialized: true,
+        }));
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setAuthState((prev) => ({
+          ...prev,
+          user: null,
+          initialized: true,
+        }));
+      }
+    };
+
+    initializeAuth();
   }, []);
 
   const signUp = async (formData: SignUpFormData) => {
@@ -67,9 +84,11 @@ export const useAuth = () => {
         error: null,
       }));
 
-      // Navigate to home or intended destination after successful registration
-      const from = (location.state as any)?.from?.pathname || "/home";
-      navigate(from, { replace: true });
+      // Small delay to ensure state is set before navigation
+      setTimeout(() => {
+        const from = (location.state as any)?.from?.pathname || "/home";
+        navigate(from, { replace: true });
+      }, 100);
 
       return response;
     } catch (error: any) {
@@ -102,9 +121,11 @@ export const useAuth = () => {
         error: null,
       }));
 
-      // Navigate to home or intended destination after successful login
-      const from = (location.state as any)?.from?.pathname || "/home";
-      navigate(from, { replace: true });
+      // Small delay to ensure state is set before navigation
+      setTimeout(() => {
+        const from = (location.state as any)?.from?.pathname || "/home";
+        navigate(from, { replace: true });
+      }, 100);
 
       return response;
     } catch (error: any) {
@@ -150,13 +171,15 @@ export const useAuth = () => {
   };
 
   const isAuthenticated = () => {
-    return AuthService.isAuthenticated();
+    // Use the hook's state instead of calling AuthService directly
+    return !!(authState.user && authState.user.id);
   };
 
   return {
     user: authState.user,
     loading: authState.loading,
     error: authState.error,
+    initialized: authState.initialized,
     signUp,
     signIn,
     signOut,
