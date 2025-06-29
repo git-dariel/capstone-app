@@ -1,4 +1,4 @@
-import type { PaginatedResponse, QueryParams } from "./api.config";
+import type { QueryParams } from "./api.config";
 import { HttpClient } from "./api.config";
 
 export interface LogEntry {
@@ -22,10 +22,10 @@ export interface CreateLogRequest {
 }
 
 export class LoggingService {
-  static async getAllLogs(params?: QueryParams): Promise<PaginatedResponse<LogEntry>> {
+  static async getAllLogs(params?: QueryParams): Promise<LogEntry[]> {
     try {
-      const response = await HttpClient.get<PaginatedResponse<LogEntry>>("/loggings", params);
-      return response.data!;
+      const response = await HttpClient.get<LogEntry[]>("/loggings", params);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -34,7 +34,7 @@ export class LoggingService {
   static async getLogById(id: string, params?: QueryParams): Promise<LogEntry> {
     try {
       const response = await HttpClient.get<LogEntry>(`/loggings/${id}`, params);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -43,7 +43,7 @@ export class LoggingService {
   static async createLog(data: CreateLogRequest): Promise<LogEntry> {
     try {
       const response = await HttpClient.post<LogEntry>("/loggings", data);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }

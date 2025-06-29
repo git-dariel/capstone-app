@@ -1,4 +1,4 @@
-import type { PaginatedResponse, QueryParams } from "./api.config";
+import type { QueryParams } from "./api.config";
 import { HttpClient } from "./api.config";
 
 export interface Student {
@@ -75,10 +75,10 @@ export interface UpdateStudentRequest {
 }
 
 export class StudentService {
-  static async getAllStudents(params?: QueryParams): Promise<PaginatedResponse<Student>> {
+  static async getAllStudents(params?: QueryParams): Promise<Student[]> {
     try {
-      const response = await HttpClient.get<PaginatedResponse<Student>>("/student", params);
-      return response.data!;
+      const response = await HttpClient.get<Student[]>("/student", params);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -87,7 +87,7 @@ export class StudentService {
   static async getStudentById(id: string, params?: QueryParams): Promise<Student> {
     try {
       const response = await HttpClient.get<Student>(`/student/${id}`, params);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -96,7 +96,7 @@ export class StudentService {
   static async createStudent(data: CreateStudentRequest): Promise<Student> {
     try {
       const response = await HttpClient.post<Student>("/student", data);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -105,7 +105,7 @@ export class StudentService {
   static async updateStudent(id: string, data: UpdateStudentRequest): Promise<Student> {
     try {
       const response = await HttpClient.patch<Student>(`/student/${id}`, data);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -114,7 +114,7 @@ export class StudentService {
   static async deleteStudent(id: string): Promise<{ message: string }> {
     try {
       const response = await HttpClient.delete<{ message: string }>(`/student/${id}`);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }

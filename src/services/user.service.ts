@@ -1,4 +1,4 @@
-import type { PaginatedResponse, QueryParams } from "./api.config";
+import type { QueryParams } from "./api.config";
 import { HttpClient } from "./api.config";
 
 export interface User {
@@ -40,10 +40,10 @@ export interface UpdateUserRequest {
 }
 
 export class UserService {
-  static async getAllUsers(params?: QueryParams): Promise<PaginatedResponse<User>> {
+  static async getAllUsers(params?: QueryParams): Promise<User[]> {
     try {
-      const response = await HttpClient.get<PaginatedResponse<User>>("/user", params);
-      return response.data!;
+      const response = await HttpClient.get<User[]>("/user", params);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -52,7 +52,7 @@ export class UserService {
   static async getUserById(id: string, params?: QueryParams): Promise<User> {
     try {
       const response = await HttpClient.get<User>(`/user/${id}`, params);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -61,7 +61,7 @@ export class UserService {
   static async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
     try {
       const response = await HttpClient.patch<User>(`/user/${id}`, data);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -70,7 +70,7 @@ export class UserService {
   static async deleteUser(id: string): Promise<{ message: string }> {
     try {
       const response = await HttpClient.delete<{ message: string }>(`/user/${id}`);
-      return response.data!;
+      return response;
     } catch (error) {
       throw error;
     }
