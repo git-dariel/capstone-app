@@ -47,59 +47,90 @@ export interface QueryParams {
   order?: "asc" | "desc";
 }
 
-// Token management (using httpOnly cookies)
+// Token management
 export class TokenManager {
   private static readonly USER_KEY = "user_data";
+  private static readonly TOKEN_KEY = "auth_token";
 
-  // Token is managed via httpOnly cookies, no localStorage needed
   static getUser(): any | null {
-    const userData = localStorage.getItem(this.USER_KEY);
-    return userData ? JSON.parse(userData) : null;
+    try {
+      const userData = localStorage.getItem(this.USER_KEY);
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      return null;
+    }
   }
 
   static setUser(user: any): void {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    try {
+      localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    } catch (error) {
+      console.error("Error storing user data:", error);
+    }
   }
 
   static removeUser(): void {
     localStorage.removeItem(this.USER_KEY);
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  static getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  static setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
   }
 }
 
 // HTTP Client utility
 export class HttpClient {
-  static async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+  static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_CONFIG.baseURL}${endpoint}`;
+    const token = TokenManager.getToken();
 
-    const defaultHeaders = {
-      ...API_CONFIG.headers,
-    };
-
-    const config: RequestInit = {
-      ...options,
-      credentials: "include", // Include cookies in requests
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-    };
+    // Prepare headers with authentication
+    const headers = new Headers({
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    });
 
     try {
-      const response = await fetch(url, config);
-      const data = await response.json();
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: "include", // Include cookies in requests
+      });
 
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "API request failed");
+      // Handle 401 Unauthorized globally
+      if (response.status === 401) {
+        // Clear user data and token
+        TokenManager.removeUser();
+
+        // Only redirect if we're not already on the signin page
+        if (!window.location.pathname.includes("/signin")) {
+          window.location.href = "/signin";
+        }
+        throw new Error("Unauthorized - Please log in again");
       }
 
-      return data;
-    } catch (error) {
+      // Handle other error responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "API request failed");
+      }
+
+      // Return the response data directly
+      return response.json();
+    } catch (error: any) {
       console.error("API Request Error:", error);
       throw error;
     }
   }
 
-  static async get<T>(endpoint: string, params?: QueryParams): Promise<ApiResponse<T>> {
+  static async get<T>(endpoint: string, params?: QueryParams): Promise<T> {
     const queryString = params ? new URLSearchParams(params as any).toString() : "";
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
 
@@ -108,28 +139,28 @@ export class HttpClient {
     });
   }
 
-  static async post<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  static async post<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  static async patch<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  static async patch<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  static async put<T>(endpoint: string, data?: any): Promise<ApiResponse<T>> {
+  static async put<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  static async delete<T>(endpoint: string): Promise<ApiResponse<T>> {
+  static async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "DELETE",
     });

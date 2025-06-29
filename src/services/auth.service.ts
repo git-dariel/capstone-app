@@ -65,7 +65,9 @@ export interface Student {
   studentNumber: string;
   program: string;
   year: string;
-  person: User["person"];
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface AuthResponse {
@@ -80,19 +82,26 @@ export class AuthService {
     try {
       const response = await HttpClient.post<AuthResponse>("/auth/login", credentials);
 
-      // The backend response structure is direct, not wrapped in data
+      // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
 
-      if (authData && authData.user) {
-        // Backend sets token as httpOnly cookie, not in response body
-        // We'll rely on the cookie for authentication
-        TokenManager.setUser(authData.user);
-
-        return authData;
+      // Validate that we have a user object at minimum
+      if (!authData.user || !authData.user.id) {
+        throw new Error("Invalid user data in response");
       }
 
-      throw new Error("Login failed");
-    } catch (error) {
+      // Store the token if it exists (might be optional if using cookies)
+      if (authData.token) {
+        TokenManager.setToken(authData.token);
+      }
+
+      // Store user data
+      TokenManager.setUser(authData.user);
+
+      return authData;
+    } catch (error: any) {
+      // Clear any existing auth data on error
+      TokenManager.removeUser();
       throw error;
     }
   }
@@ -101,31 +110,38 @@ export class AuthService {
     try {
       const response = await HttpClient.post<AuthResponse>("/auth/register", userData);
 
-      // The backend response structure is direct, not wrapped in data
+      // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
 
-      if (authData && authData.user) {
-        // Backend sets token as httpOnly cookie, not in response body
-        // We'll rely on the cookie for authentication
-        TokenManager.setUser(authData.user);
-
-        return authData;
+      // Validate that we have a user object at minimum
+      if (!authData.user || !authData.user.id) {
+        throw new Error("Invalid user data in response");
       }
 
-      throw new Error("Registration failed");
-    } catch (error) {
+      // Store the token if it exists (might be optional if using cookies)
+      if (authData.token) {
+        TokenManager.setToken(authData.token);
+      }
+
+      // Store user data
+      TokenManager.setUser(authData.user);
+
+      return authData;
+    } catch (error: any) {
+      // Clear any existing auth data on error
+      TokenManager.removeUser();
       throw error;
     }
   }
 
   static async logout(): Promise<void> {
     try {
-      // Clear user data from localStorage
-      // Note: httpOnly cookie will expire naturally (24h expiry set by backend)
-      TokenManager.removeUser();
+      // Call the logout endpoint
+      await HttpClient.post("/auth/logout");
     } catch (error) {
       console.error("Logout error:", error);
-      // Still clear user data even if error occurs
+    } finally {
+      // Always clear local storage
       TokenManager.removeUser();
     }
   }
@@ -135,7 +151,8 @@ export class AuthService {
   }
 
   static isAuthenticated(): boolean {
-    const user = TokenManager.getUser();
-    return !!user;
+    const user = this.getCurrentUser();
+    // Check if user exists and has an ID - token might be optional if using cookies
+    return !!(user && user.id);
   }
 }
