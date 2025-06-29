@@ -1,48 +1,58 @@
-import React from "react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+import React from "react";
 
-interface Option {
+export interface FormSelectOption {
   value: string;
   label: string;
 }
 
-interface FormSelectProps {
+export interface FormSelectProps {
   label: string;
   value?: string;
   onChange?: (value: string) => void;
+  options: FormSelectOption[];
+  placeholder?: string;
   className?: string;
   id: string;
-  options: Option[];
-  placeholder?: string;
+  required?: boolean;
+  disabled?: boolean;
 }
 
 export const FormSelect: React.FC<FormSelectProps> = ({
   label,
   value,
   onChange,
+  options,
+  placeholder,
   className = "",
   id,
-  options,
-  placeholder = "Select an option",
+  required = false,
+  disabled = false,
 }) => {
   return (
     <div className={`space-y-1 ${className}`}>
       <Label htmlFor={id} className="text-xs font-medium text-gray-700">
         {label}
       </Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger id={id}>
-          {value ? options.find((opt) => opt.value === value)?.label : placeholder}
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <select
+        id={id}
+        value={value || ""}
+        onChange={(e) => onChange?.(e.target.value)}
+        required={required}
+        disabled={disabled}
+        className="w-full h-9 px-3 text-sm bg-gray-50 border border-gray-200 rounded-md focus:border-teal-400 focus:ring-1 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {placeholder && (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        )}
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 };

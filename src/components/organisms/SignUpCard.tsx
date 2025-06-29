@@ -1,6 +1,7 @@
 import React from "react";
 import { Logo } from "@/components/atoms/Logo";
 import { SignUpForm } from "@/components/molecules/SignUpForm";
+import { useAuth } from "@/hooks";
 
 interface SignUpFormData {
   firstName: string;
@@ -10,15 +11,22 @@ interface SignUpFormData {
   password: string;
 }
 
-interface SignUpCardProps {
-  onSignUp?: (data: SignUpFormData) => void;
-}
+export const SignUpCard: React.FC = () => {
+  const { signUp, loading, error, clearError } = useAuth();
 
-export const SignUpCard: React.FC<SignUpCardProps> = ({ onSignUp }) => {
-  const handleSignUp = (data: SignUpFormData) => {
-    console.log("Sign up data:", data);
-    if (onSignUp) {
-      onSignUp(data);
+  const handleSignUp = async (data: SignUpFormData) => {
+    try {
+      // Clear any previous errors
+      clearError();
+
+      // Attempt registration
+      await signUp(data);
+
+      // Success handling is done in the hook (navigation)
+      console.log("Registration successful!");
+    } catch (error: any) {
+      // Error handling is done in the hook (setting error state)
+      console.error("Registration failed:", error.message);
     }
   };
 
@@ -30,7 +38,7 @@ export const SignUpCard: React.FC<SignUpCardProps> = ({ onSignUp }) => {
         <p className="text-xs sm:text-sm text-gray-600">Lets create your account.</p>
       </div>
 
-      <SignUpForm onSubmit={handleSignUp} />
+      <SignUpForm onSubmit={handleSignUp} loading={loading} error={error} />
     </div>
   );
 };

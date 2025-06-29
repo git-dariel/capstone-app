@@ -8,20 +8,77 @@ import {
   ResourcesPage,
   HelpSupportPage,
 } from "@/pages";
+import { ProtectedRoute, PublicRoute } from "@/components";
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
+          {/* Default route - redirect to signin for unauthenticated users */}
           <Route path="/" element={<Navigate to="/signin" replace />} />
-          <Route path="/signin" element={<SignInPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/reports" element={<ReportsPage />} />
-          <Route path="/resources" element={<ResourcesPage />} />
-          <Route path="/help-support" element={<HelpSupportPage />} />
+
+          {/* Public routes - redirect to home if already authenticated */}
+          <Route
+            path="/signin"
+            element={
+              <PublicRoute>
+                <SignInPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup"
+            element={
+              <PublicRoute>
+                <SignUpPage />
+              </PublicRoute>
+            }
+          />
+
+          {/* Protected home page */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Protected routes - require authentication */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resources"
+            element={
+              <ProtectedRoute>
+                <ResourcesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/help-support"
+            element={
+              <ProtectedRoute>
+                <HelpSupportPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </div>
     </Router>

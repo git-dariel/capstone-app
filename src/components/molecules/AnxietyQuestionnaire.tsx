@@ -21,11 +21,21 @@ export const AnxietyQuestionnaire: React.FC<AnxietyQuestionnaireProps> = ({ onBa
     "Feeling afraid as if something awful might happen",
   ];
 
+  const difficultyQuestion =
+    "If you checked any problems, how difficult have they made it for you to do your work, take care of things at home, or get along with other people?";
+
   const answerChoices = [
     { value: 0, label: "Not at all" },
     { value: 1, label: "Several days" },
     { value: 2, label: "More than half the days" },
     { value: 3, label: "Nearly every day" },
+  ];
+
+  const difficultyChoices = [
+    { value: 0, label: "Not difficult at all" },
+    { value: 1, label: "Somewhat difficult" },
+    { value: 2, label: "Very difficult" },
+    { value: 3, label: "Extremely difficult" },
   ];
 
   const handleAnswerSelect = (questionIndex: number, value: number) => {
@@ -39,8 +49,18 @@ export const AnxietyQuestionnaire: React.FC<AnxietyQuestionnaireProps> = ({ onBa
     onSubmit(responses);
   };
 
-  const isComplete = Object.keys(responses).length === questions.length;
-  const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
+  // Check if any of the first 7 questions have symptoms (value > 0)
+  const hasSymptoms = Object.entries(responses)
+    .filter(([key]) => parseInt(key) < 7)
+    .some(([, value]) => value > 0);
+
+  // Total questions needed to complete (7 + difficulty question if has symptoms)
+  const totalQuestionsNeeded = hasSymptoms ? questions.length + 1 : questions.length;
+
+  const isComplete = Object.keys(responses).length === totalQuestionsNeeded;
+  const totalScore = Object.entries(responses)
+    .filter(([key]) => parseInt(key) < 7) // Only count first 7 questions for score
+    .reduce((sum, [, value]) => sum + value, 0);
 
   const getScoreInterpretation = (score: number) => {
     if (score <= 4) return { level: "Minimal", color: "text-green-600", bg: "bg-green-50" };
@@ -94,6 +114,18 @@ export const AnxietyQuestionnaire: React.FC<AnxietyQuestionnaireProps> = ({ onBa
             onSelect={(value) => handleAnswerSelect(index, value)}
           />
         ))}
+
+        {/* Difficulty Question - only show if user has symptoms */}
+        {hasSymptoms && (
+          <QuestionCard
+            key={7}
+            questionNumber={8}
+            question={difficultyQuestion}
+            choices={difficultyChoices}
+            selectedValue={responses[7]}
+            onSelect={(value) => handleAnswerSelect(7, value)}
+          />
+        )}
       </div>
 
       {/* Submit Button */}

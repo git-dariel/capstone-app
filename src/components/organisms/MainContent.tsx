@@ -1,62 +1,141 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
-import { AnnouncementCard } from "@/components/molecules";
+import { AnnouncementCard, AnnouncementModal } from "@/components/molecules";
 import { Button } from "@/components/ui";
+import { useAuth, useAnnouncement } from "@/hooks";
+import type {
+  CreateAnnouncementRequest,
+  UpdateAnnouncementRequest,
+  Announcement,
+} from "@/services";
 
 export const MainContent: React.FC = () => {
-  const announcements = [
-    {
-      title: "Understanding Your Academic Advising Report",
-      description:
-        "Good morning! Darrel, hope you're feeling well this morning! We understand that some students have questions about their report cards, and let's get on track...",
-      date: "October 25, 2024",
-      category: "Academic",
-      categoryColor: "blue" as const,
-    },
-    {
-      title: "Career Fair: Explore Internship Opportunities",
-      description:
-        "Mark your calendars, students. Join the Scholarship search to land students for internships and full-time positions. Bring your resume.",
-      date: "October 24, 2024",
-      category: "Career",
-      categoryColor: "green" as const,
-    },
-    {
-      title: "Stress Management Techniques for Students",
-      description:
-        "Join our mental strategies to manage academic stress and wellness best during midterms. Lack of the Campus Counseling Center.",
-      date: "October 22, 2024",
-      category: "Wellness",
-      categoryColor: "purple" as const,
-    },
-    {
-      title: "New Peer Tutoring Program Launched",
-      description:
-        "Looking for help with a challenging course? Our new peer tutoring programs connects you with experienced students for personalized support.",
-      date: "October 19, 2024",
-      category: "Academic",
-      categoryColor: "blue" as const,
-    },
-    {
-      title: "Student Health Services Flu Shot Clinic",
-      description:
-        "Protect yourself and the campus community. Free flu shots are available for all enrolled students.",
-      date: "October 18, 2024",
-      category: "Wellness",
-      categoryColor: "purple" as const,
-    },
-  ];
+  const { user } = useAuth();
+  const {
+    announcements,
+    loading,
+    error,
+    createAnnouncement,
+    updateAnnouncement,
+    deleteAnnouncement,
+    fetchAnnouncements,
+    clearError,
+  } = useAnnouncement();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+
+  // Get the user's first name for personalized greeting
+  const firstName = user?.person?.firstName || "User";
+
+  // Check if user is guidance counselor (has access to all features)
+  const isGuidance = user?.type === "guidance";
+
+  // Generate time-based greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 17) return "Good Afternoon";
+    return "Good Evening";
+  };
+
+  // Load announcements on component mount
+  useEffect(() => {
+    fetchAnnouncements();
+  }, []);
+
+  const handleOpenCreateModal = () => {
+    setSelectedAnnouncement(null);
+    setIsModalOpen(true);
+    clearError();
+  };
+
+  const handleOpenViewModal = (announcement: Announcement) => {
+    setSelectedAnnouncement(announcement);
+    setIsModalOpen(true);
+    clearError();
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAnnouncement(null);
+    clearError();
+  };
+
+  const handleAnnouncementSubmit = async (data: CreateAnnouncementRequest) => {
+    try {
+      await createAnnouncement(data);
+      // Success - close modal
+      setIsModalOpen(false);
+      setSelectedAnnouncement(null);
+    } catch (err: any) {
+      // Error is handled by the hook
+      console.error("Failed to create announcement:", err);
+    }
+  };
+
+  const handleAnnouncementUpdate = async (id: string, data: UpdateAnnouncementRequest) => {
+    try {
+      await updateAnnouncement(id, data);
+      // Success - close modal
+      setIsModalOpen(false);
+      setSelectedAnnouncement(null);
+    } catch (err: any) {
+      // Error is handled by the hook
+      console.error("Failed to update announcement:", err);
+    }
+  };
+
+  const handleAnnouncementDelete = async (id: string) => {
+    try {
+      await deleteAnnouncement(id);
+      // Success - close modal
+      setIsModalOpen(false);
+      setSelectedAnnouncement(null);
+    } catch (err: any) {
+      // Error is handled by the hook
+      console.error("Failed to delete announcement:", err);
+    }
+  };
+
+  // Helper function to map API announcement to AnnouncementCard props
+  const mapAnnouncementToCard = (announcement: any) => {
+    const statusColorMap = {
+      academic: "blue" as const,
+      career: "green" as const,
+      wellness: "purple" as const,
+    };
+
+    return {
+      title: announcement.title,
+      description: announcement.description,
+      date: new Date(announcement.createdAt).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      category: announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1),
+      categoryColor: statusColorMap[announcement.status as keyof typeof statusColorMap],
+    };
+  };
 
   return (
     <main className="flex-1 p-6 bg-gray-50 overflow-auto">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Header */}
         <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">Good Morning, Dariel!</h1>
-          <Button className="bg-teal-400 hover:bg-teal-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
-            <Plus className="w-4 h-4" />
-            <span>New Announcement</span>
-          </Button>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {getGreeting()}, {firstName}!
+          </h1>
+          {/* Only show New Announcement button for guidance counselors */}
+          {isGuidance && (
+            <Button
+              onClick={handleOpenCreateModal}
+              className="bg-teal-400 hover:bg-teal-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>New Announcement</span>
+            </Button>
+          )}
         </div>
 
         {/* Guidance Counselor Announcements */}
@@ -73,9 +152,23 @@ export const MainContent: React.FC = () => {
           </div>
 
           <div className="divide-y divide-gray-200">
-            {announcements.map((announcement, index) => (
-              <AnnouncementCard key={index} {...announcement} />
-            ))}
+            {announcements.length > 0 ? (
+              announcements.map((announcement, index) => (
+                <AnnouncementCard
+                  key={announcement.id || index}
+                  {...mapAnnouncementToCard(announcement)}
+                  onClick={() => handleOpenViewModal(announcement)}
+                />
+              ))
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                {loading
+                  ? "Loading announcements..."
+                  : isGuidance
+                  ? "No announcements yet. Create one to get started!"
+                  : "No announcements available at the moment."}
+              </div>
+            )}
           </div>
         </div>
 
@@ -107,6 +200,18 @@ export const MainContent: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Announcement Modal */}
+      <AnnouncementModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onSubmit={handleAnnouncementSubmit}
+        onUpdate={isGuidance ? handleAnnouncementUpdate : undefined}
+        onDelete={isGuidance ? handleAnnouncementDelete : undefined}
+        announcement={selectedAnnouncement}
+        loading={loading}
+        error={error}
+      />
     </main>
   );
 };

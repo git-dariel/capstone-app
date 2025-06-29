@@ -3,6 +3,8 @@ export { SignUpForm } from "./SignUpForm";
 export { TopNavigation } from "./TopNavigation";
 export { SidebarNavigation } from "./SidebarNavigation";
 export { AnnouncementCard } from "./AnnouncementCard";
+export { AnnouncementModal } from "./AnnouncementModal";
+export { ConfirmationModal } from "./ConfirmationModal";
 export { StatsGrid } from "./StatsGrid";
 export { RecentActivitiesTable } from "./RecentActivitiesTable";
 export { AnxietyAssessmentTable } from "./AnxietyAssessmentTable";

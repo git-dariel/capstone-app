@@ -2,6 +2,7 @@ export { Avatar } from "./Avatar";
 export { FormField } from "./FormField";
 export { FormSelect } from "./FormSelect";
 export { Logo } from "./Logo";
+export { Modal } from "./Modal";
 export { NotificationBell } from "./NotificationBell";
 export { SearchBar } from "./SearchBar";
 export { StatCard } from "./StatCard";

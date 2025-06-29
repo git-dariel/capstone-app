@@ -26,11 +26,21 @@ export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = (
     "Thoughts that you would be better off dead or of hurting yourself in some way",
   ];
 
+  const difficultyQuestion =
+    "If you checked any problems, how difficult have these problems made it for you to do your work, take care of things at home, or get along with other people?";
+
   const answerChoices = [
     { value: 0, label: "Not at all" },
     { value: 1, label: "Several days" },
     { value: 2, label: "More than half the days" },
     { value: 3, label: "Nearly every day" },
+  ];
+
+  const difficultyChoices = [
+    { value: 0, label: "Not difficult at all" },
+    { value: 1, label: "Somewhat difficult" },
+    { value: 2, label: "Very difficult" },
+    { value: 3, label: "Extremely difficult" },
   ];
 
   const handleAnswerSelect = (questionIndex: number, value: number) => {
@@ -44,8 +54,21 @@ export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = (
     onSubmit(responses);
   };
 
-  const isComplete = Object.keys(responses).length === questions.length;
-  const totalScore = Object.values(responses).reduce((sum, value) => sum + value, 0);
+  // Check if user has any symptoms (any question > 0)
+  const hasSymptoms = Object.keys(responses).some((key) => {
+    const index = parseInt(key);
+    return index < questions.length && responses[index] > 0;
+  });
+
+  // Check if all required questions are answered
+  const mainQuestionsComplete = Object.keys(responses).length >= questions.length;
+  const difficultyAnswered = hasSymptoms ? responses[questions.length] !== undefined : true;
+  const isComplete = mainQuestionsComplete && difficultyAnswered;
+
+  // Calculate score (only main questions, not difficulty)
+  const totalScore = Object.keys(responses)
+    .filter((key) => parseInt(key) < questions.length)
+    .reduce((sum, key) => sum + responses[parseInt(key)], 0);
 
   const getScoreInterpretation = (score: number) => {
     if (score <= 4) return { level: "Minimal", color: "text-green-600", bg: "bg-green-50" };
@@ -100,6 +123,18 @@ export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = (
             onSelect={(value) => handleAnswerSelect(index, value)}
           />
         ))}
+
+        {/* Difficulty Question - Only show if user has symptoms */}
+        {hasSymptoms && (
+          <QuestionCard
+            key={questions.length}
+            questionNumber={questions.length + 1}
+            question={difficultyQuestion}
+            choices={difficultyChoices}
+            selectedValue={responses[questions.length]}
+            onSelect={(value) => handleAnswerSelect(questions.length, value)}
+          />
+        )}
       </div>
 
       {/* Submit Button */}

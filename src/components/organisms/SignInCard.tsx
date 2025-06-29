@@ -3,24 +3,34 @@ import { Logo } from "@/components/atoms";
 import { SignInForm } from "@/components/molecules";
 import { Button } from "@/components/ui/button";
 import { HeartHandshake, GraduationCap } from "lucide-react";
+import { useAuth } from "@/hooks";
 
 interface SignInFormData {
   email: string;
   password: string;
-  userType: "guidance" | "student";
 }
 
-interface SignInCardProps {
-  onSignIn?: (data: SignInFormData) => void;
-}
+export const SignInCard: React.FC = () => {
+  const { signIn, loading, error, clearError } = useAuth();
+  const [userType, setUserType] = React.useState<"guidance" | "student">("student");
 
-export const SignInCard: React.FC<SignInCardProps> = ({ onSignIn }) => {
-  const [userType, setUserType] = React.useState<"guidance" | "student">("guidance");
+  const handleSignIn = async (data: SignInFormData) => {
+    try {
+      // Clear any previous errors
+      clearError();
 
-  const handleSignIn = (data: Omit<SignInFormData, "userType">) => {
-    console.log("Sign in data:", { ...data, userType });
-    if (onSignIn) {
-      onSignIn({ ...data, userType });
+      // Attempt login with selected user type
+      await signIn({
+        email: data.email,
+        password: data.password,
+        type: userType,
+      });
+
+      // Success handling is done in the hook (navigation)
+      console.log("Login successful!");
+    } catch (error: any) {
+      // Error handling is done in the hook (setting error state)
+      console.error("Login failed:", error.message);
     }
   };
 
@@ -36,6 +46,7 @@ export const SignInCard: React.FC<SignInCardProps> = ({ onSignIn }) => {
       <div className="flex gap-3 mb-6">
         <Button
           onClick={() => setUserType("guidance")}
+          disabled={loading}
           className={`flex-1 py-3 gap-2 ${
             userType === "guidance"
               ? "bg-teal-500 hover:bg-teal-600 text-white"
@@ -47,6 +58,7 @@ export const SignInCard: React.FC<SignInCardProps> = ({ onSignIn }) => {
         </Button>
         <Button
           onClick={() => setUserType("student")}
+          disabled={loading}
           className={`flex-1 py-3 gap-2 ${
             userType === "student"
               ? "bg-teal-500 hover:bg-teal-600 text-white"
@@ -58,7 +70,7 @@ export const SignInCard: React.FC<SignInCardProps> = ({ onSignIn }) => {
         </Button>
       </div>
 
-      <SignInForm onSubmit={handleSignIn} />
+      <SignInForm onSubmit={handleSignIn} loading={loading} error={error} />
     </div>
   );
 };

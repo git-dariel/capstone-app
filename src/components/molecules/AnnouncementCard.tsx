@@ -1,6 +1,5 @@
-import React from "react";
-import { Avatar } from "@/components/atoms";
 import { cn } from "@/lib/utils";
+import React from "react";
 
 interface AnnouncementCardProps {
   title: string;
@@ -8,8 +7,8 @@ interface AnnouncementCardProps {
   date: string;
   category: string;
   categoryColor?: "blue" | "green" | "purple" | "orange";
-  avatar?: string;
   className?: string;
+  onClick?: () => void;
 }
 
 export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
@@ -18,8 +17,8 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   date,
   category,
   categoryColor = "blue",
-  avatar,
   className = "",
+  onClick,
 }) => {
   const categoryColors = {
     blue: "bg-blue-100 text-blue-800",
@@ -30,11 +29,14 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
 
   return (
     <div
-      className={cn("flex items-start space-x-3 p-4 hover:bg-gray-50 transition-colors", className)}
+      className={cn(
+        "p-4 hover:bg-gray-50 transition-colors",
+        onClick && "cursor-pointer",
+        className
+      )}
+      onClick={onClick}
     >
-      <Avatar src={avatar} fallback="A" className="mt-1" />
-
-      <div className="flex-1 min-w-0">
+      <div className="w-full">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-900 line-clamp-1">{title}</h3>
           <span

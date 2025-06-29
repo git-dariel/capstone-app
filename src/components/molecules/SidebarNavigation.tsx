@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, BookOpen, HelpCircle, Settings, LogOut, BarChart3, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -28,24 +29,47 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive = false, onClic
 export const SidebarNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { signOut, user } = useAuth();
 
-  const navigationItems = [
+  // Check if user is guidance counselor
+  const isGuidance = user?.type === "guidance";
+
+  const allNavigationItems = [
     { icon: <Home className="w-5 h-5" />, label: "Home", path: "/home" },
-    { icon: <BarChart3 className="w-5 h-5" />, label: "Dashboard", path: "/dashboard" },
-    { icon: <FileText className="w-5 h-5" />, label: "Reports", path: "/reports" },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "Dashboard",
+      path: "/dashboard",
+      guidanceOnly: true,
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
+      label: "Reports",
+      path: "/reports",
+      guidanceOnly: true,
+    },
     { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
     { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },
   ];
+
+  // Filter navigation items based on user type
+  const navigationItems = allNavigationItems.filter((item) => !item.guidanceOnly || isGuidance);
 
   const bottomItems = [
     { icon: <Settings className="w-5 h-5" />, label: "Settings", path: "/settings" },
     { icon: <LogOut className="w-5 h-5" />, label: "Log Out", path: "/signin" },
   ];
 
-  const handleNavigation = (path: string, label: string) => {
+  const handleNavigation = async (path: string, label: string) => {
     if (label === "Log Out") {
-      // Handle logout logic here if needed
-      navigate("/signin");
+      try {
+        await signOut();
+        // signOut already handles navigation to signin
+      } catch (error) {
+        console.error("Logout failed:", error);
+        // Fallback navigation if logout fails
+        navigate("/signin");
+      }
     } else {
       navigate(path);
     }

@@ -13,6 +13,8 @@ interface SignUpFormData {
 
 interface SignUpFormProps {
   onSubmit: (data: SignUpFormData) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
 const programOptions = [
@@ -23,7 +25,7 @@ const programOptions = [
   { value: "social-work", label: "DCPET" },
 ];
 
-export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
+export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = false, error }) => {
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: "",
     lastName: "",
@@ -52,13 +54,28 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
     onSubmit(formData);
   };
 
+  const isFormValid =
+    formData.firstName.trim() &&
+    formData.lastName.trim() &&
+    formData.program &&
+    formData.email.trim() &&
+    formData.password.trim();
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       <FormField
         id="firstName"
         label="First name"
         value={formData.firstName}
         onChange={handleChange("firstName")}
+        required
+        disabled={loading}
       />
 
       <FormField
@@ -66,6 +83,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
         label="Last name"
         value={formData.lastName}
         onChange={handleChange("lastName")}
+        required
+        disabled={loading}
       />
 
       <FormSelect
@@ -75,6 +94,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
         onChange={handleProgramChange}
         options={programOptions}
         placeholder="Select your program"
+        disabled={loading}
       />
 
       <FormField
@@ -83,6 +103,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
         type="email"
         value={formData.email}
         onChange={handleChange("email")}
+        required
+        disabled={loading}
       />
 
       <FormField
@@ -91,6 +113,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
         type="password"
         value={formData.password}
         onChange={handleChange("password")}
+        required
+        disabled={loading}
       />
 
       <div className="text-xs text-gray-500 mt-3">
@@ -107,9 +131,10 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit }) => {
 
       <Button
         type="submit"
-        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-3"
+        disabled={!isFormValid || loading}
+        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Sign Up
+        {loading ? "Creating Account..." : "Sign Up"}
       </Button>
 
       <div className="text-center text-xs text-gray-600 mt-3">

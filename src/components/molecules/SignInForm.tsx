@@ -1,5 +1,4 @@
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 import { FormField } from "@/components/atoms/FormField";
 import { Button } from "@/components/ui/button";
 
@@ -10,11 +9,12 @@ interface SignInFormData {
 
 interface SignInFormProps {
   onSubmit: (data: SignInFormData) => void;
+  loading?: boolean;
+  error?: string | null;
 }
 
-export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
-  const navigate = useNavigate();
-  const [formData, setFormData] = React.useState<SignInFormData>({
+export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit, loading = false, error }) => {
+  const [formData, setFormData] = useState<SignInFormData>({
     email: "",
     password: "",
   });
@@ -22,16 +22,22 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
-    // Navigate to home page after sign in
-    navigate("/home");
   };
 
   const handleChange = (name: keyof SignInFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const isFormValid = formData.email.trim() && formData.password.trim();
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       <FormField
         id="email"
         label="Email address"
@@ -39,6 +45,7 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
         value={formData.email}
         onChange={(e) => handleChange("email", e.target.value)}
         required
+        disabled={loading}
       />
 
       <FormField
@@ -48,13 +55,15 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit }) => {
         value={formData.password}
         onChange={(e) => handleChange("password", e.target.value)}
         required
+        disabled={loading}
       />
 
       <Button
         type="submit"
-        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-3"
+        disabled={!isFormValid || loading}
+        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Sign In
+        {loading ? "Signing In..." : "Sign In"}
       </Button>
 
       <div className="text-center text-xs text-gray-600 mt-3">
