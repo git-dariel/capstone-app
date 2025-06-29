@@ -1,7 +1,9 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search } from "lucide-react";
+import { Search, AlertCircle, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/atoms";
 import { cn } from "@/lib/utils";
+import { useAnxiety } from "@/hooks";
+import type { AnxietyAssessment as ApiAnxietyAssessment } from "@/services";
 
 type AnxietySeverityLevel = "minimal" | "mild" | "moderate" | "severe";
 
@@ -19,113 +21,34 @@ export const AnxietyAssessmentTable: React.FC = () => {
   const [displayCount, setDisplayCount] = useState(10);
   const tableRef = useRef<HTMLDivElement>(null);
 
-  const allAssessments: AnxietyAssessment[] = [
-    {
-      id: "1",
-      studentName: "Alice Johnson",
-      score: 72,
-      severityLevel: "severe",
-      date: "Oct 25, 2024",
-    },
-    {
-      id: "2",
-      studentName: "David Rodriguez",
-      score: 34,
-      severityLevel: "mild",
-      date: "Oct 24, 2024",
-    },
-    {
-      id: "3",
-      studentName: "Jennifer Martinez",
-      score: 56,
-      severityLevel: "moderate",
-      date: "Oct 23, 2024",
-    },
-    {
-      id: "4",
-      studentName: "Kevin Park",
-      score: 18,
-      severityLevel: "minimal",
-      date: "Oct 22, 2024",
-    },
-    {
-      id: "5",
-      studentName: "Lisa Thompson",
-      score: 65,
-      severityLevel: "moderate",
-      date: "Oct 21, 2024",
-    },
-    {
-      id: "6",
-      studentName: "Marcus Brown",
-      score: 81,
-      severityLevel: "severe",
-      date: "Oct 20, 2024",
-    },
-    {
-      id: "7",
-      studentName: "Amanda Wilson",
-      score: 42,
-      severityLevel: "mild",
-      date: "Oct 19, 2024",
-    },
-    {
-      id: "8",
-      studentName: "Ryan Cooper",
-      score: 89,
-      severityLevel: "severe",
-      date: "Oct 18, 2024",
-    },
-    {
-      id: "9",
-      studentName: "Michelle Adams",
-      score: 23,
-      severityLevel: "minimal",
-      date: "Oct 17, 2024",
-    },
-    {
-      id: "10",
-      studentName: "Christopher Lee",
-      score: 59,
-      severityLevel: "moderate",
-      date: "Oct 16, 2024",
-    },
-    {
-      id: "11",
-      studentName: "Jessica Brown",
-      score: 75,
-      severityLevel: "severe",
-      date: "Oct 15, 2024",
-    },
-    {
-      id: "12",
-      studentName: "Andrew Davis",
-      score: 31,
-      severityLevel: "mild",
-      date: "Oct 14, 2024",
-    },
-    {
-      id: "13",
-      studentName: "Nicole Taylor",
-      score: 67,
-      severityLevel: "moderate",
-      date: "Oct 13, 2024",
-    },
-    {
-      id: "14",
-      studentName: "Matthew Garcia",
-      score: 15,
-      severityLevel: "minimal",
-      date: "Oct 12, 2024",
-    },
-    {
-      id: "15",
-      studentName: "Samantha Miller",
-      score: 83,
-      severityLevel: "severe",
-      date: "Oct 11, 2024",
-    },
-  ];
+  // Use the anxiety hook to fetch data
+  const { assessments: apiAssessments, loading, error, fetchAssessments } = useAnxiety();
+
+  // Fetch assessments on component mount
+  useEffect(() => {
+    fetchAssessments({
+      limit: 100,
+      fields:
+        "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName",
+    }).catch(console.error);
+  }, []);
+
+  // Transform API data to table format
+  const allAssessments: AnxietyAssessment[] = useMemo(() => {
+    return apiAssessments.map((assessment: ApiAnxietyAssessment) => ({
+      id: assessment.id,
+      studentName: assessment.user
+        ? `${assessment.user.person.firstName} ${assessment.user.person.lastName}`
+        : "Unknown Student",
+      score: assessment.totalScore,
+      severityLevel: assessment.severityLevel,
+      date: new Date(assessment.assessmentDate).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+    }));
+  }, [apiAssessments]);
 
   // Filter assessments based on search term
   const filteredAssessments = useMemo(() => {
@@ -135,7 +58,7 @@ export const AnxietyAssessmentTable: React.FC = () => {
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [searchTerm]);
+  }, [searchTerm, allAssessments]);
 
   // Get assessments to display (limited by displayCount)
   const assessments = useMemo(() => {
@@ -189,7 +112,9 @@ export const AnxietyAssessmentTable: React.FC = () => {
           <div>
             <h2 className="text-lg font-medium text-gray-900">Anxiety Assessment Reports</h2>
             <p className="text-sm text-gray-500">
-              Showing {assessments.length} of {filteredAssessments.length} students
+              {loading
+                ? "Loading assessments..."
+                : `Showing ${assessments.length} of ${filteredAssessments.length} students`}
             </p>
           </div>
         </div>
@@ -203,6 +128,7 @@ export const AnxietyAssessmentTable: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400"
+            disabled={loading}
           />
         </div>
       </div>
@@ -212,62 +138,85 @@ export const AnxietyAssessmentTable: React.FC = () => {
         className="overflow-x-auto max-h-96 overflow-y-auto"
         onScroll={handleScroll}
       >
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Score
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Severity Level
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Date
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {assessments.map((assessment) => (
-              <tr key={assessment.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <Avatar
-                      src={assessment.avatar}
-                      fallback={assessment.studentName.charAt(0)}
-                      className="mr-3"
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">
-                        {assessment.studentName}
+        {error ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="w-5 h-5" />
+              <span className="text-sm">{error}</span>
+            </div>
+          </div>
+        ) : loading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm">Loading anxiety assessments...</span>
+            </div>
+          </div>
+        ) : assessments.length === 0 ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center text-gray-500">
+              <p className="text-sm">No anxiety assessments found</p>
+              {searchTerm && <p className="text-xs mt-1">Try adjusting your search terms</p>}
+            </div>
+          </div>
+        ) : (
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Student
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Score
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Severity Level
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {assessments.map((assessment) => (
+                <tr key={assessment.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <Avatar
+                        src={assessment.avatar}
+                        fallback={assessment.studentName.charAt(0)}
+                        className="mr-3"
+                      />
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {assessment.studentName}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={cn("text-sm", getScoreColor(assessment.score))}>
-                    {assessment.score}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span
-                    className={cn(
-                      "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                      getSeverityColor(assessment.severityLevel)
-                    )}
-                  >
-                    {formatSeverityLevel(assessment.severityLevel)}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {assessment.date}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={cn("text-sm", getScoreColor(assessment.score))}>
+                      {assessment.score}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={cn(
+                        "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                        getSeverityColor(assessment.severityLevel)
+                      )}
+                    >
+                      {formatSeverityLevel(assessment.severityLevel)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {assessment.date}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

@@ -112,12 +112,15 @@ export class DepressionService {
     params?: QueryParams
   ): Promise<PaginatedResponse<DepressionAssessment>> {
     try {
-      const response = await HttpClient.get<PaginatedResponse<DepressionAssessment>>(
-        "/depression",
-        params
-      );
-      // Backend returns data directly
-      return response as any;
+      const response = await HttpClient.get<any>("/depression", params);
+      // Backend returns { assessments, total, page, totalPages } format
+      return {
+        data: response.assessments || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        limit: params?.limit || 10,
+        totalPages: response.totalPages || 0,
+      };
     } catch (error) {
       throw error;
     }

@@ -105,12 +105,15 @@ export class AnxietyService {
     params?: QueryParams
   ): Promise<PaginatedResponse<AnxietyAssessment>> {
     try {
-      const response = await HttpClient.get<PaginatedResponse<AnxietyAssessment>>(
-        "/anxiety",
-        params
-      );
-      // Backend returns data directly
-      return response as any;
+      const response = await HttpClient.get<any>("/anxiety", params);
+      // Backend returns { assessments, total, page, totalPages } format
+      return {
+        data: response.assessments || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        limit: params?.limit || 10,
+        totalPages: response.totalPages || 0,
+      };
     } catch (error) {
       throw error;
     }
