@@ -18,9 +18,8 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
     );
   }
 
-  // Only redirect after auth state is fully initialized
+  // Redirect authenticated users to home - let the main app handle consent logic
   if (isAuthenticated()) {
-    // Redirect authenticated users to home
     return <Navigate to="/home" replace />;
   }
 

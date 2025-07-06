@@ -44,7 +44,7 @@ export const FormField: React.FC<FormFieldProps> = ({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
-          className="h-9 text-sm bg-gray-50 border-gray-200 focus:border-teal-400 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-8 text-xs bg-gray-50 border-gray-200 focus:border-teal-400 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
           required={required}
           disabled={disabled}
         />

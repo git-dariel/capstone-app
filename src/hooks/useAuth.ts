@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { AuthService } from "@/services";
-import type { LoginRequest, RegisterRequest, AuthResponse } from "@/services";
+import { AuthService, ConsentService } from "@/services";
+import type { LoginRequest, RegisterRequest, AuthResponse, Student } from "@/services";
 
 interface AuthState {
   user: any | null;
+  student: Student | null;
   loading: boolean;
   error: string | null;
   initialized: boolean;
@@ -14,8 +15,21 @@ interface SignUpFormData {
   firstName: string;
   lastName: string;
   program: string;
+  year: string;
   email: string;
   password: string;
+  contactNumber: string;
+  address: {
+    street: string;
+    city: string;
+    province: string;
+    zipCode: string;
+  };
+  guardian: {
+    name: string;
+    contactNumber: string;
+    relationship: string;
+  };
 }
 
 interface SignInData {
@@ -29,6 +43,7 @@ export const useAuth = () => {
   const location = useLocation();
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
+    student: null,
     loading: false,
     error: null,
     initialized: false,
@@ -39,9 +54,11 @@ export const useAuth = () => {
     const initializeAuth = async () => {
       try {
         const user = AuthService.getCurrentUser();
+        const student = AuthService.getCurrentStudent();
         setAuthState((prev) => ({
           ...prev,
           user,
+          student,
           initialized: true,
         }));
       } catch (error) {
@@ -49,6 +66,7 @@ export const useAuth = () => {
         setAuthState((prev) => ({
           ...prev,
           user: null,
+          student: null,
           initialized: true,
         }));
       }
@@ -67,28 +85,39 @@ export const useAuth = () => {
         password: formData.password,
         firstName: formData.firstName,
         lastName: formData.lastName,
+        contactNumber: formData.contactNumber,
+        address: {
+          street: formData.address.street,
+          city: formData.address.city,
+          province: formData.address.province,
+          zipCode: formData.address.zipCode,
+        },
+        guardian: {
+          firstName: formData.guardian.name.split(" ")[0] || "",
+          lastName: formData.guardian.name.split(" ").slice(1).join(" ") || "",
+          contactNumber: formData.guardian.contactNumber,
+          relationship: formData.guardian.relationship,
+        },
         userName: formData.email, // Use email as username
         type: "student", // Default to student for signup
         role: "user", // Default to user role
         studentNumber: generateStudentNumber(), // Generate a student number
         program: mapProgramValue(formData.program),
-        year: "1st Year", // Default year for new students
+        year: formData.year, // Use year from form data
       };
 
       const response: AuthResponse = await AuthService.register(registerData);
 
+      // Don't update auth state - keep user unauthenticated
+      // They will need to sign in after registration
       setAuthState((prev) => ({
         ...prev,
-        user: response.user,
         loading: false,
         error: null,
+        // Keep user and student as null to remain unauthenticated
       }));
 
-      // Small delay to ensure state is set before navigation
-      setTimeout(() => {
-        const from = (location.state as any)?.from?.pathname || "/home";
-        navigate(from, { replace: true });
-      }, 100);
+      console.log("Registration completed successfully. User needs to sign in.");
 
       return response;
     } catch (error: any) {
@@ -117,12 +146,27 @@ export const useAuth = () => {
       setAuthState((prev) => ({
         ...prev,
         user: response.user,
+        student: response.student || null,
         loading: false,
         error: null,
       }));
 
       // Small delay to ensure state is set before navigation
-      setTimeout(() => {
+      setTimeout(async () => {
+        // Check if user is a student and needs to complete consent
+        if (response.user.type === "student" && response.student?.id) {
+          try {
+            const hasConsent = await ConsentService.hasConsent(response.student.id);
+            if (!hasConsent) {
+              navigate("/consent", { replace: true });
+              return;
+            }
+          } catch (error) {
+            console.error("Error checking consent:", error);
+            // If consent check fails, continue to normal navigation
+          }
+        }
+
         const from = (location.state as any)?.from?.pathname || "/home";
         navigate(from, { replace: true });
       }, 100);
@@ -147,6 +191,7 @@ export const useAuth = () => {
       setAuthState((prev) => ({
         ...prev,
         user: null,
+        student: null,
         loading: false,
         error: null,
       }));
@@ -159,6 +204,7 @@ export const useAuth = () => {
       setAuthState((prev) => ({
         ...prev,
         user: null,
+        student: null,
         loading: false,
         error: null,
       }));
@@ -177,6 +223,7 @@ export const useAuth = () => {
 
   return {
     user: authState.user,
+    student: authState.student,
     loading: authState.loading,
     error: authState.error,
     initialized: authState.initialized,

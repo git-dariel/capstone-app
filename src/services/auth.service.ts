@@ -31,6 +31,23 @@ export interface RegisterRequest {
     country?: string;
     type?: string;
   };
+  guardian?: {
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    contactNumber?: string;
+    relationship?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      houseNo?: string;
+      province?: string;
+      barangay?: string;
+      zipCode?: string;
+      country?: string;
+      type?: string;
+    };
+  };
   role?: "user" | "admin";
   type?: "student" | "employee";
   studentNumber?: string;
@@ -98,6 +115,11 @@ export class AuthService {
       // Store user data
       TokenManager.setUser(authData.user);
 
+      // Store student data if it exists
+      if (authData.student) {
+        TokenManager.setStudent(authData.student);
+      }
+
       return authData;
     } catch (error: any) {
       // Clear any existing auth data on error
@@ -118,13 +140,9 @@ export class AuthService {
         throw new Error("Invalid user data in response");
       }
 
-      // Store the token if it exists (might be optional if using cookies)
-      if (authData.token) {
-        TokenManager.setToken(authData.token);
-      }
-
-      // Store user data
-      TokenManager.setUser(authData.user);
+      // DON'T store any auth data during registration
+      // User will need to sign in after registration
+      console.log("Registration successful, but not storing auth data. User needs to sign in.");
 
       return authData;
     } catch (error: any) {
@@ -148,6 +166,10 @@ export class AuthService {
 
   static getCurrentUser(): User | null {
     return TokenManager.getUser();
+  }
+
+  static getCurrentStudent(): Student | null {
+    return TokenManager.getStudent();
   }
 
   static isAuthenticated(): boolean {

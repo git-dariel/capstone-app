@@ -1,6 +1,8 @@
 export { HomePage } from "./HomePage";
 export { SignInPage } from "./SignInPage";
 export { SignUpPage } from "./SignUpPage";
+export { ConsentPage } from "./ConsentPage";
+export { MentalHealthResultsPage } from "./MentalHealthResultsPage";
 export { DashboardPage } from "./DashboardPage";
 export { ReportsPage } from "./ReportsPage";
 export { ResourcesPage } from "./ResourcesPage";

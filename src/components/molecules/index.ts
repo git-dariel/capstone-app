@@ -1,5 +1,6 @@
 export { SignInForm } from "./SignInForm";
 export { SignUpForm } from "./SignUpForm";
+export { ConsentForm } from "./ConsentForm";
 export { TopNavigation } from "./TopNavigation";
 export { SidebarNavigation } from "./SidebarNavigation";
 export { AnnouncementCard } from "./AnnouncementCard";

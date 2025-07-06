@@ -17,8 +17,8 @@ export const SignUpPage: React.FC = () => {
       </div>
 
       {/* Form section */}
-      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-4 lg:px-16 min-h-screen lg:min-h-0">
-        <div className="w-full max-w-sm py-8 lg:py-0">
+      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-3 lg:px-8 min-h-screen lg:min-h-0">
+        <div className="w-full max-w-4xl py-4 lg:py-0">
           <SignUpCard />
         </div>
       </div>

@@ -18,6 +18,15 @@ export type {
   UpdateStudentRequest,
 } from "./student.service";
 
+// Consent Service
+export { ConsentService } from "./consent.service";
+export type {
+  ConsentFormData,
+  ConsentResponse,
+  GetConsentResponse,
+  MentalHealthPrediction,
+} from "./consent.service";
+
 // Person Service
 export { PersonService } from "./person.service";
 export type { Person, CreatePersonRequest, UpdatePersonRequest } from "./person.service";

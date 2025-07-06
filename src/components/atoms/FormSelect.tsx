@@ -40,7 +40,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
         onChange={(e) => onChange?.(e.target.value)}
         required={required}
         disabled={disabled}
-        className="w-full h-9 px-3 text-sm bg-gray-50 border border-gray-200 rounded-md focus:border-teal-400 focus:ring-1 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full h-8 px-3 text-xs bg-gray-50 border border-gray-200 rounded-md focus:border-teal-400 focus:ring-1 focus:ring-teal-400 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {placeholder && (
           <option value="" disabled>

@@ -50,6 +50,7 @@ export interface QueryParams {
 // Token management
 export class TokenManager {
   private static readonly USER_KEY = "user_data";
+  private static readonly STUDENT_KEY = "student_data";
   private static readonly TOKEN_KEY = "auth_token";
 
   private static isLocalStorageAvailable(): boolean {
@@ -102,9 +103,39 @@ export class TokenManager {
 
     try {
       localStorage.removeItem(this.USER_KEY);
+      localStorage.removeItem(this.STUDENT_KEY);
       localStorage.removeItem(this.TOKEN_KEY);
     } catch (error) {
       console.error("Error removing user data:", error);
+    }
+  }
+
+  static getStudent(): any | null {
+    if (!this.isLocalStorageAvailable()) {
+      return null;
+    }
+
+    try {
+      const studentData = localStorage.getItem(this.STUDENT_KEY);
+      return studentData ? JSON.parse(studentData) : null;
+    } catch (error) {
+      console.error("Error parsing student data:", error);
+      // Clear corrupted data
+      localStorage.removeItem(this.STUDENT_KEY);
+      return null;
+    }
+  }
+
+  static setStudent(student: any): void {
+    if (!this.isLocalStorageAvailable()) {
+      console.warn("localStorage not available, student data not persisted");
+      return;
+    }
+
+    try {
+      localStorage.setItem(this.STUDENT_KEY, JSON.stringify(student));
+    } catch (error) {
+      console.error("Error storing student data:", error);
     }
   }
 

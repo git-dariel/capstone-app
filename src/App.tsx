@@ -3,6 +3,8 @@ import {
   HomePage,
   SignInPage,
   SignUpPage,
+  ConsentPage,
+  MentalHealthResultsPage,
   DashboardPage,
   ReportsPage,
   ResourcesPage,
@@ -33,6 +35,24 @@ function App() {
               <PublicRoute>
                 <SignUpPage />
               </PublicRoute>
+            }
+          />
+
+          {/* Consent routes - protected but don't require consent completion */}
+          <Route
+            path="/consent"
+            element={
+              <ProtectedRoute>
+                <ConsentPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/consent/results"
+            element={
+              <ProtectedRoute>
+                <MentalHealthResultsPage />
+              </ProtectedRoute>
             }
           />
 
