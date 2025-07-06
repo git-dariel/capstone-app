@@ -153,16 +153,18 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
     Object.values(formData.concerns).some((value) => value !== undefined);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+        <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-3 rounded-lg text-xs sm:text-sm">
           {error}
         </div>
       )}
 
       {/* Referral Information */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Referral Information</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
+          Referral Information
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormSelect
@@ -186,8 +188,10 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       </div>
 
       {/* Financial and Personal Information */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
+          Personal Information
+        </h3>
 
         <div className="space-y-4">
           <FormSelect
@@ -212,7 +216,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
               value={formData.what_brings_you_to_guidance || ""}
               onChange={(e) => handleFieldChange("what_brings_you_to_guidance", e.target.value)}
               placeholder="Please describe what brings you here..."
-              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:border-teal-400 focus:ring-1 focus:ring-teal-400 disabled:opacity-50"
+              className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-md focus:border-primary-400 focus:ring-1 focus:ring-primary-400 disabled:opacity-50"
               disabled={loading}
               rows={3}
             />
@@ -221,8 +225,8 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       </div>
 
       {/* Physical Health */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Physical Health</h3>
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Physical Health</h3>
 
         <div className="space-y-4">
           <div>
@@ -238,7 +242,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
                   checked={formData.physical_problem === "yes"}
                   onChange={(e) => handleFieldChange("physical_problem", e.target.value)}
                   disabled={loading}
-                  className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500"
+                  className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
                 />
                 <span className="text-sm text-gray-700">Yes</span>
               </label>
@@ -250,7 +254,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
                   checked={formData.physical_problem === "no"}
                   onChange={(e) => handleFieldChange("physical_problem", e.target.value)}
                   disabled={loading}
-                  className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500"
+                  className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
                 />
                 <span className="text-sm text-gray-700">No</span>
               </label>
@@ -310,7 +314,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
                       }
                       onChange={(e) => handleConcernChange(key, e.target.value)}
                       disabled={loading}
-                      className="w-4 h-4 text-teal-600 bg-gray-100 border-gray-300 focus:ring-teal-500"
+                      className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
                     />
                     <span className="text-xs text-gray-700">{level.label}</span>
                   </label>
@@ -374,8 +378,8 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       </div>
 
       {/* Disclaimer */}
-      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-        <p className="text-sm text-blue-800">
+      <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+        <p className="text-xs sm:text-sm text-blue-800">
           <strong>Important:</strong> The information you provide will be used to create a
           preliminary mental health assessment. This is for screening purposes only and should not
           be considered a professional diagnosis. For comprehensive mental health evaluation, please
@@ -388,7 +392,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
         <Button
           type="submit"
           disabled={!isFormValid || loading}
-          className="px-8 py-2 bg-teal-500 hover:bg-teal-600 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-6 sm:px-8 py-2 bg-primary-700 hover:bg-primary-800 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? "Submitting..." : "Submit Consent Form"}
         </Button>

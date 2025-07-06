@@ -7,3 +7,4 @@ export { DashboardPage } from "./DashboardPage";
 export { ReportsPage } from "./ReportsPage";
 export { ResourcesPage } from "./ResourcesPage";
 export { HelpSupportPage } from "./HelpSupportPage";
+export { HistoryPage } from "./HistoryPage";

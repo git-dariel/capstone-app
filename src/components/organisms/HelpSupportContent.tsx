@@ -48,12 +48,14 @@ export const HelpSupportContent: React.FC = () => {
             </div>
 
             {/* Additional Resources */}
-            <div className="bg-teal-50 rounded-lg p-6 mt-12">
-              <h3 className="text-lg font-semibold text-teal-900 mb-2">🌟 Additional Resources</h3>
+            <div className="bg-primary-50 rounded-lg p-6 mt-12">
+              <h3 className="text-lg font-semibold text-primary-900 mb-2">
+                🌟 Additional Resources
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <h4 className="font-medium text-teal-800 mb-2">Campus Resources</h4>
-                  <ul className="space-y-1 text-teal-700">
+                  <h4 className="font-medium text-primary-800 mb-2">Campus Resources</h4>
+                  <ul className="space-y-1 text-primary-700">
                     <li>• Student Health Center</li>
                     <li>• Academic Support Center</li>
                     <li>• Campus Recreation & Wellness</li>
@@ -61,8 +63,8 @@ export const HelpSupportContent: React.FC = () => {
                   </ul>
                 </div>
                 <div>
-                  <h4 className="font-medium text-teal-800 mb-2">Online Resources</h4>
-                  <ul className="space-y-1 text-teal-700">
+                  <h4 className="font-medium text-primary-800 mb-2">Online Resources</h4>
+                  <ul className="space-y-1 text-primary-700">
                     <li>• Mental Health First Aid Training</li>
                     <li>• Mindfulness & Meditation Apps</li>
                     <li>• Study Skills & Time Management</li>

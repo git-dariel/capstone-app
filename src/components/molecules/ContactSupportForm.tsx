@@ -145,7 +145,7 @@ export const ContactSupportForm: React.FC<ContactSupportFormProps> = ({ onBack }
               placeholder="Please describe your issue or question in detail..."
               value={formData.message}
               onChange={(e) => handleChange("message", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 resize-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
               required
             />
           </div>
@@ -161,7 +161,7 @@ export const ContactSupportForm: React.FC<ContactSupportFormProps> = ({ onBack }
             <Button
               type="submit"
               disabled={!isFormValid}
-              className="px-8 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-primary-700 hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-4 h-4 mr-2" />
               Send Message

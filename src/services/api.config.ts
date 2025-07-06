@@ -241,7 +241,7 @@ export class HttpClient {
 
   static async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: "DELETE",
+      method: "PUT",
     });
   }
 }

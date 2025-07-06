@@ -49,7 +49,7 @@ export const SignInCard: React.FC = () => {
           disabled={loading}
           className={`flex-1 py-3 gap-2 ${
             userType === "guidance"
-              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              ? "bg-primary-700 hover:bg-primary-800 text-white"
               : "border-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
           }`}
         >
@@ -61,7 +61,7 @@ export const SignInCard: React.FC = () => {
           disabled={loading}
           className={`flex-1 py-3 gap-2 ${
             userType === "student"
-              ? "bg-teal-500 hover:bg-teal-600 text-white"
+              ? "bg-primary-700 hover:bg-primary-800 text-white"
               : "border-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
           }`}
         >

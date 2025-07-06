@@ -133,7 +133,7 @@ export const AnxietyQuestionnaire: React.FC<AnxietyQuestionnaireProps> = ({ onBa
         <Button
           onClick={handleSubmit}
           disabled={!isComplete}
-          className="px-8 py-3 bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-8 py-3 bg-primary-700 hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4 mr-2" />
           Submit Assessment

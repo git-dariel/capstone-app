@@ -15,6 +15,7 @@ export const MainContent: React.FC = () => {
     announcements,
     loading,
     error,
+    total,
     createAnnouncement,
     updateAnnouncement,
     deleteAnnouncement,
@@ -23,6 +24,7 @@ export const MainContent: React.FC = () => {
   } = useAnnouncement();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
+  const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
 
   // Get the user's first name for personalized greeting
   const firstName = user?.person?.firstName || "User";
@@ -40,8 +42,29 @@ export const MainContent: React.FC = () => {
 
   // Load announcements on component mount
   useEffect(() => {
-    fetchAnnouncements();
+    // Start with limited view - show only 3 announcements
+    fetchAnnouncements({ page: 1, limit: 3 });
   }, []);
+
+  const handleViewAllAnnouncements = async () => {
+    try {
+      setShowAllAnnouncements(true);
+      // Fetch more announcements with larger limit
+      await fetchAnnouncements({ page: 1, limit: 20 });
+    } catch (error) {
+      console.error("Failed to fetch all announcements:", error);
+    }
+  };
+
+  const handleViewLessAnnouncements = async () => {
+    try {
+      setShowAllAnnouncements(false);
+      // Fetch back to normal limited view
+      await fetchAnnouncements({ page: 1, limit: 3 });
+    } catch (error) {
+      console.error("Failed to fetch limited announcements:", error);
+    }
+  };
 
   const handleOpenCreateModal = () => {
     setSelectedAnnouncement(null);
@@ -115,88 +138,121 @@ export const MainContent: React.FC = () => {
       }),
       category: announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1),
       categoryColor: statusColorMap[announcement.status as keyof typeof statusColorMap],
+      authorName: "Guidance Counselor",
+      authorInitials: "GC",
+      showEditOption: isGuidance,
+      attachement: announcement.attachement,
     };
   };
 
   return (
-    <main className="flex-1 p-6 bg-gray-50 overflow-auto">
+    <main className="flex-1 p-4 sm:p-6 bg-gray-50 overflow-auto">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-gray-900">
+        <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
             {getGreeting()}, {firstName}!
           </h1>
           {/* Only show New Announcement button for guidance counselors */}
           {isGuidance && (
             <Button
               onClick={handleOpenCreateModal}
-              className="bg-teal-400 hover:bg-teal-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2"
+              className="bg-primary-500 hover:bg-primary-600 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center space-x-2 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" />
-              <span>New Announcement</span>
+              <span className="text-sm sm:text-base">New Announcement</span>
             </Button>
           )}
         </div>
 
         {/* Guidance Counselor Announcements */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">
-                Guidance Counselor Announcements
-              </h2>
-              <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700">
-                View All →
-              </Button>
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div>
+                <h2 className="text-base sm:text-lg font-medium text-gray-900">
+                  Guidance Counselor Announcements
+                </h2>
+                {total > 0 && (
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                    Showing {announcements.length} of {total} announcements
+                  </p>
+                )}
+              </div>
+              {total > 3 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary-700 hover:text-primary-800 text-sm w-full sm:w-auto"
+                  onClick={
+                    showAllAnnouncements ? handleViewLessAnnouncements : handleViewAllAnnouncements
+                  }
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Loading..."
+                    : showAllAnnouncements
+                    ? "View Less"
+                    : `View All (${total})`}
+                </Button>
+              )}
             </div>
           </div>
 
-          <div className="divide-y divide-gray-200">
+          <div className="p-4 sm:p-6">
             {announcements.length > 0 ? (
-              announcements.map((announcement, index) => (
-                <AnnouncementCard
-                  key={announcement.id || index}
-                  {...mapAnnouncementToCard(announcement)}
-                  onClick={() => handleOpenViewModal(announcement)}
-                />
-              ))
+              <div className="space-y-4">
+                {announcements.map((announcement, index) => (
+                  <AnnouncementCard
+                    key={announcement.id || index}
+                    {...mapAnnouncementToCard(announcement)}
+                    onClick={() => handleOpenViewModal(announcement)}
+                    onEdit={() => handleOpenViewModal(announcement)}
+                  />
+                ))}
+              </div>
             ) : (
-              <div className="p-6 text-center text-gray-500">
-                {loading
-                  ? "Loading announcements..."
-                  : isGuidance
-                  ? "No announcements yet. Create one to get started!"
-                  : "No announcements available at the moment."}
+              <div className="py-8 sm:py-12 text-center text-gray-500">
+                <div className="max-w-md mx-auto px-4">
+                  {loading ? (
+                    <div className="flex flex-col items-center space-y-3">
+                      <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary-600"></div>
+                      <p className="text-sm sm:text-base">Loading announcements...</p>
+                    </div>
+                  ) : isGuidance ? (
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                        <Plus className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900">
+                        No announcements yet
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Create your first announcement to get started!
+                      </p>
+                      <Button
+                        onClick={handleOpenCreateModal}
+                        className="mt-4 bg-primary-600 hover:bg-primary-700 text-white w-full sm:w-auto"
+                      >
+                        Create Announcement
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center">
+                        <span className="text-xl sm:text-2xl">📢</span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900">
+                        No announcements available
+                      </h3>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Check back later for updates from your guidance counselor.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
-          </div>
-        </div>
-
-        {/* Campus News */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-medium text-gray-900">Campus News</h2>
-              <Button variant="ghost" size="sm" className="text-teal-600 hover:text-teal-700">
-                All News →
-              </Button>
-            </div>
-          </div>
-
-          <div className="p-6">
-            <div className="bg-gray-100 rounded-lg h-48 flex items-center justify-center">
-              <div className="text-center">
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  University Celebrates Record-Breaking Research Grants
-                </h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Our faculty secured over $50 million in research funding this year, marking the
-                  highest amount of innovative activity while supporting exceptional student
-                  research opportunities across all disciplines.
-                </p>
-                <span className="text-xs text-gray-400">October 27, 2024</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

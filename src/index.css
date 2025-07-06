@@ -5,3 +5,116 @@
     font-family: "Poppins", system-ui, sans-serif;
   }
 }
+
+@layer utilities {
+  /* Primary color utilities using #A31261 */
+  .bg-primary-50 {
+    background-color: #fdf2f6;
+  }
+  .bg-primary-100 {
+    background-color: #fce7ed;
+  }
+  .bg-primary-200 {
+    background-color: #facfdc;
+  }
+  .bg-primary-300 {
+    background-color: #f7aac0;
+  }
+  .bg-primary-400 {
+    background-color: #f1749d;
+  }
+  .bg-primary-500 {
+    background-color: #e8477d;
+  }
+  .bg-primary-600 {
+    background-color: #d1295f;
+  }
+  .bg-primary-700 {
+    background-color: #a31261;
+  }
+  .bg-primary-800 {
+    background-color: #901452;
+  }
+  .bg-primary-900 {
+    background-color: #7a1748;
+  }
+
+  .text-primary-50 {
+    color: #fdf2f6;
+  }
+  .text-primary-100 {
+    color: #fce7ed;
+  }
+  .text-primary-200 {
+    color: #facfdc;
+  }
+  .text-primary-300 {
+    color: #f7aac0;
+  }
+  .text-primary-400 {
+    color: #f1749d;
+  }
+  .text-primary-500 {
+    color: #e8477d;
+  }
+  .text-primary-600 {
+    color: #d1295f;
+  }
+  .text-primary-700 {
+    color: #a31261;
+  }
+  .text-primary-800 {
+    color: #901452;
+  }
+  .text-primary-900 {
+    color: #7a1748;
+  }
+
+  .border-primary-50 {
+    border-color: #fdf2f6;
+  }
+  .border-primary-100 {
+    border-color: #fce7ed;
+  }
+  .border-primary-200 {
+    border-color: #facfdc;
+  }
+  .border-primary-300 {
+    border-color: #f7aac0;
+  }
+  .border-primary-400 {
+    border-color: #f1749d;
+  }
+  .border-primary-500 {
+    border-color: #e8477d;
+  }
+  .border-primary-600 {
+    border-color: #d1295f;
+  }
+  .border-primary-700 {
+    border-color: #a31261;
+  }
+  .border-primary-800 {
+    border-color: #901452;
+  }
+  .border-primary-900 {
+    border-color: #7a1748;
+  }
+
+  .hover\:bg-primary-700:hover {
+    background-color: #a31261;
+  }
+  .hover\:bg-primary-800:hover {
+    background-color: #901452;
+  }
+  .hover\:text-primary-700:hover {
+    color: #a31261;
+  }
+  .hover\:text-primary-800:hover {
+    color: #901452;
+  }
+
+  .focus\:ring-primary-400:focus {
+    --tw-ring-color: #f1749d;
+  }
+}

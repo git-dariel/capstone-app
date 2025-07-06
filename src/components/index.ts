@@ -4,6 +4,9 @@ export * from "./molecules";
 export * from "./organisms";
 export * from "./ui";
 
+// Layout Components
+export * from "./layout";
+
 // Route Components
 export * from "./ProtectedRoute";
 export * from "./PublicRoute";

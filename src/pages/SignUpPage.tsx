@@ -1,6 +1,6 @@
 import React from "react";
 import { SignUpCard } from "@/components/organisms/SignUpCard";
-import landingImage from "@/assets/landing.png";
+import landingImage from "@/assets/landing-img.png";
 
 export const SignUpPage: React.FC = () => {
   return (

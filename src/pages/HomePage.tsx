@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { TopNavigation, SidebarNavigation } from "@/components/molecules";
+import { MainLayout } from "@/components";
 import { MainContent } from "@/components/organisms";
 import { useAuth } from "@/hooks";
 import { ConsentService } from "@/services";
@@ -31,13 +31,8 @@ export const HomePage: React.FC = () => {
   }, [user, student, navigate]);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      <TopNavigation />
-
-      <div className="flex flex-1 overflow-hidden">
-        <SidebarNavigation />
-        <MainContent />
-      </div>
-    </div>
+    <MainLayout>
+      <MainContent />
+    </MainLayout>
   );
 };

@@ -1,6 +1,6 @@
-import React from "react";
-import { Logo, SearchBar, NotificationBell, Avatar } from "@/components/atoms";
+import { Avatar, Logo } from "@/components/atoms";
 import { useAuth } from "@/hooks";
+import React from "react";
 
 export const TopNavigation: React.FC = () => {
   const { user } = useAuth();
@@ -9,17 +9,18 @@ export const TopNavigation: React.FC = () => {
   const avatarLetter = user?.person?.firstName?.charAt(0).toUpperCase() || "U";
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        {/* Logo Section - Always visible */}
+        <div className="flex items-center space-x-2 md:space-x-4">
           <Logo />
-          <span className="text-xl font-semibold text-gray-900">Bloom</span>
+          <span className="text-lg md:text-xl font-semibold text-gray-900">Bloom</span>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <SearchBar />
-          <NotificationBell hasNotification={true} />
-          <Avatar fallback={avatarLetter} />
+        {/* Right Side - Responsive */}
+        <div className="flex items-center space-x-2 md:space-x-4">
+          {/* Avatar - Always visible */}
+          <Avatar fallback={avatarLetter} className="h-8 w-8 md:h-10 md:w-10" />
         </div>
       </div>
     </header>

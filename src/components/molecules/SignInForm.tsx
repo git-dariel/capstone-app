@@ -61,14 +61,14 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit, loading = fals
       <Button
         type="submit"
         disabled={!isFormValid || loading}
-        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-2 rounded-full mt-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Signing In..." : "Sign In"}
       </Button>
 
       <div className="text-center text-xs text-gray-600 mt-3">
         Don't have an account?{" "}
-        <a href="/signup" className="text-teal-500 hover:text-teal-600 font-medium">
+        <a href="/signup" className="text-primary-700 hover:text-primary-800 font-medium">
           Sign up
         </a>
       </div>

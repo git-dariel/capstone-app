@@ -48,16 +48,16 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
     <button
       onClick={onClick}
       className={cn(
-        "w-full p-6 rounded-xl border-2 transition-all duration-300 text-left hover:shadow-lg transform hover:-translate-y-1",
+        "w-full p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 text-left hover:shadow-lg transform hover:-translate-y-1",
         getColorClasses(color),
         className
       )}
     >
-      <div className="flex items-start space-x-4">
-        <div className={cn("p-3 rounded-lg bg-white/80", getIconColor(color))}>{icon}</div>
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-          <p className="text-sm text-gray-600 leading-relaxed">{description}</p>
+      <div className="flex items-start space-x-3 sm:space-x-4">
+        <div className={cn("p-2 sm:p-3 rounded-lg bg-white/80", getIconColor(color))}>{icon}</div>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-1 sm:mb-2">{title}</h3>
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">{description}</p>
         </div>
       </div>
     </button>

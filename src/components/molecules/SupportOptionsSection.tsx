@@ -25,7 +25,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           icon={<Headphones className="w-6 h-6" />}
           onClick={onContactSupport}
         >
-          <div className="text-sm text-teal-600 font-medium">Email • Live Chat • FAQ</div>
+          <div className="text-sm text-primary-700 font-medium">Email • Live Chat • FAQ</div>
         </HelpCard>
 
         <HelpCard
@@ -33,7 +33,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           description="New to Bloom? Learn how to navigate the platform, take assessments, and understand your results."
           icon={<BookOpen className="w-6 h-6" />}
         >
-          <div className="text-sm text-teal-600 font-medium">Interactive Tutorial</div>
+          <div className="text-sm text-primary-700 font-medium">Interactive Tutorial</div>
         </HelpCard>
 
         <HelpCard
@@ -41,7 +41,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           description="Book an appointment with our licensed counselors for professional mental health support."
           icon={<Calendar className="w-6 h-6" />}
         >
-          <div className="text-sm text-teal-600 font-medium">Free for Students</div>
+          <div className="text-sm text-primary-700 font-medium">Free for Students</div>
         </HelpCard>
 
         <HelpCard
@@ -49,7 +49,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           description="Connect with other students in facilitated support groups focused on anxiety, depression, and stress management."
           icon={<UserCheck className="w-6 h-6" />}
         >
-          <div className="text-sm text-teal-600 font-medium">Weekly Sessions</div>
+          <div className="text-sm text-primary-700 font-medium">Weekly Sessions</div>
         </HelpCard>
 
         <HelpCard
@@ -57,7 +57,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           description="Access educational materials, coping strategies, and self-help tools to support your mental wellness journey."
           icon={<BookOpen className="w-6 h-6" />}
         >
-          <div className="text-sm text-teal-600 font-medium">Articles • Videos • Tools</div>
+          <div className="text-sm text-primary-700 font-medium">Articles • Videos • Tools</div>
         </HelpCard>
 
         <HelpCard
@@ -66,7 +66,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           icon={<MessageSquare className="w-6 h-6" />}
           onClick={onContactSupport}
         >
-          <div className="text-sm text-teal-600 font-medium">24-48 hour response</div>
+          <div className="text-sm text-primary-700 font-medium">24-48 hour response</div>
         </HelpCard>
       </div>
     </div>

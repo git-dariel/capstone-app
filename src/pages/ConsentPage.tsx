@@ -74,7 +74,7 @@ export const ConsentPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-700 mx-auto mb-4"></div>
           <p className="text-gray-600">
             {checkingConsent ? "Checking your consent status..." : "Loading..."}
           </p>
@@ -105,11 +105,11 @@ export const ConsentPage: React.FC = () => {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Information Notice */}
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 mb-8">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mb-8">
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <svg
-                className="w-6 h-6 text-teal-600"
+                className="w-6 h-6 text-primary-700"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -123,8 +123,8 @@ export const ConsentPage: React.FC = () => {
               </svg>
             </div>
             <div className="ml-3">
-              <h3 className="text-lg font-medium text-teal-900">Before You Begin</h3>
-              <div className="mt-2 text-sm text-teal-800">
+              <h3 className="text-lg font-medium text-primary-900">Before You Begin</h3>
+              <div className="mt-2 text-sm text-primary-800">
                 <p className="mb-2">
                   This form helps us understand your current situation and provide personalized
                   mental health support. Your responses will be used to:

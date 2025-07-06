@@ -43,7 +43,7 @@ export const MentalHealthResultsPage: React.FC = () => {
           </p>
           <Button
             onClick={() => navigate("/consent")}
-            className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-primary-700 hover:bg-primary-800 text-white px-4 py-2 rounded-lg font-medium"
           >
             Take Assessment
           </Button>
@@ -258,7 +258,7 @@ export const MentalHealthResultsPage: React.FC = () => {
                 <div key={index} className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg
-                      className="w-5 h-5 text-teal-600 mt-0.5"
+                      className="w-5 h-5 text-primary-700 mt-0.5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -308,9 +308,9 @@ export const MentalHealthResultsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4 mt-8">
           <Button
             onClick={() => navigate("/home")}
-            className="flex-1 bg-teal-500 hover:bg-teal-600 text-white px-6 py-3 rounded-lg font-medium"
+            className="flex-1 bg-primary-700 hover:bg-primary-800 text-white px-6 py-3 rounded-lg font-medium"
           >
-            Continue to Dashboard
+            Continue to Home
           </Button>
           <Button
             onClick={() => navigate("/resources")}
@@ -321,9 +321,9 @@ export const MentalHealthResultsPage: React.FC = () => {
         </div>
 
         {/* Next Steps */}
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-teal-900 mb-3">What's Next?</h3>
-          <div className="space-y-2 text-sm text-teal-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mt-6">
+          <h3 className="text-lg font-semibold text-primary-900 mb-3">What's Next?</h3>
+          <div className="space-y-2 text-sm text-primary-800">
             <p>• Use our comprehensive mental health assessment tools for detailed analysis</p>
             <p>• Access personalized resources and coping strategies</p>
             <p>• Connect with guidance counselors and mental health professionals</p>

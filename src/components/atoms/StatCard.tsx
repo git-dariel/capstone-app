@@ -37,20 +37,23 @@ export const StatCard: React.FC<StatCardProps> = ({
   return (
     <div
       className={cn(
-        "bg-white rounded-lg border shadow-sm p-6 transition-all hover:shadow-md",
+        "bg-white rounded-lg border shadow-sm p-4 sm:p-6 transition-all hover:shadow-md",
         colorClasses[color],
         className
       )}
     >
       <div className="flex items-center justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
           {subtitle && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
         </div>
         {icon && (
           <div
-            className={cn("w-12 h-12 flex items-center justify-center", iconColorClasses[color])}
+            className={cn(
+              "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center",
+              iconColorClasses[color]
+            )}
           >
             {icon}
           </div>

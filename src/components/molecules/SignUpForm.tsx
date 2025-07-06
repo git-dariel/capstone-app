@@ -288,11 +288,11 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
 
       <div className="text-xs text-gray-500 mt-2 pt-1.5 border-t border-gray-50">
         By tapping "Sign Up" you agree to Bloom's{" "}
-        <a href="#" className="text-teal-500 hover:text-teal-600">
+        <a href="#" className="text-primary-700 hover:text-primary-800">
           Terms and Conditions
         </a>{" "}
         and{" "}
-        <a href="#" className="text-teal-500 hover:text-teal-600">
+        <a href="#" className="text-primary-700 hover:text-primary-800">
           Privacy Policy
         </a>
         .
@@ -301,14 +301,14 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
       <Button
         type="submit"
         disabled={!isFormValid || loading}
-        className="w-full bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 rounded-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-2 rounded-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "Creating Account..." : "Sign Up"}
       </Button>
 
       <div className="text-center text-xs text-gray-600 mt-1.5">
         Already have an account?{" "}
-        <a href="/signin" className="text-teal-500 hover:text-teal-600 font-medium">
+        <a href="/signin" className="text-primary-700 hover:text-primary-800 font-medium">
           Sign in
         </a>
       </div>

@@ -188,14 +188,14 @@ export const ResourcesContent: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleCloseModal}
-              className="flex-1 px-4 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 transition-colors"
             >
               Take Another Assessment
             </button>
             <button
               onClick={() => {
                 handleCloseModal();
-                window.location.href = "/reports";
+                window.location.href = "/history";
               }}
               className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
             >
@@ -237,7 +237,7 @@ export const ResourcesContent: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6">
               <div className="flex items-center justify-center space-x-3">
-                <Loader2 className="w-6 h-6 text-teal-600 animate-spin" />
+                <Loader2 className="w-6 h-6 text-primary-700 animate-spin" />
                 <p className="text-gray-700">Submitting your assessment...</p>
               </div>
             </div>

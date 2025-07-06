@@ -9,6 +9,7 @@ import {
   ReportsPage,
   ResourcesPage,
   HelpSupportPage,
+  HistoryPage,
 } from "@/pages";
 import { ProtectedRoute, PublicRoute } from "@/components";
 
@@ -96,6 +97,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <HelpSupportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
               </ProtectedRoute>
             }
           />
