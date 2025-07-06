@@ -8,6 +8,8 @@ interface StatCardProps {
   icon?: React.ReactNode;
   color?: "blue" | "red" | "yellow" | "green" | "purple";
   className?: string;
+  onClick?: () => void;
+  clickable?: boolean;
 }
 
 export const StatCard: React.FC<StatCardProps> = ({
@@ -17,6 +19,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon,
   color = "blue",
   className = "",
+  onClick,
+  clickable = false,
 }) => {
   const colorClasses = {
     blue: "bg-blue-50 border-blue-200",
@@ -34,11 +38,15 @@ export const StatCard: React.FC<StatCardProps> = ({
     purple: "text-purple-600",
   };
 
+  const CardComponent = clickable ? "button" : "div";
+
   return (
-    <div
+    <CardComponent
+      onClick={clickable ? onClick : undefined}
       className={cn(
-        "bg-white rounded-lg border shadow-sm p-4 sm:p-6 transition-all hover:shadow-md",
+        "bg-white rounded-lg border shadow-sm p-4 sm:p-6 transition-all hover:shadow-md w-full text-left",
         colorClasses[color],
+        clickable && "cursor-pointer hover:scale-105 active:scale-95",
         className
       )}
     >
@@ -59,6 +67,6 @@ export const StatCard: React.FC<StatCardProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </CardComponent>
   );
 };

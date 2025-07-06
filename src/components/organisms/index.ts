@@ -6,3 +6,4 @@ export { ReportsContent } from "./ReportsContent";
 export { ResourcesContent } from "./ResourcesContent";
 export { HelpSupportContent } from "./HelpSupportContent";
 export { HistoryContent } from "./HistoryContent";
+export { InsightsContent } from "./InsightsContent";

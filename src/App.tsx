@@ -10,6 +10,7 @@ import {
   ResourcesPage,
   HelpSupportPage,
   HistoryPage,
+  InsightsPage,
 } from "@/pages";
 import { ProtectedRoute, PublicRoute } from "@/components";
 
@@ -105,6 +106,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Insights routes */}
+          <Route
+            path="/insights/:type"
+            element={
+              <ProtectedRoute>
+                <InsightsPage />
               </ProtectedRoute>
             }
           />

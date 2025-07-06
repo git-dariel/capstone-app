@@ -3,3 +3,4 @@ export { useAnnouncement } from "./useAnnouncement";
 export { useAnxiety } from "./useAnxiety";
 export { useDepression } from "./useDepression";
 export { useStress } from "./useStress";
+export { useInsights } from "./useInsights";

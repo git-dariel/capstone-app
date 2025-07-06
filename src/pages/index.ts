@@ -8,3 +8,4 @@ export { ReportsPage } from "./ReportsPage";
 export { ResourcesPage } from "./ResourcesPage";
 export { HelpSupportPage } from "./HelpSupportPage";
 export { HistoryPage } from "./HistoryPage";
+export { InsightsPage } from "./InsightsPage";

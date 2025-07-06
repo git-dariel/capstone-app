@@ -18,4 +18,6 @@ export { StressQuestionnaire } from "./StressQuestionnaire";
 export { CrisisResourcesSection } from "./CrisisResourcesSection";
 export { FAQSection } from "./FAQSection";
 export { SupportOptionsSection } from "./SupportOptionsSection";
+export { InsightsHeader } from "./InsightsHeader";
+export { InsightsBarChart } from "./InsightsBarChart";
 export { ContactSupportForm } from "./ContactSupportForm";

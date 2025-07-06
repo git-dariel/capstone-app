@@ -1,8 +1,15 @@
 import React from "react";
 import { Users, Brain, Heart, Zap } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { StatCard } from "@/components/atoms";
 
 export const StatsGrid: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleStatClick = (type: string) => {
+    navigate(`/insights/${type}`);
+  };
+
   const stats = [
     {
       title: "Total Students",
@@ -17,6 +24,7 @@ export const StatsGrid: React.FC = () => {
       subtitle: "Students assessed",
       icon: <Brain className="w-6 h-6" />,
       color: "yellow" as const,
+      type: "anxiety",
     },
     {
       title: "Total Depression",
@@ -24,6 +32,7 @@ export const StatsGrid: React.FC = () => {
       subtitle: "Students assessed",
       icon: <Heart className="w-6 h-6" />,
       color: "red" as const,
+      type: "depression",
     },
     {
       title: "Total Stress",
@@ -31,6 +40,7 @@ export const StatsGrid: React.FC = () => {
       subtitle: "Students assessed",
       icon: <Zap className="w-6 h-6" />,
       color: "purple" as const,
+      type: "stress",
     },
   ];
 
@@ -44,6 +54,8 @@ export const StatsGrid: React.FC = () => {
           subtitle={stat.subtitle}
           icon={stat.icon}
           color={stat.color}
+          clickable={stat.type !== undefined}
+          onClick={stat.type ? () => handleStatClick(stat.type) : undefined}
         />
       ))}
     </div>
