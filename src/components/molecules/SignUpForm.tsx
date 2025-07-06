@@ -287,7 +287,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
       </div>
 
       <div className="text-xs text-gray-500 mt-2 pt-1.5 border-t border-gray-50">
-        By tapping "Sign Up" you agree to Bloom's{" "}
+        By tapping "Sign Up" you agree to Office of Guidance and Counseling Services{" "}
         <a href="#" className="text-primary-700 hover:text-primary-800">
           Terms and Conditions
         </a>{" "}

@@ -46,7 +46,7 @@ export const FAQSection: React.FC = () => {
     {
       question: "What if I'm having technical issues with the platform?",
       answer:
-        "If you experience any technical problems, please contact our support team at support@bloomhealth.edu or use the contact form below. We typically respond within 24 hours during business days.",
+        "If you experience any technical problems, please contact our support team at support@guidancecenter.edu or use the contact form below. We typically respond within 24 hours during business days.",
     },
     {
       question: "Can I retake assessments if I made a mistake?",
@@ -60,7 +60,8 @@ export const FAQSection: React.FC = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">💬 Frequently Asked Questions</h2>
         <p className="text-gray-600">
-          Find answers to common questions about using Bloom and mental health resources.
+          Find answers to common questions about using Office of Guidance and Counseling Services
+          and mental health resources.
         </p>
       </div>
 

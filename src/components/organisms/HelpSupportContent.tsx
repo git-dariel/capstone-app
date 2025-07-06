@@ -28,7 +28,8 @@ export const HelpSupportContent: React.FC = () => {
             <div className="mb-8">
               <h1 className="text-2xl font-semibold text-gray-900">Help & Support</h1>
               <p className="text-gray-600 mt-1">
-                Find answers, get support, and access resources to help you succeed with Bloom.
+                Find answers, get support, and access resources to help you succeed with Office of
+                Guidance and Counseling Services.
               </p>
             </div>
 

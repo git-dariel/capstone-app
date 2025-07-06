@@ -20,11 +20,11 @@ export const MentalHealthResultsPage: React.FC = () => {
   // Redirect if no prediction data
   if (!prediction) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <div className="text-gray-400 mb-4">
             <svg
-              className="w-12 h-12 mx-auto"
+              className="w-10 h-10 sm:w-12 sm:h-12 mx-auto"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -37,13 +37,13 @@ export const MentalHealthResultsPage: React.FC = () => {
               />
             </svg>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Results Found</h2>
-          <p className="text-gray-600 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Results Found</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
             No mental health assessment results were found. Please complete the consent form first.
           </p>
           <Button
             onClick={() => navigate("/consent")}
-            className="bg-primary-700 hover:bg-primary-800 text-white px-4 py-2 rounded-lg font-medium"
+            className="bg-primary-700 hover:bg-primary-800 text-white px-4 py-2 rounded-lg font-medium w-full sm:w-auto"
           >
             Take Assessment
           </Button>
@@ -125,27 +125,35 @@ export const MentalHealthResultsPage: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-center mb-4">
-            <Logo className="scale-75" />
-            <span className="text-xl font-semibold text-gray-900 ml-2">Bloom</span>
+        <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center mb-3 sm:mb-4">
+            <div className="flex items-center mb-2 sm:mb-0">
+              <Logo className="scale-75" />
+              <span className="text-base sm:text-xl font-semibold text-gray-900 ml-2">
+                Office of Guidance and Counseling Services
+              </span>
+            </div>
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900">Predicted Mental Health Results</h1>
-            <p className="text-gray-600 mt-2">Your personalized mental health screening results</p>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Predicted Mental Health Results
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-0">
+              Your personalized mental health screening results
+            </p>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         {/* Disclaimer */}
         {consentResponse?.disclaimer && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row items-start">
+              <div className="flex-shrink-0 mx-auto sm:mx-0 mb-2 sm:mb-0">
                 <svg
-                  className="w-5 h-5 text-blue-600 mt-0.5"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -158,52 +166,54 @@ export const MentalHealthResultsPage: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-800">{consentResponse.disclaimer}</p>
+              <div className="sm:ml-3 text-center sm:text-left">
+                <p className="text-xs sm:text-sm text-blue-800">{consentResponse.disclaimer}</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Academic Performance Prediction */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+            <div className="flex items-center mb-3 sm:mb-4">
               {getPerformanceIcon(prediction.academicPerformanceOutlook)}
-              <h3 className="text-lg font-semibold text-gray-900 ml-2">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 ml-2">
                 Academic Performance Outlook
               </h3>
             </div>
-            <div className="text-center py-4">
-              <div className="text-3xl font-bold text-gray-900 mb-2">
+            <div className="text-center py-3 sm:py-4">
+              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                 {prediction.academicPerformanceOutlook}
               </div>
-              <div className="text-sm text-gray-600">Confidence: {prediction.confidence}</div>
+              <div className="text-xs sm:text-sm text-gray-600">
+                Confidence: {prediction.confidence}
+              </div>
             </div>
           </div>
 
           {/* Mental Health Risk Level */}
           <div
-            className={`rounded-lg shadow p-6 border ${getRiskLevelBgColor(
+            className={`rounded-lg shadow p-4 sm:p-6 border ${getRiskLevelBgColor(
               prediction.mentalHealthRisk.level
             )}`}
           >
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
               Mental Health Risk Assessment
             </h3>
-            <div className="text-center py-4">
+            <div className="text-center py-3 sm:py-4">
               <div
-                className={`text-2xl font-bold mb-2 ${getRiskLevelColor(
+                className={`text-xl sm:text-2xl font-bold mb-2 ${getRiskLevelColor(
                   prediction.mentalHealthRisk.level
                 )}`}
               >
                 {prediction.mentalHealthRisk.level}
               </div>
-              <div className="text-sm text-gray-700 mb-3">
+              <div className="text-xs sm:text-sm text-gray-700 mb-3">
                 {prediction.mentalHealthRisk.description}
               </div>
               <div
-                className={`text-sm font-medium ${getRiskLevelColor(
+                className={`text-xs sm:text-sm font-medium ${getRiskLevelColor(
                   prediction.mentalHealthRisk.level
                 )}`}
               >
@@ -214,33 +224,37 @@ export const MentalHealthResultsPage: React.FC = () => {
         </div>
 
         {/* Model Accuracy */}
-        <div className="bg-white rounded-lg shadow p-6 mt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Prediction Model Accuracy</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-xl font-bold text-gray-900">
+        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            Prediction Model Accuracy
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="text-lg sm:text-xl font-bold text-gray-900">
                 {prediction.modelAccuracy.decisionTree}
               </div>
-              <div className="text-sm text-gray-600">Decision Tree Model</div>
+              <div className="text-xs sm:text-sm text-gray-600">Decision Tree Model</div>
             </div>
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <div className="text-xl font-bold text-gray-900">
+            <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <div className="text-lg sm:text-xl font-bold text-gray-900">
                 {prediction.modelAccuracy.randomForest}
               </div>
-              <div className="text-sm text-gray-600">Random Forest Model</div>
+              <div className="text-xs sm:text-sm text-gray-600">Random Forest Model</div>
             </div>
           </div>
         </div>
 
         {/* Risk Factors */}
         {prediction.riskFactors && prediction.riskFactors.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Areas to Monitor</h3>
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Areas to Monitor
+            </h3>
             <div className="space-y-2">
               {prediction.riskFactors.map((factor, index) => (
                 <div key={index} className="flex items-start">
                   <div className="flex-shrink-0 w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
-                  <div className="ml-3 text-sm text-gray-700">{factor}</div>
+                  <div className="ml-3 text-xs sm:text-sm text-gray-700">{factor}</div>
                 </div>
               ))}
             </div>
@@ -249,8 +263,8 @@ export const MentalHealthResultsPage: React.FC = () => {
 
         {/* Recommendations */}
         {prediction.recommendations && prediction.recommendations.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
               Personalized Recommendations
             </h3>
             <div className="space-y-3">
@@ -258,7 +272,7 @@ export const MentalHealthResultsPage: React.FC = () => {
                 <div key={index} className="flex items-start">
                   <div className="flex-shrink-0">
                     <svg
-                      className="w-5 h-5 text-primary-700 mt-0.5"
+                      className="w-4 h-4 sm:w-5 sm:h-5 text-primary-700 mt-0.5"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -271,7 +285,7 @@ export const MentalHealthResultsPage: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <div className="ml-3 text-sm text-gray-700">{recommendation}</div>
+                  <div className="ml-3 text-xs sm:text-sm text-gray-700">{recommendation}</div>
                 </div>
               ))}
             </div>
@@ -280,11 +294,11 @@ export const MentalHealthResultsPage: React.FC = () => {
 
         {/* Mental Health Risk Disclaimer */}
         {prediction.mentalHealthRisk.disclaimer && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-6">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mt-4 sm:mt-6">
+            <div className="flex flex-col sm:flex-row items-start">
+              <div className="flex-shrink-0 mx-auto sm:mx-0 mb-2 sm:mb-0">
                 <svg
-                  className="w-5 h-5 text-amber-600 mt-0.5"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mt-0.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -297,33 +311,35 @@ export const MentalHealthResultsPage: React.FC = () => {
                   />
                 </svg>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-amber-800">{prediction.mentalHealthRisk.disclaimer}</p>
+              <div className="sm:ml-3 text-center sm:text-left">
+                <p className="text-xs sm:text-sm text-amber-800">
+                  {prediction.mentalHealthRisk.disclaimer}
+                </p>
               </div>
             </div>
           </div>
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mt-8">
+        <div className="flex flex-col gap-3 sm:gap-4 mt-6 sm:mt-8">
           <Button
             onClick={() => navigate("/home")}
-            className="flex-1 bg-primary-700 hover:bg-primary-800 text-white px-6 py-3 rounded-lg font-medium"
+            className="w-full bg-primary-700 hover:bg-primary-800 text-white px-4 sm:px-6 py-3 rounded-lg font-medium"
           >
             Continue to Home
           </Button>
           <Button
             onClick={() => navigate("/resources")}
-            className="flex-1 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium"
+            className="w-full border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 px-4 sm:px-6 py-3 rounded-lg font-medium"
           >
             Explore Resources
           </Button>
         </div>
 
         {/* Next Steps */}
-        <div className="bg-primary-50 border border-primary-200 rounded-lg p-6 mt-6">
-          <h3 className="text-lg font-semibold text-primary-900 mb-3">What's Next?</h3>
-          <div className="space-y-2 text-sm text-primary-800">
+        <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+          <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3">What's Next?</h3>
+          <div className="space-y-2 text-xs sm:text-sm text-primary-800">
             <p>• Use our comprehensive mental health assessment tools for detailed analysis</p>
             <p>• Access personalized resources and coping strategies</p>
             <p>• Connect with guidance counselors and mental health professionals</p>

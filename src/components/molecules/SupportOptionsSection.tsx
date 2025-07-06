@@ -30,7 +30,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
 
         <HelpCard
           title="Getting Started Guide"
-          description="New to Bloom? Learn how to navigate the platform, take assessments, and understand your results."
+          description="New to Office of Guidance and Counseling Services? Learn how to navigate the platform, take assessments, and understand your results."
           icon={<BookOpen className="w-6 h-6" />}
         >
           <div className="text-sm text-primary-700 font-medium">Interactive Tutorial</div>

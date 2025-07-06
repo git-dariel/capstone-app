@@ -92,115 +92,205 @@ export const ResourcesContent: React.FC = () => {
       ? currentAssessment.charAt(0).toUpperCase() + currentAssessment.slice(1)
       : "Assessment";
 
+    // Determine severity level color and styling
+    const getSeverityColor = (level: string) => {
+      const normalizedLevel = level?.toLowerCase().replace("_", " ");
+      switch (normalizedLevel) {
+        case "minimal":
+        case "low":
+        case "none":
+          return {
+            bg: "bg-green-50",
+            border: "border-green-200",
+            text: "text-green-800",
+            icon: "text-green-600",
+            badge: "bg-green-100 text-green-800",
+          };
+        case "mild":
+        case "moderate":
+          return {
+            bg: "bg-yellow-50",
+            border: "border-yellow-200",
+            text: "text-yellow-800",
+            icon: "text-yellow-600",
+            badge: "bg-yellow-100 text-yellow-800",
+          };
+        case "severe":
+        case "high":
+          return {
+            bg: "bg-red-50",
+            border: "border-red-200",
+            text: "text-red-800",
+            icon: "text-red-600",
+            badge: "bg-red-100 text-red-800",
+          };
+        default:
+          return {
+            bg: "bg-blue-50",
+            border: "border-blue-200",
+            text: "text-blue-800",
+            icon: "text-blue-600",
+            badge: "bg-blue-100 text-blue-800",
+          };
+      }
+    };
+
+    const severityColors = getSeverityColor(analysis?.severityLevel || "");
+
     return (
       <Modal
         isOpen={submissionState.success}
         onClose={handleCloseModal}
-        title="Assessment Complete!"
+        title="Assessment Results"
         size="xl"
       >
-        <div className="max-w-2xl mx-auto">
-          {/* Success Icon */}
-          <div className="flex items-center justify-center mb-6">
-            <CheckCircle className="w-12 h-12 text-green-600" />
-          </div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          {/* Hero Section - Prominent Result Display */}
+          <div
+            className={`${severityColors.bg} ${severityColors.border} border-2 rounded-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 text-center`}
+          >
+            <div className="flex items-center justify-center mb-3 sm:mb-4">
+              <CheckCircle
+                className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 ${severityColors.icon}`}
+              />
+            </div>
 
-          {/* Results Summary */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Your Results</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Assessment Type</p>
-                <p className="text-lg font-medium text-gray-900">{assessmentName} Assessment</p>
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
+              {assessmentName} Assessment Complete
+            </h2>
+
+            {/* Severity Level - Most Prominent */}
+            <div className="mb-4">
+              <p className="text-xs sm:text-sm text-gray-600 mb-2">Your Result</p>
+              <div
+                className={`inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 rounded-full text-lg sm:text-xl font-bold ${severityColors.badge}`}
+              >
+                {analysis?.severityLevel?.replace("_", " ").toUpperCase() || "N/A"}
               </div>
+            </div>
+
+            {/* Score Display */}
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 mt-6">
               <div>
-                <p className="text-sm text-gray-600">Total Score</p>
-                <p className="text-lg font-medium text-gray-900">{totalScore}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Score</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{totalScore}</p>
               </div>
+              <div className="hidden sm:block h-12 w-px bg-gray-300"></div>
+              <div className="sm:hidden w-full h-px bg-gray-300"></div>
               <div>
-                <p className="text-sm text-gray-600">Severity Level</p>
-                <p className="text-lg font-medium text-gray-900 capitalize">
-                  {analysis?.severityLevel?.replace("_", " ") || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Assessment Date</p>
-                <p className="text-lg font-medium text-gray-900">
+                <p className="text-xs sm:text-sm text-gray-600">Assessment Date</p>
+                <p className="text-base sm:text-lg font-medium text-gray-900">
                   {new Date().toLocaleDateString()}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Analysis & Recommendations */}
-          {analysis?.severityDescription && (
-            <div className="mb-6">
-              <h4 className="text-md font-medium text-gray-900 mb-2">Analysis</h4>
-              <p className="text-gray-700 leading-relaxed">{analysis.severityDescription}</p>
-            </div>
-          )}
-
-          {analysis?.recommendationMessage && (
-            <div className="mb-6">
-              <h4 className="text-md font-medium text-gray-900 mb-2">Recommendations</h4>
-              <p className="text-gray-700 leading-relaxed">{analysis?.recommendationMessage}</p>
-            </div>
-          )}
-
-          {/* Professional Help Alert */}
+          {/* Professional Help Alert - High Priority */}
           {analysis?.needsProfessionalHelp && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h4 className="text-sm font-medium text-yellow-800">
-                    Professional Support Recommended
-                  </h4>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    Based on your results, we recommend speaking with a mental health professional.
-                    Please consider reaching out to our Student Counseling Center.
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+              <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
+                <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0 mx-auto sm:mx-0 sm:mt-1" />
+                <div className="text-center sm:text-left">
+                  <h3 className="text-lg sm:text-xl font-bold text-red-800 mb-2">
+                    🚨 Professional Support Recommended
+                  </h3>
+                  <p className="text-red-700 text-base sm:text-lg mb-4">
+                    Based on your results, we strongly recommend speaking with a mental health
+                    professional.
                   </p>
+                  <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
+                    <p className="text-red-800 font-medium text-sm sm:text-base">
+                      📞 Student Counseling Center: Available 24/7
+                    </p>
+                    <p className="text-red-700 text-xs sm:text-sm mt-1">
+                      Please don't hesitate to reach out for support. You don't have to face this
+                      alone.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Score Breakdown */}
+          {/* Analysis Section */}
+          {analysis?.severityDescription && (
+            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center justify-center sm:justify-start">
+                📊 What This Means
+              </h3>
+              <div className="prose prose-gray max-w-none">
+                <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-center sm:text-left">
+                  {analysis.severityDescription}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Recommendations Section */}
+          {analysis?.recommendationMessage && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
+              <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-3 sm:mb-4 flex items-center justify-center sm:justify-start">
+                💡 Personalized Recommendations
+              </h3>
+              <div className="prose prose-blue max-w-none">
+                <p className="text-blue-800 text-base sm:text-lg leading-relaxed text-center sm:text-left">
+                  {analysis.recommendationMessage}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Score Breakdown - Collapsible/Secondary */}
           {analysis?.scoreBreakdown && (
-            <div className="mb-6">
-              <h4 className="text-md font-medium text-gray-900 mb-3">Score Breakdown</h4>
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <div className="space-y-2">
-                  {Object.entries(analysis.scoreBreakdown).map(([key, value]) => (
-                    <div key={key} className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600 capitalize">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 text-center sm:text-left">
+                📈 Detailed Score Breakdown
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {Object.entries(analysis.scoreBreakdown).map(([key, value]) => (
+                  <div key={key} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+                      <span className="text-gray-700 font-medium capitalize text-sm sm:text-base mb-1 sm:mb-0">
                         {key.replace(/_/g, " ")}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">{value as number}</span>
+                      <span className="text-lg sm:text-xl font-bold text-gray-900">
+                        {value as number}
+                      </span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          {/* Action Buttons - Enhanced */}
+          <div className="flex flex-col gap-3 sm:gap-4">
             <button
-              onClick={handleCloseModal}
-              className="flex-1 px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 transition-colors"
+              onClick={() => {
+                handleCloseModal();
+                window.location.href = "/resources";
+              }}
+              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-primary-700 text-white rounded-xl hover:bg-primary-800 transition-all duration-200 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              Take Another Assessment
+              ✨ Take Another Assessment
             </button>
             <button
               onClick={() => {
                 handleCloseModal();
                 window.location.href = "/history";
               }}
-              className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              View All Results
+              📋 View All Results
             </button>
+          </div>
+
+          {/* Additional Resources */}
+          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+            <p className="text-center text-xs sm:text-sm text-gray-500">
+              💙 Remember: Seeking help is a sign of strength, not weakness.
+            </p>
           </div>
         </div>
       </Modal>
@@ -230,15 +320,15 @@ export const ResourcesContent: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 p-6 bg-gray-50 overflow-auto">
+    <main className="flex-1 p-3 sm:p-6 bg-gray-50 overflow-auto">
       <div className="max-w-7xl mx-auto">
         {/* Loading Overlay */}
         {submissionState.loading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4">
               <div className="flex items-center justify-center space-x-3">
-                <Loader2 className="w-6 h-6 text-primary-700 animate-spin" />
-                <p className="text-gray-700">Submitting your assessment...</p>
+                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-700 animate-spin" />
+                <p className="text-gray-700 text-sm sm:text-base">Submitting your assessment...</p>
               </div>
             </div>
           </div>
@@ -253,9 +343,11 @@ export const ResourcesContent: React.FC = () => {
         {/* Assessment Grid */}
         {currentAssessment === null && (
           <>
-            <div className="mb-8">
-              <h1 className="text-2xl font-semibold text-gray-900">Mental Health Resources</h1>
-              <p className="text-gray-600 mt-1">
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                Mental Health Resources
+              </h1>
+              <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 Take a confidential assessment to better understand your mental health. Choose an
                 assessment below to get started.
               </p>
@@ -263,9 +355,11 @@ export const ResourcesContent: React.FC = () => {
 
             <AssessmentGrid onSelectAssessment={handleSelectAssessment} />
 
-            <div className="mt-12 bg-blue-50 rounded-lg p-6">
-              <h2 className="text-lg font-semibold text-blue-900 mb-2">Important Notice</h2>
-              <p className="text-blue-800 text-sm leading-relaxed">
+            <div className="mt-8 sm:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6">
+              <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
+                Important Notice
+              </h2>
+              <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
                 These assessments are screening tools and not diagnostic instruments. If you're
                 experiencing significant distress or having thoughts of self-harm, please contact a
                 mental health professional or call a crisis helpline immediately.

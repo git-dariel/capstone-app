@@ -50,7 +50,9 @@ export const SignUpCard: React.FC = () => {
     <div className="w-full">
       <div className="text-center mb-1.5">
         <Logo className="justify-center mb-1 scale-75 sm:scale-90" />
-        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 mb-0.5">Welcome to Bloom!</h1>
+        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 mb-0.5">
+          Welcome to Office of Guidance and Counseling Services!
+        </h1>
         <p className="text-xs sm:text-sm text-gray-600">Lets create your account.</p>
       </div>
 

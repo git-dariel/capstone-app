@@ -14,7 +14,7 @@ export const TopNavigation: React.FC = () => {
         {/* Logo Section - Always visible */}
         <div className="flex items-center space-x-2 md:space-x-4">
           <Logo />
-          <span className="text-lg md:text-xl font-semibold text-gray-900">Bloom</span>
+          <span className="text-base md:text-xl font-semibold text-gray-900">Guidance Center</span>
         </div>
 
         {/* Right Side - Responsive */}
