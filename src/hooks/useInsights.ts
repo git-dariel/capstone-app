@@ -1,13 +1,13 @@
-import { useState, useCallback } from "react";
 import type {
-  MentalHealthInsights,
-  InsightsDrilldownLevel,
   ChartFilters,
   InsightData,
+  InsightsDrilldownLevel,
+  MentalHealthInsights,
 } from "@/types/insights";
+import { useCallback, useState } from "react";
 
 // Mock data generators - replace with real API calls later
-const generateOverviewData = (type: string): InsightData[] => {
+const generateOverviewData = (_type: string): InsightData[] => {
   const programs = [
     "Computer Science",
     "Engineering",
@@ -24,7 +24,7 @@ const generateOverviewData = (type: string): InsightData[] => {
   }));
 };
 
-const generateYearData = (type: string, program: string): InsightData[] => {
+const generateYearData = (_type: string, _program: string): InsightData[] => {
   const years = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
   return years.map((year, index) => ({
     label: year,
@@ -34,7 +34,7 @@ const generateYearData = (type: string, program: string): InsightData[] => {
   }));
 };
 
-const generateGenderData = (type: string, program: string, year: string): InsightData[] => {
+const generateGenderData = (_type: string, _program: string, _year: string): InsightData[] => {
   return [
     {
       label: "Male",
