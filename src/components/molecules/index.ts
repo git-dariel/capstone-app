@@ -22,3 +22,5 @@ export { SupportOptionsSection } from "./SupportOptionsSection";
 export { InsightsHeader } from "./InsightsHeader";
 export { InsightsBarChart } from "./InsightsBarChart";
 export { ContactSupportForm } from "./ContactSupportForm";
+export { AddAdminForm } from "./AddAdminForm";
+export { UsersTable } from "./UsersTable";

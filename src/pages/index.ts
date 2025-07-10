@@ -5,6 +5,7 @@ export { ConsentPage } from "./ConsentPage";
 export { MentalHealthResultsPage } from "./MentalHealthResultsPage";
 export { DashboardPage } from "./DashboardPage";
 export { ReportsPage } from "./ReportsPage";
+export { AccountsPage } from "./AccountsPage";
 export { ResourcesPage } from "./ResourcesPage";
 export { HelpSupportPage } from "./HelpSupportPage";
 export { HistoryPage } from "./HistoryPage";

@@ -7,6 +7,7 @@ import {
   MentalHealthResultsPage,
   DashboardPage,
   ReportsPage,
+  AccountsPage,
   ResourcesPage,
   HelpSupportPage,
   HistoryPage,
@@ -82,6 +83,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accounts"
+            element={
+              <ProtectedRoute>
+                <AccountsPage />
               </ProtectedRoute>
             }
           />

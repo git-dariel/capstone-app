@@ -49,7 +49,7 @@ export const HelpSupportContent: React.FC = () => {
             </div>
 
             {/* Additional Resources */}
-            <div className="bg-primary-50 rounded-lg p-6 mt-12">
+            {/* <div className="bg-primary-50 rounded-lg p-6 mt-12">
               <h3 className="text-lg font-semibold text-primary-900 mb-2">
                 🌟 Additional Resources
               </h3>
@@ -73,7 +73,7 @@ export const HelpSupportContent: React.FC = () => {
                   </ul>
                 </div>
               </div>
-            </div>
+            </div> */}
           </>
         )}
 

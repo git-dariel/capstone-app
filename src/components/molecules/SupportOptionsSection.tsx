@@ -1,5 +1,5 @@
 import { HelpCard } from "@/components/atoms";
-import { BookOpen, Calendar, Headphones, MessageSquare, UserCheck } from "lucide-react";
+import { BookOpen, Headphones, MessageSquare } from "lucide-react";
 import React from "react";
 
 interface SupportOptionsSectionProps {
@@ -36,7 +36,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           <div className="text-sm text-primary-700 font-medium">Interactive Tutorial</div>
         </HelpCard>
 
-        <HelpCard
+        {/* <HelpCard
           title="Schedule Counseling"
           description="Book an appointment with our licensed counselors for professional mental health support."
           icon={<Calendar className="w-6 h-6" />}
@@ -58,7 +58,7 @@ export const SupportOptionsSection: React.FC<SupportOptionsSectionProps> = ({
           icon={<BookOpen className="w-6 h-6" />}
         >
           <div className="text-sm text-primary-700 font-medium">Articles • Videos • Tools</div>
-        </HelpCard>
+        </HelpCard> */}
 
         <HelpCard
           title="Contact Support Team"

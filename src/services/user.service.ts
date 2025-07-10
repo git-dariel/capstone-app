@@ -7,6 +7,7 @@ export interface User {
   userName: string;
   role: string;
   type: string;
+  status?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

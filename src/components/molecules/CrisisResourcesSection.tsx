@@ -8,35 +8,34 @@ export const CrisisResourcesSection: React.FC = () => {
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-red-900 mb-2">🚨 Crisis Resources</h2>
         <p className="text-red-700">
-          If you're having thoughts of self-harm or suicide, please reach out immediately. Help is
-          available 24/7.
+          If you're having thoughts of self-harm or suicide, please reach out immediately.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ContactCard
-          title="National Suicide Prevention Lifeline"
-          description="Free and confidential emotional support for people in suicidal crisis or emotional distress."
-          contactInfo="988"
-          availability="24/7/365"
+          title="Municipal Disaster Risk Reduction and Management Office"
+          description="It is a local government unit in the Philippines responsible for disaster risk reduction and management at the municipal level."
+          contactInfo="042.717.4364/0909-341-0636"
+          availability="24/7"
           urgent={true}
           icon={<Phone className="w-6 h-6" />}
         />
 
         <ContactCard
-          title="Crisis Text Line"
-          description="Text with a trained crisis counselor who can provide support and information."
-          contactInfo="Text HOME to 741741"
-          availability="24/7/365"
+          title="Philippine National Police"
+          description="It is the national police force of the country, responsible for maintaining peace and order, enforcing laws, and ensuring public safety."
+          contactInfo="042.236.1269/0947-998-7085/0908-489-8919"
+          availability="24/7"
           urgent={true}
           icon={<MessageCircle className="w-6 h-6" />}
         />
 
         <ContactCard
-          title="NAMI HelpLine"
-          description="Information, resource referrals and support for people living with mental health conditions."
-          contactInfo="1-800-950-NAMI (6264)"
-          availability="Mon-Fri, 10am-10pm ET"
+          title="National Emergency Hotline in the Philippines"
+          description=" It is managed by the Emergency 911 National Office and serves as a single number for police, fire, medical, and other emergency services."
+          contactInfo="911"
+          availability="24/7"
           urgent={false}
           icon={<Heart className="w-6 h-6" />}
         />
@@ -44,8 +43,8 @@ export const CrisisResourcesSection: React.FC = () => {
         <ContactCard
           title="Student Counseling Center"
           description="Professional counseling services specifically for students. Free and confidential."
-          contactInfo="(555) 123-HELP"
-          availability="Mon-Fri, 8am-5pm"
+          contactInfo="0928-832-7363/codotado@pup.edu.ph"
+          availability="Mon-Fri, 8am-8pm"
           urgent={false}
           icon={<Users className="w-6 h-6" />}
         />

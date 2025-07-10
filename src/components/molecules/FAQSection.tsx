@@ -21,7 +21,7 @@ export const FAQSection: React.FC = () => {
     {
       question: "How often should I take assessments?",
       answer:
-        "You can take assessments as often as you'd like to track your mental health over time. Many people find it helpful to take them weekly or monthly. Consistent tracking can help you identify patterns and monitor your progress.",
+        "You can take assessments regularly to track your mental health over time. While many find it helpful to check in weekly or monthly, please note that access to assessments may be limited depending on the severity level of your most recent result. This helps ensure appropriate pacing and care in monitoring your progress.",
     },
     {
       question: "What should I do if my results show high severity?",
@@ -51,7 +51,7 @@ export const FAQSection: React.FC = () => {
     {
       question: "Can I retake assessments if I made a mistake?",
       answer:
-        "Yes, you can retake any assessment at any time. Your most recent results will be saved, and you can track changes over time. There's no limit to how many times you can use the assessments.",
+        "Yes, you can retake assessments to track changes over time. Your most recent results will be saved for easy comparison. However, the number of times you can take an assessment may be limited based on the severity level of your latest result to ensure responsible and supportive monitoring.",
     },
   ];
 

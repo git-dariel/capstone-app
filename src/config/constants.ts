@@ -66,3 +66,11 @@ export const genderOptions = [
   { value: "female", label: "Female" },
   { value: "others", label: "Others" },
 ];
+
+export const civilStatusOptions = [
+  { value: "single", label: "Single" },
+  { value: "married", label: "Married" },
+  { value: "separated", label: "Separated" },
+  { value: "widow", label: "Widow" },
+  { value: "cohabiting", label: "Cohabiting" },
+];

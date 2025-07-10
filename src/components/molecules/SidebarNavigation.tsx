@@ -10,6 +10,7 @@ import {
   Menu,
   X,
   Clock,
+  Users,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -93,6 +94,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       icon: <FileText className="w-5 h-5" />,
       label: "Reports",
       path: "/reports",
+      guidanceOnly: true,
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Accounts",
+      path: "/accounts",
       guidanceOnly: true,
     },
     {

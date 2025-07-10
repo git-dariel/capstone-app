@@ -55,6 +55,16 @@ export interface RegisterRequest {
   year?: string;
 }
 
+export interface RegisterAdminRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  contactNumber?: string;
+  gender?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -148,6 +158,28 @@ export class AuthService {
     } catch (error: any) {
       // Clear any existing auth data on error
       TokenManager.removeUser();
+      throw error;
+    }
+  }
+
+  static async registerAdmin(userData: RegisterAdminRequest): Promise<AuthResponse> {
+    try {
+      const response = await HttpClient.post<AuthResponse>("/auth/register-admin", userData);
+
+      // The API returns the response directly, not wrapped in data property
+      const authData = response as unknown as AuthResponse;
+
+      // Validate that we have a user object at minimum
+      if (!authData.user || !authData.user.id) {
+        throw new Error("Invalid user data in response");
+      }
+
+      // DON'T store any auth data during admin registration
+      // Admin registration is done by existing admin users
+      console.log("Admin registration successful");
+
+      return authData;
+    } catch (error: any) {
       throw error;
     }
   }
