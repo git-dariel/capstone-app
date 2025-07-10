@@ -4,12 +4,13 @@ import {
   AnxietyQuestionnaire,
   DepressionQuestionnaire,
   StressQuestionnaire,
+  SuicideQuestionnaire,
 } from "@/components/molecules";
-import { useAnxiety, useDepression, useStress, useAuth } from "@/hooks";
+import { useAnxiety, useDepression, useStress, useSuicide, useAuth } from "@/hooks";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { Modal } from "@/components/atoms";
 
-type AssessmentType = "anxiety" | "depression" | "stress" | null;
+type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | null;
 
 export const ResourcesContent: React.FC = () => {
   const [currentAssessment, setCurrentAssessment] = useState<AssessmentType>(null);
@@ -29,6 +30,7 @@ export const ResourcesContent: React.FC = () => {
   const anxietyHook = useAnxiety();
   const depressionHook = useDepression();
   const stressHook = useStress();
+  const suicideHook = useSuicide();
 
   const handleSelectAssessment = (type: AssessmentType) => {
     setCurrentAssessment(type);
@@ -66,6 +68,8 @@ export const ResourcesContent: React.FC = () => {
         result = await depressionHook.createAssessmentFromResponses(user.id, responses);
       } else if (currentAssessment === "stress") {
         result = await stressHook.createAssessmentFromResponses(user.id, responses);
+      } else if (currentAssessment === "suicide") {
+        result = await suicideHook.createAssessmentFromResponses(user.id, responses);
       }
 
       setSubmissionState({
@@ -91,6 +95,13 @@ export const ResourcesContent: React.FC = () => {
     const assessmentName = currentAssessment
       ? currentAssessment.charAt(0).toUpperCase() + currentAssessment.slice(1)
       : "Assessment";
+
+    // Handle different assessment types - suicide uses riskLevel, others use severityLevel
+    const displayLevel =
+      currentAssessment === "suicide" ? analysis?.riskLevel : analysis?.severityLevel;
+
+    const displayDescription =
+      currentAssessment === "suicide" ? analysis?.riskDescription : analysis?.severityDescription;
 
     // Determine severity level color and styling
     const getSeverityColor = (level: string) => {
@@ -135,7 +146,7 @@ export const ResourcesContent: React.FC = () => {
       }
     };
 
-    const severityColors = getSeverityColor(analysis?.severityLevel || "");
+    const severityColors = getSeverityColor(displayLevel || "");
 
     return (
       <Modal
@@ -165,7 +176,7 @@ export const ResourcesContent: React.FC = () => {
               <div
                 className={`inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 rounded-full text-lg sm:text-xl font-bold ${severityColors.badge}`}
               >
-                {analysis?.severityLevel?.replace("_", " ").toUpperCase() || "N/A"}
+                {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
               </div>
             </div>
 
@@ -187,7 +198,7 @@ export const ResourcesContent: React.FC = () => {
           </div>
 
           {/* Professional Help Alert - High Priority */}
-          {analysis?.needsProfessionalHelp && (
+          {(analysis?.needsProfessionalHelp || analysis?.requiresImmediateIntervention) && (
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
               <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
                 <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0 mx-auto sm:mx-0 sm:mt-1" />
@@ -214,14 +225,14 @@ export const ResourcesContent: React.FC = () => {
           )}
 
           {/* Analysis Section */}
-          {analysis?.severityDescription && (
+          {displayDescription && (
             <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center justify-center sm:justify-start">
                 📊 What This Means
               </h3>
               <div className="prose prose-gray max-w-none">
                 <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-center sm:text-left">
-                  {analysis.severityDescription}
+                  {displayDescription}
                 </p>
               </div>
             </div>
@@ -379,6 +390,10 @@ export const ResourcesContent: React.FC = () => {
 
         {currentAssessment === "stress" && (
           <StressQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
+        )}
+
+        {currentAssessment === "suicide" && (
+          <SuicideQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
         )}
       </div>
     </main>

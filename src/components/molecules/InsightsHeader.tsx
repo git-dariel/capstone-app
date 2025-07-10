@@ -30,6 +30,12 @@ export const InsightsHeader: React.FC<InsightsHeaderProps> = ({
     return `${baseTitle} Insights - ${insights.currentLevel.title}`;
   };
 
+  const getFullTitle = () => getTitle();
+  const getTruncatedTitle = () => {
+    const title = getTitle();
+    return title.length > 60 ? title.substring(0, 57) + "..." : title;
+  };
+
   return (
     <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -44,8 +50,11 @@ export const InsightsHeader: React.FC<InsightsHeaderProps> = ({
             </button>
           )}
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 truncate">
-              {getTitle()}
+            <h1
+              className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 truncate"
+              title={getFullTitle()}
+            >
+              {getTruncatedTitle()}
             </h1>
             {insights.currentLevel.parentValue && (
               <p className="text-xs sm:text-sm text-gray-600 mt-1 truncate">

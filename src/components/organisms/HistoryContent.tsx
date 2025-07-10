@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useAuth } from "@/hooks";
-import { useAnxiety, useDepression, useStress } from "@/hooks";
+import { useAnxiety, useDepression, useStress, useSuicide } from "@/hooks";
 
 interface AssessmentHistoryItem {
   id: string;
-  type: "anxiety" | "depression" | "stress";
+  type: "anxiety" | "depression" | "stress" | "suicide";
   score: number;
   severityLevel: string;
   date: string;
@@ -39,6 +39,8 @@ const getTypeIcon = (type: string) => {
       return "💭";
     case "stress":
       return "⚡";
+    case "suicide":
+      return "🛡️";
     default:
       return "📊";
   }
@@ -52,6 +54,8 @@ const getTypeColor = (type: string) => {
       return "text-purple-700 bg-purple-50";
     case "stress":
       return "text-red-700 bg-red-50";
+    case "suicide":
+      return "text-purple-700 bg-purple-50";
     default:
       return "text-gray-700 bg-gray-50";
   }
@@ -66,6 +70,7 @@ export const HistoryContent: React.FC = () => {
   const { fetchAssessments: fetchAnxietyAssessments } = useAnxiety();
   const { fetchAssessments: fetchDepressionAssessments } = useDepression();
   const { fetchAssessments: fetchStressAssessments } = useStress();
+  const { fetchAssessments: fetchSuicideAssessments } = useSuicide();
 
   const loadAssessmentHistory = async () => {
     if (!user?.id) return;
@@ -73,7 +78,7 @@ export const HistoryContent: React.FC = () => {
     setLoading(true);
     setError(null); // Clear previous errors
     try {
-      const [anxietyData, depressionData, stressData] = await Promise.all([
+      const [anxietyData, depressionData, stressData, suicideData] = await Promise.all([
         fetchAnxietyAssessments({
           limit: 50,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
@@ -85,6 +90,10 @@ export const HistoryContent: React.FC = () => {
         fetchStressAssessments({
           limit: 50,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+        }),
+        fetchSuicideAssessments({
+          limit: 50,
+          fields: "id,riskLevel,assessmentDate,createdAt",
         }),
       ]);
 
@@ -110,6 +119,14 @@ export const HistoryContent: React.FC = () => {
           type: "stress" as const,
           score: item.totalScore,
           severityLevel: item.severityLevel,
+          date: item.assessmentDate,
+          createdAt: item.createdAt,
+        })),
+        ...(suicideData?.data || []).map((item: any) => ({
+          id: item.id,
+          type: "suicide" as const,
+          score: item.riskScore || 0,
+          severityLevel: item.riskLevel,
           date: item.assessmentDate,
           createdAt: item.createdAt,
         })),
@@ -266,9 +283,15 @@ export const HistoryContent: React.FC = () => {
 
                       {/* Score and Severity - Stack on mobile, inline on tablet+ */}
                       <div className="flex flex-col xs:flex-row xs:items-center space-y-2 xs:space-y-0 xs:space-x-3 flex-1">
-                        <div className="text-lg font-semibold text-gray-900">
-                          Score: {assessment.score}
-                        </div>
+                        {assessment.type === "suicide" ? (
+                          <div className="text-lg font-semibold text-gray-900">
+                            Risk Level: {assessment.severityLevel}
+                          </div>
+                        ) : (
+                          <div className="text-lg font-semibold text-gray-900">
+                            Score: {assessment.score}
+                          </div>
+                        )}
                         <div className="flex items-center space-x-2">
                           <div
                             className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getSeverityColor(
@@ -304,12 +327,13 @@ export const HistoryContent: React.FC = () => {
 
         {/* Summary Stats */}
         {assessmentHistory.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {["anxiety", "depression", "stress"].map((type) => {
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {["anxiety", "depression", "stress", "suicide"].map((type) => {
               const typeAssessments = assessmentHistory.filter((a) => a.type === type);
               const latestScore = typeAssessments[0]?.score;
+              const latestLevel = typeAssessments[0]?.severityLevel;
               const averageScore =
-                typeAssessments.length > 0
+                typeAssessments.length > 0 && type !== "suicide"
                   ? Math.round(
                       typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length
                     )
@@ -326,17 +350,28 @@ export const HistoryContent: React.FC = () => {
                       <span className="text-sm text-gray-600">Total:</span>
                       <span className="text-sm font-medium">{typeAssessments.length}</span>
                     </div>
-                    {latestScore !== undefined && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Latest:</span>
-                        <span className="text-sm font-medium">{latestScore}</span>
-                      </div>
-                    )}
-                    {typeAssessments.length > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Average:</span>
-                        <span className="text-sm font-medium">{averageScore}</span>
-                      </div>
+                    {type === "suicide" ? (
+                      latestLevel && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Latest:</span>
+                          <span className="text-sm font-medium">{latestLevel}</span>
+                        </div>
+                      )
+                    ) : (
+                      <>
+                        {latestScore !== undefined && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Latest:</span>
+                            <span className="text-sm font-medium">{latestScore}</span>
+                          </div>
+                        )}
+                        {typeAssessments.length > 0 && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Average:</span>
+                            <span className="text-sm font-medium">{averageScore}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

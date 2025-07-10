@@ -142,7 +142,10 @@ export const InsightsContent: React.FC = () => {
           {/* Main Chart */}
           <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 mb-4 sm:mb-6">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+              <h2 
+                className="text-base sm:text-lg font-semibold text-gray-900 truncate"
+                title={insights.currentLevel.title}
+              >
                 {insights.currentLevel.title}
               </h2>
               {canDrillDown && (

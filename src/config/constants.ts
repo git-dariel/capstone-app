@@ -60,3 +60,9 @@ export const yearOptions = [
   { value: "4th", label: "4th Year" },
   { value: "5th", label: "5th Year" },
 ];
+
+export const genderOptions = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+  { value: "others", label: "Others" },
+];

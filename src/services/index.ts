@@ -53,6 +53,13 @@ export type {
   UpdateStressAssessmentRequest,
 } from "./stress.service";
 
+export { SuicideService } from "./suicide.service";
+export type {
+  SuicideAssessment,
+  CreateSuicideAssessmentRequest,
+  UpdateSuicideAssessmentRequest,
+} from "./suicide.service";
+
 // Announcement Service
 export { AnnouncementService } from "./announcement.service";
 export type {
@@ -65,3 +72,14 @@ export type {
 // Logging Service
 export { LoggingService } from "./logging.service";
 export type { LogEntry, CreateLogRequest } from "./logging.service";
+
+// Metrics Service
+export { MetricsService } from "./metrics.service";
+export type {
+  MetricFilter,
+  MetricRequest,
+  MetricResponse,
+  ProgramMetric,
+  YearMetric,
+  GenderMetric,
+} from "./metrics.service";

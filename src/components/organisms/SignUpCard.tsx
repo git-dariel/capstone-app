@@ -9,6 +9,7 @@ interface SignUpFormData {
   lastName: string;
   program: string;
   year: string;
+  gender: string;
   email: string;
   password: string;
   contactNumber: string;

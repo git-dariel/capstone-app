@@ -15,6 +15,7 @@ export { AssessmentGrid } from "./AssessmentGrid";
 export { AnxietyQuestionnaire } from "./AnxietyQuestionnaire";
 export { DepressionQuestionnaire } from "./DepressionQuestionnaire";
 export { StressQuestionnaire } from "./StressQuestionnaire";
+export { SuicideQuestionnaire } from "./SuicideQuestionnaire";
 export { CrisisResourcesSection } from "./CrisisResourcesSection";
 export { FAQSection } from "./FAQSection";
 export { SupportOptionsSection } from "./SupportOptionsSection";

@@ -2,13 +2,19 @@ import React, { useState } from "react";
 import { FormField } from "@/components/atoms/FormField";
 import { FormSelect } from "@/components/atoms/FormSelect";
 import { Button } from "@/components/ui/button";
-import { programOptions, relationshipOptions, yearOptions } from "@/config/constants";
+import {
+  programOptions,
+  relationshipOptions,
+  yearOptions,
+  genderOptions,
+} from "@/config/constants";
 
 interface SignUpFormData {
   firstName: string;
   lastName: string;
   program: string;
   year: string;
+  gender: string;
   email: string;
   password: string;
   contactNumber: string;
@@ -37,6 +43,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
     lastName: "",
     program: "",
     year: "",
+    gender: "",
     email: "",
     password: "",
     contactNumber: "",
@@ -97,6 +104,13 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
     }));
   };
 
+  const handleGenderChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      gender: value,
+    }));
+  };
+
   const handleRelationshipChange = (value: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -117,6 +131,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
     formData.lastName.trim() &&
     formData.program &&
     formData.year &&
+    formData.gender &&
     formData.email.trim() &&
     formData.password.trim() &&
     formData.contactNumber.trim() &&
@@ -213,6 +228,16 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
         <div className="space-y-1.5">
           {/* Address Section */}
           <div className="space-y-1.5">
+            <FormSelect
+              id="gender"
+              label="Gender"
+              value={formData.gender}
+              onChange={handleGenderChange}
+              options={genderOptions}
+              placeholder="Select gender"
+              disabled={loading}
+            />
+
             <FormField
               id="address.street"
               label="Street Address"

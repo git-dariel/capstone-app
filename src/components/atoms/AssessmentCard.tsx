@@ -5,7 +5,7 @@ interface AssessmentCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  color: "anxiety" | "depression" | "stress";
+  color: "anxiety" | "depression" | "stress" | "suicide";
   onClick: () => void;
   className?: string;
 }
@@ -18,7 +18,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
   onClick,
   className,
 }) => {
-  const getColorClasses = (color: "anxiety" | "depression" | "stress") => {
+  const getColorClasses = (color: "anxiety" | "depression" | "stress" | "suicide") => {
     switch (color) {
       case "anxiety":
         return "border-red-200 hover:border-red-300 bg-gradient-to-br from-red-50 to-red-100 hover:from-red-100 hover:to-red-150";
@@ -26,12 +26,14 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
         return "border-blue-200 hover:border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-150";
       case "stress":
         return "border-yellow-200 hover:border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-150";
+      case "suicide":
+        return "border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-150";
       default:
         return "border-gray-200 hover:border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100";
     }
   };
 
-  const getIconColor = (color: "anxiety" | "depression" | "stress") => {
+  const getIconColor = (color: "anxiety" | "depression" | "stress" | "suicide") => {
     switch (color) {
       case "anxiety":
         return "text-red-600";
@@ -39,6 +41,8 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
         return "text-blue-600";
       case "stress":
         return "text-yellow-600";
+      case "suicide":
+        return "text-purple-600";
       default:
         return "text-gray-600";
     }

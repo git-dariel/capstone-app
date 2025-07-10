@@ -1,61 +1,6 @@
-import type {
-  ChartFilters,
-  InsightData,
-  InsightsDrilldownLevel,
-  MentalHealthInsights,
-} from "@/types/insights";
+import { MetricsService, type MetricFilter } from "@/services";
+import type { ChartFilters, InsightsDrilldownLevel, MentalHealthInsights } from "@/types/insights";
 import { useCallback, useState } from "react";
-
-// Mock data generators - replace with real API calls later
-const generateOverviewData = (_type: string): InsightData[] => {
-  const programs = [
-    "Computer Science",
-    "Engineering",
-    "Business",
-    "Medicine",
-    "Arts",
-    "Psychology",
-  ];
-  return programs.map((program, index) => ({
-    label: program,
-    value: Math.floor(Math.random() * 50) + 10,
-    percentage: Math.floor(Math.random() * 30) + 5,
-    color: `hsl(${index * 60}, 70%, 50%)`,
-  }));
-};
-
-const generateYearData = (_type: string, _program: string): InsightData[] => {
-  const years = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-  return years.map((year, index) => ({
-    label: year,
-    value: Math.floor(Math.random() * 30) + 5,
-    percentage: Math.floor(Math.random() * 25) + 10,
-    color: `hsl(${index * 90}, 60%, 55%)`,
-  }));
-};
-
-const generateGenderData = (_type: string, _program: string, _year: string): InsightData[] => {
-  return [
-    {
-      label: "Male",
-      value: Math.floor(Math.random() * 20) + 5,
-      percentage: Math.floor(Math.random() * 20) + 15,
-      color: "#3B82F6",
-    },
-    {
-      label: "Female",
-      value: Math.floor(Math.random() * 25) + 8,
-      percentage: Math.floor(Math.random() * 25) + 20,
-      color: "#EC4899",
-    },
-    {
-      label: "Other",
-      value: Math.floor(Math.random() * 3) + 1,
-      percentage: Math.floor(Math.random() * 5) + 2,
-      color: "#10B981",
-    },
-  ];
-};
 
 interface UseInsightsState {
   insights: MentalHealthInsights | null;
@@ -77,13 +22,24 @@ export const useInsights = () => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Create filter for API call
+        const metricFilter: MetricFilter = {};
+
+        if (filters.year && filters.month) {
+          // Create date filter for the specific month/year
+          metricFilter.startDate = new Date(filters.year, filters.month - 1, 1);
+        } else if (filters.year) {
+          // If only year is specified, get data for the whole year
+          metricFilter.startDate = new Date(filters.year, 0, 1);
+        }
+
+        // Fetch real data from API
+        const overviewData = await MetricsService.getOverviewMetrics(type, metricFilter);
 
         const overviewLevel: InsightsDrilldownLevel = {
           level: "overview",
           title: "By Program",
-          data: generateOverviewData(type),
+          data: overviewData.data,
         };
 
         const insights: MentalHealthInsights = {
@@ -129,47 +85,75 @@ export const useInsights = () => {
   );
 
   const drillDown = useCallback(
-    (selectedValue: string) => {
+    async (selectedValue: string) => {
       if (!state.insights) return;
 
-      setState((prev) => {
-        const currentLevel = prev.insights!.currentLevel;
+      setState((prev) => ({ ...prev, loading: true }));
+
+      try {
+        const currentLevel = state.insights.currentLevel;
+        const filters = state.insights.filters;
         let nextLevel: InsightsDrilldownLevel;
 
-        switch (currentLevel.level) {
-          case "overview":
-            nextLevel = {
-              level: "year",
-              title: `${selectedValue} - By Academic Year`,
-              data: generateYearData(prev.insights!.type, selectedValue),
-              parentValue: selectedValue,
-            };
-            break;
-          case "year":
-            nextLevel = {
-              level: "gender",
-              title: `${currentLevel.parentValue} - ${selectedValue} - By Gender`,
-              data: generateGenderData(
-                prev.insights!.type,
-                currentLevel.parentValue!,
-                selectedValue
-              ),
-              parentValue: selectedValue,
-            };
-            break;
-          default:
-            return prev; // Can't drill down further
+        // Create filter for API call
+        const metricFilter: MetricFilter = {};
+
+        if (filters.year && filters.month) {
+          metricFilter.startDate = new Date(filters.year, filters.month - 1, 1);
+        } else if (filters.year) {
+          metricFilter.startDate = new Date(filters.year, 0, 1);
         }
 
-        return {
+        switch (currentLevel.level) {
+          case "overview": {
+            // Drill down to year level
+            const yearData = await MetricsService.getYearMetrics(state.insights.type, metricFilter);
+            nextLevel = {
+              level: "year",
+              title: "By Academic Year",
+              data: yearData.data,
+              parentValue: selectedValue,
+            };
+            break;
+          }
+          case "year": {
+            // Drill down to gender level
+            const genderData = await MetricsService.getGenderMetrics(
+              state.insights.type,
+              metricFilter
+            );
+            nextLevel = {
+              level: "gender",
+              title: `${selectedValue} - By Gender`,
+              data: genderData.data,
+              parentValue: selectedValue,
+            };
+            break;
+          }
+          default:
+            setState((prev) => ({ ...prev, loading: false }));
+            return; // Can't drill down further
+        }
+
+        setState((prev) => ({
           ...prev,
-          insights: {
-            ...prev.insights!,
-            currentLevel: nextLevel,
-          },
+          insights: prev.insights
+            ? {
+                ...prev.insights,
+                currentLevel: nextLevel,
+              }
+            : null,
           navigationStack: [...prev.navigationStack, nextLevel],
-        };
-      });
+          loading: false,
+        }));
+      } catch (error: any) {
+        console.error("Error drilling down:", error);
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          error: "Failed to load detailed data",
+        }));
+      }
     },
     [state.insights]
   );
