@@ -13,6 +13,9 @@ interface AnxietyAssessment {
   score: number;
   severityLevel: AnxietySeverityLevel;
   date: string;
+  program: string;
+  year: string;
+  contactNumber: string;
   avatar?: string;
 }
 
@@ -29,25 +32,35 @@ export const AnxietyAssessmentTable: React.FC = () => {
     fetchAssessments({
       limit: 100,
       fields:
-        "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName",
+        "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
     }).catch(console.error);
   }, []);
 
   // Transform API data to table format
   const allAssessments: AnxietyAssessment[] = useMemo(() => {
-    return apiAssessments.map((assessment: ApiAnxietyAssessment) => ({
-      id: assessment.id,
-      studentName: assessment.user
-        ? `${assessment.user.person.firstName} ${assessment.user.person.lastName}`
-        : "Unknown Student",
-      score: assessment.totalScore,
-      severityLevel: assessment.severityLevel,
-      date: new Date(assessment.assessmentDate).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-    }));
+    return apiAssessments.map((assessment: ApiAnxietyAssessment) => {
+      // Type assertion to access additional fields from API response
+      const person = assessment.user?.person as any;
+      const student = (person as any)?.students?.[0];
+
+      return {
+        id: assessment.id,
+        studentName: assessment.user ? `${person.firstName} ${person.lastName}` : "Unknown Student",
+        score: assessment.totalScore,
+        severityLevel: assessment.severityLevel,
+        date: new Date(assessment.assessmentDate).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }),
+        program: student?.program || "N/A",
+        year: student?.year || "N/A",
+        contactNumber: (person as any)?.contactNumber || "N/A",
+      };
+    });
   }, [apiAssessments]);
 
   // Filter assessments based on search term
@@ -56,7 +69,9 @@ export const AnxietyAssessmentTable: React.FC = () => {
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase())
+        assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        assessment.year.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [searchTerm, allAssessments]);
 
@@ -124,7 +139,7 @@ export const AnxietyAssessmentTable: React.FC = () => {
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search students or severity level..."
+            placeholder="Search students, program, year, or severity level..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
@@ -175,6 +190,15 @@ export const AnxietyAssessmentTable: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Date
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Program
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Year
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contact Number
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -211,6 +235,15 @@ export const AnxietyAssessmentTable: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {assessment.date}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {assessment.program}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {assessment.year}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {assessment.contactNumber}
                   </td>
                 </tr>
               ))}

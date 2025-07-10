@@ -27,14 +27,23 @@ export const useInsights = () => {
 
         if (filters.year && filters.month) {
           // Create date filter for the specific month/year
-          metricFilter.startDate = new Date(filters.year, filters.month - 1, 1);
+          const startDate = new Date(filters.year, filters.month - 1, 1);
+          const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999); // Last day of month
+          metricFilter.startDate = startDate;
+          metricFilter.endDate = endDate;
         } else if (filters.year) {
           // If only year is specified, get data for the whole year
-          metricFilter.startDate = new Date(filters.year, 0, 1);
+          const startDate = new Date(filters.year, 0, 1); // First day of year
+          const endDate = new Date(filters.year, 11, 31, 23, 59, 59, 999); // Last day of year
+          metricFilter.startDate = startDate;
+          metricFilter.endDate = endDate;
         }
 
-        // Fetch real data from API
-        const overviewData = await MetricsService.getOverviewMetrics(type, metricFilter);
+        // Fetch real data and available years from API
+        const [overviewData, availableYears] = await Promise.all([
+          MetricsService.getOverviewMetrics(type, metricFilter),
+          MetricsService.getAvailableYears(),
+        ]);
 
         const overviewLevel: InsightsDrilldownLevel = {
           level: "overview",
@@ -45,7 +54,7 @@ export const useInsights = () => {
         const insights: MentalHealthInsights = {
           type,
           currentLevel: overviewLevel,
-          availableYears: [2020, 2021, 2022, 2023, 2024],
+          availableYears: availableYears,
           availableMonths: [
             { value: 1, label: "January" },
             { value: 2, label: "February" },
@@ -99,9 +108,15 @@ export const useInsights = () => {
         const metricFilter: MetricFilter = {};
 
         if (filters.year && filters.month) {
-          metricFilter.startDate = new Date(filters.year, filters.month - 1, 1);
+          const startDate = new Date(filters.year, filters.month - 1, 1);
+          const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999);
+          metricFilter.startDate = startDate;
+          metricFilter.endDate = endDate;
         } else if (filters.year) {
-          metricFilter.startDate = new Date(filters.year, 0, 1);
+          const startDate = new Date(filters.year, 0, 1);
+          const endDate = new Date(filters.year, 11, 31, 23, 59, 59, 999);
+          metricFilter.startDate = startDate;
+          metricFilter.endDate = endDate;
         }
 
         switch (currentLevel.level) {

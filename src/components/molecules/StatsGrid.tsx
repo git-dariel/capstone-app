@@ -26,15 +26,13 @@ export const StatsGrid: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch total counts for each assessment type
-      const [anxietyCount, depressionCount, stressCount] = await Promise.all([
+      // Fetch total counts for each assessment type and unique student count
+      const [totalStudents, anxietyCount, depressionCount, stressCount] = await Promise.all([
+        MetricsService.getTotalStudentCount(),
         MetricsService.getTotalCount("anxiety"),
         MetricsService.getTotalCount("depression"),
         MetricsService.getTotalCount("stress"),
       ]);
-
-      // For total students, we'll use a placeholder for now since the API structure would need adjustment
-      const totalStudents = anxietyCount + depressionCount + stressCount; // Approximate
 
       setStats({
         totalStudents,

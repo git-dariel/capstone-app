@@ -46,6 +46,41 @@ export class MetricsService {
     }
   }
 
+  // Get available years dynamically from the database
+  static async getAvailableYears(): Promise<number[]> {
+    try {
+      // Get years from anxiety assessments as a sample
+      const anxietyYears = await this.fetchMetrics({
+        model: "Anxiety",
+        data: ["availableYears"],
+      });
+
+      const years = anxietyYears.data[0]?.availableYears || [];
+      if (years.length > 0) {
+        return years.sort((a: number, b: number) => b - a); // Descending order
+      }
+
+      throw new Error("No years data available");
+    } catch (error) {
+      console.error("Error fetching available years:", error);
+      // Fallback to current year range if API fails
+      const currentYear = new Date().getFullYear();
+      return [currentYear, currentYear - 1, currentYear - 2, currentYear - 3, currentYear - 4];
+    }
+  }
+
+  // Get total unique student count
+  static async getTotalStudentCount(filter?: MetricFilter): Promise<number> {
+    const request: MetricRequest = {
+      model: "Student",
+      data: ["totalStudent"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    return response.data[0]?.totalStudent || 0;
+  }
+
   // Get total count for a specific assessment type
   static async getTotalCount(
     assessmentType: "anxiety" | "depression" | "stress",
@@ -182,6 +217,7 @@ export class MetricsService {
       male: "#3B82F6",
       female: "#EC4899",
       other: "#10B981",
+      others: "#10B981",
       unknown: "#6B7280",
     };
 

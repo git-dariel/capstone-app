@@ -20,6 +20,9 @@ interface Activity {
   score: number;
   severityLevel: SeverityLevel;
   date: string;
+  program: string;
+  year: string;
+  contactNumber: string;
   avatar?: string;
   createdAt: string; // for sorting
 }
@@ -50,19 +53,19 @@ export const RecentActivitiesTable: React.FC = () => {
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchDepression({
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchStress({
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
         ];
 
@@ -82,17 +85,26 @@ export const RecentActivitiesTable: React.FC = () => {
     // Add anxiety assessments
     anxietyAssessments.forEach((assessment) => {
       if (assessment.user && assessment.user.person) {
+        // Type assertion to access additional fields from API response
+        const person = assessment.user.person as any;
+        const student = (person as any).students?.[0];
         allActivities.push({
           id: `anxiety-${assessment.id}`,
-          studentName: `${assessment.user.person.firstName} ${assessment.user.person.lastName}`,
+          studentName: `${person.firstName} ${person.lastName}`,
           assessmentType: "Anxiety Assessment",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
-          date: new Date(assessment.assessmentDate).toLocaleDateString("en-US", {
+          date: new Date(assessment.assessmentDate).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           }),
+          program: student?.program || "N/A",
+          year: student?.year || "N/A",
+          contactNumber: (person as any).contactNumber || "N/A",
           createdAt: assessment.createdAt,
         });
       }
@@ -101,17 +113,26 @@ export const RecentActivitiesTable: React.FC = () => {
     // Add depression assessments
     depressionAssessments.forEach((assessment) => {
       if (assessment.user && assessment.user.person) {
+        // Type assertion to access additional fields from API response
+        const person = assessment.user.person as any;
+        const student = (person as any).students?.[0];
         allActivities.push({
           id: `depression-${assessment.id}`,
-          studentName: `${assessment.user.person.firstName} ${assessment.user.person.lastName}`,
+          studentName: `${person.firstName} ${person.lastName}`,
           assessmentType: "Depression Screening",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
-          date: new Date(assessment.assessmentDate).toLocaleDateString("en-US", {
+          date: new Date(assessment.assessmentDate).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           }),
+          program: student?.program || "N/A",
+          year: student?.year || "N/A",
+          contactNumber: (person as any).contactNumber || "N/A",
           createdAt: assessment.createdAt,
         });
       }
@@ -120,17 +141,26 @@ export const RecentActivitiesTable: React.FC = () => {
     // Add stress assessments
     stressAssessments.forEach((assessment) => {
       if (assessment.user && assessment.user.person) {
+        // Type assertion to access additional fields from API response
+        const person = assessment.user.person as any;
+        const student = (person as any).students?.[0];
         allActivities.push({
           id: `stress-${assessment.id}`,
-          studentName: `${assessment.user.person.firstName} ${assessment.user.person.lastName}`,
+          studentName: `${person.firstName} ${person.lastName}`,
           assessmentType: "Stress Evaluation",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
-          date: new Date(assessment.assessmentDate).toLocaleDateString("en-US", {
+          date: new Date(assessment.assessmentDate).toLocaleString("en-US", {
             month: "short",
             day: "numeric",
             year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           }),
+          program: student?.program || "N/A",
+          year: student?.year || "N/A",
+          contactNumber: (person as any).contactNumber || "N/A",
           createdAt: assessment.createdAt,
         });
       }
@@ -235,7 +265,13 @@ export const RecentActivitiesTable: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-xs text-gray-600 mt-1">{activity.assessmentType}</p>
-                      <div className="flex items-center justify-between mt-2">
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-gray-600">
+                          {activity.program} • {activity.year} Year
+                        </span>
+                        <p className="text-xs text-gray-500">{activity.date}</p>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
                         <div
                           className={cn(
                             "text-sm font-medium",
@@ -244,7 +280,7 @@ export const RecentActivitiesTable: React.FC = () => {
                         >
                           Score: {activity.severityLevel === "pending" ? "-" : `${activity.score}`}
                         </div>
-                        <p className="text-xs text-gray-500">{activity.date}</p>
+                        <span className="text-xs text-gray-600">{activity.contactNumber}</span>
                       </div>
                     </div>
                   </div>
@@ -263,6 +299,15 @@ export const RecentActivitiesTable: React.FC = () => {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Assessment Type
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Program
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Year
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact Number
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Score
@@ -294,6 +339,15 @@ export const RecentActivitiesTable: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{activity.assessmentType}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{activity.program}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{activity.year} Year</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{activity.contactNumber}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div

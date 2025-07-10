@@ -16,6 +16,7 @@ interface SignUpFormData {
   lastName: string;
   program: string;
   year: string;
+  gender: string;
   email: string;
   password: string;
   contactNumber: string;
@@ -86,6 +87,7 @@ export const useAuth = () => {
         firstName: formData.firstName,
         lastName: formData.lastName,
         contactNumber: formData.contactNumber,
+        gender: formData.gender,
         address: {
           street: formData.address.street,
           city: formData.address.city,
