@@ -17,12 +17,32 @@ export const InsightsHeader: React.FC<InsightsHeaderProps> = ({
 }) => {
   const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const year = e.target.value ? parseInt(e.target.value) : undefined;
-    onFiltersChange({ ...insights.filters, year });
+    console.log(`🔧 Year filter changed to: ${year}`);
+    console.log(`🔧 Current filters:`, insights.filters);
+
+    // If year is cleared, also clear month to avoid invalid combinations
+    const newFilters = year
+      ? { ...insights.filters, year }
+      : { ...insights.filters, year: undefined, month: undefined };
+
+    console.log(`🔧 New filters:`, newFilters);
+    onFiltersChange(newFilters);
   };
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const month = e.target.value ? parseInt(e.target.value) : undefined;
-    onFiltersChange({ ...insights.filters, month });
+    console.log(`🔧 Month filter changed to: ${month}`);
+    console.log(`🔧 Current filters:`, insights.filters);
+
+    // Month filter only works when year is selected
+    if (month && !insights.filters.year) {
+      console.warn("⚠️ Month filter requires year to be selected first");
+      return;
+    }
+
+    const newFilters = { ...insights.filters, month };
+    console.log(`🔧 New filters:`, newFilters);
+    onFiltersChange(newFilters);
   };
 
   const getTitle = () => {
@@ -86,9 +106,10 @@ export const InsightsHeader: React.FC<InsightsHeaderProps> = ({
             <select
               value={insights.filters.month || ""}
               onChange={handleMonthChange}
-              className="border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-sm w-full sm:w-auto focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled={!insights.filters.year}
+              className="border border-gray-300 rounded-md px-2 sm:px-3 py-1 text-sm w-full sm:w-auto focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <option value="">All Months</option>
+              <option value="">{insights.filters.year ? "All Months" : "Select Year First"}</option>
               {insights.availableMonths.map((month) => (
                 <option key={month.value} value={month.value}>
                   {month.label}

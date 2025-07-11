@@ -38,7 +38,9 @@ export class MetricsService {
   // Generic method to fetch metrics
   static async fetchMetrics(request: MetricRequest): Promise<MetricResponse> {
     try {
+      console.log("📤 Sending metrics request:", JSON.stringify(request, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics", request);
+      console.log("📥 Received metrics response:", response);
       return response as any;
     } catch (error) {
       console.error("Error fetching metrics:", error);

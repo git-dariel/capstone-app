@@ -29,14 +29,20 @@ export const useInsights = () => {
           // Create date filter for the specific month/year
           const startDate = new Date(filters.year, filters.month - 1, 1);
           const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999); // Last day of month
-          metricFilter.startDate = startDate;
-          metricFilter.endDate = endDate;
+          metricFilter.startDate = startDate.toISOString();
+          metricFilter.endDate = endDate.toISOString();
+
+          console.log(`🔍 Month Filter Applied: ${filters.month}/${filters.year}`);
+          console.log(`📅 Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         } else if (filters.year) {
           // If only year is specified, get data for the whole year
           const startDate = new Date(filters.year, 0, 1); // First day of year
           const endDate = new Date(filters.year, 11, 31, 23, 59, 59, 999); // Last day of year
-          metricFilter.startDate = startDate;
-          metricFilter.endDate = endDate;
+          metricFilter.startDate = startDate.toISOString();
+          metricFilter.endDate = endDate.toISOString();
+
+          console.log(`🔍 Year Filter Applied: ${filters.year}`);
+          console.log(`📅 Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         }
 
         // Fetch real data and available years from API
@@ -110,13 +116,13 @@ export const useInsights = () => {
         if (filters.year && filters.month) {
           const startDate = new Date(filters.year, filters.month - 1, 1);
           const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999);
-          metricFilter.startDate = startDate;
-          metricFilter.endDate = endDate;
+          metricFilter.startDate = startDate.toISOString();
+          metricFilter.endDate = endDate.toISOString();
         } else if (filters.year) {
           const startDate = new Date(filters.year, 0, 1);
           const endDate = new Date(filters.year, 11, 31, 23, 59, 59, 999);
-          metricFilter.startDate = startDate;
-          metricFilter.endDate = endDate;
+          metricFilter.startDate = startDate.toISOString();
+          metricFilter.endDate = endDate.toISOString();
         }
 
         switch (currentLevel.level) {
@@ -199,18 +205,21 @@ export const useInsights = () => {
     async (newFilters: ChartFilters) => {
       if (!state.insights) return;
 
+      // Merge filters correctly
+      const mergedFilters = { ...state.insights.filters, ...newFilters };
+
       setState((prev) => ({
         ...prev,
         insights: prev.insights
           ? {
               ...prev.insights,
-              filters: { ...prev.insights.filters, ...newFilters },
+              filters: mergedFilters,
             }
           : null,
       }));
 
-      // Re-fetch data with new filters
-      await fetchInsights(state.insights.type, { ...state.insights.filters, ...newFilters });
+      // Re-fetch data with merged filters
+      await fetchInsights(state.insights.type, mergedFilters);
     },
     [state.insights, fetchInsights]
   );

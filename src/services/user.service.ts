@@ -1,5 +1,5 @@
 import type { QueryParams } from "./api.config";
-import { HttpClient } from "./api.config";
+import { HttpClient, API_CONFIG, TokenManager } from "./api.config";
 
 export interface User {
   id: string;
@@ -72,6 +72,40 @@ export class UserService {
     try {
       const response = await HttpClient.delete<{ message: string }>(`/user/${id}`);
       return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async exportStudentDataCsv(): Promise<void> {
+    try {
+      const response = await fetch(`${API_CONFIG.baseURL}/user/export/csv`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${TokenManager.getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to export CSV data");
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "student_mental_health_data.csv";
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       throw error;
     }
