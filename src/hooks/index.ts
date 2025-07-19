@@ -5,3 +5,5 @@ export { useDepression } from "./useDepression";
 export { useStress } from "./useStress";
 export { useSuicide } from "./useSuicide";
 export { useInsights } from "./useInsights";
+export { useRetakeRequest } from "./useRetakeRequest";
+export { useRetakeRequestMetrics } from "./useRetakeRequestMetrics";

@@ -82,4 +82,7 @@ export type {
   ProgramMetric,
   YearMetric,
   GenderMetric,
+  RetakeRequestMetrics,
+  StatusMetric,
+  AssessmentTypeMetric,
 } from "./metrics.service";

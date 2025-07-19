@@ -1,6 +1,29 @@
 import type { PaginatedResponse, QueryParams } from "./api.config";
 import { HttpClient } from "./api.config";
 
+// Cooldown interfaces to match API response
+export interface CooldownInfo {
+  isActive: boolean;
+  daysRemaining: number;
+  nextAvailableDate: string;
+  lastAssessmentDate?: string;
+  lastSeverityLevel?: string;
+  cooldownPeriodDays: number;
+  manuallyDeactivated: boolean;
+  currentPhilippinesTime: string;
+  debugInfo?: {
+    lastAssessmentPhTime: string;
+    nextAvailablePhTime: string;
+    timeDifferenceMs: number;
+  };
+}
+
+export interface CooldownError {
+  error: string;
+  message: string;
+  cooldownInfo: CooldownInfo;
+}
+
 export interface DepressionAssessment {
   id: string;
   userId: string;
@@ -8,6 +31,7 @@ export interface DepressionAssessment {
   severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
   assessmentDate: string;
   responses: Record<string, number>;
+  cooldownActive?: boolean;
   analysis: {
     totalScore: number;
     severityLevel: string;
@@ -16,6 +40,7 @@ export interface DepressionAssessment {
     needsProfessionalHelp: boolean;
     requiresImmediateAttention: boolean;
   };
+  cooldownInfo?: CooldownInfo;
   createdAt: string;
   updatedAt: string;
   user?: {
@@ -77,6 +102,73 @@ export class DepressionService {
         return "extremely_difficult";
       default:
         return "not_difficult_at_all";
+    }
+  }
+
+  // Check cooldown status for a user before allowing new assessment
+  static async checkCooldownStatus(userId: string): Promise<CooldownInfo | null> {
+    try {
+      // Get the most recent assessment for the user
+      const response = await HttpClient.get<any>(
+        `/depression?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`
+      );
+
+      if (response.assessments && response.assessments.length > 0) {
+        const lastAssessment = response.assessments[0];
+
+        // If the last assessment exists and cooldownActive is true,
+        // we can assume there might be a cooldown
+        if (lastAssessment.cooldownActive) {
+          // Calculate cooldown days based on severity level
+          const cooldownDays = this.getCooldownDays(lastAssessment.severityLevel);
+          const lastDate = new Date(lastAssessment.assessmentDate);
+          const nextAvailableDate = new Date(lastDate);
+          nextAvailableDate.setDate(nextAvailableDate.getDate() + cooldownDays);
+
+          const now = new Date();
+          const isActive = now < nextAvailableDate;
+
+          if (isActive) {
+            const daysRemaining = Math.ceil(
+              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+            );
+
+            return {
+              isActive: true,
+              daysRemaining,
+              nextAvailableDate: nextAvailableDate.toISOString(),
+              lastAssessmentDate: lastAssessment.assessmentDate,
+              lastSeverityLevel: lastAssessment.severityLevel,
+              cooldownPeriodDays: cooldownDays,
+              manuallyDeactivated: false,
+              currentPhilippinesTime: now.toISOString(),
+            };
+          }
+        }
+      }
+
+      return null; // No cooldown active
+    } catch (error) {
+      console.error("Error checking cooldown status:", error);
+      return null;
+    }
+  }
+
+  // Get cooldown days based on severity level (matching API logic)
+  private static getCooldownDays(severityLevel: string): number {
+    switch (severityLevel) {
+      case "minimal":
+        return 30;
+      case "mild":
+        return 25;
+      case "moderate":
+        return 14;
+      case "moderately_severe":
+        return 7;
+      case "severe":
+        return 2;
+      default:
+        return 30;
     }
   }
 
@@ -143,7 +235,14 @@ export class DepressionService {
       const response = await HttpClient.post<DepressionAssessment>("/depression", data);
       // Backend returns assessment data directly, not wrapped in response.data
       return response as any;
-    } catch (error) {
+    } catch (error: any) {
+      if (error.status === 429 && error.data?.cooldownInfo) {
+        throw {
+          error: "CooldownError",
+          message: "Assessment cooldown active. Please try again later.",
+          cooldownInfo: error.data.cooldownInfo,
+        };
+      }
       throw error;
     }
   }
@@ -153,8 +252,15 @@ export class DepressionService {
     userId: string,
     responses: Record<number, number>
   ): Promise<DepressionAssessment> {
-    const assessmentData = this.createAssessmentRequest(userId, responses);
-    return this.createAssessment(assessmentData);
+    try {
+      const assessmentData = this.createAssessmentRequest(userId, responses);
+      return await this.createAssessment(assessmentData);
+    } catch (error: any) {
+      if (error.error === "CooldownError") {
+        throw error; // Re-throw cooldown errors as-is
+      }
+      throw error;
+    }
   }
 
   static async updateAssessment(

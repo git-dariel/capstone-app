@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { AnxietyService } from "@/services";
-import type {
-  AnxietyAssessment,
-  CreateAnxietyAssessmentRequest,
-  UpdateAnxietyAssessmentRequest,
-  PaginatedResponse,
-  QueryParams,
+import {
+  AnxietyService,
+  type AnxietyAssessment,
+  type CreateAnxietyAssessmentRequest,
+  type UpdateAnxietyAssessmentRequest,
 } from "@/services";
+import type { CooldownInfo } from "@/services/anxiety.service";
+import type { PaginatedResponse, QueryParams } from "@/services/api.config";
+import { useState } from "react";
 
 interface AnxietyState {
   assessments: AnxietyAssessment[];
@@ -16,6 +16,8 @@ interface AnxietyState {
   total: number;
   page: number;
   totalPages: number;
+  cooldownInfo: CooldownInfo | null;
+  cooldownChecking: boolean;
 }
 
 export const useAnxiety = () => {
@@ -27,6 +29,8 @@ export const useAnxiety = () => {
     total: 0,
     page: 1,
     totalPages: 0,
+    cooldownInfo: null,
+    cooldownChecking: false,
   });
 
   const setLoading = (loading: boolean) => {
@@ -39,6 +43,31 @@ export const useAnxiety = () => {
 
   const clearError = () => {
     setState((prev) => ({ ...prev, error: null }));
+  };
+
+  const setCooldownInfo = (cooldownInfo: CooldownInfo | null) => {
+    setState((prev) => ({ ...prev, cooldownInfo }));
+  };
+
+  const setCooldownChecking = (checking: boolean) => {
+    setState((prev) => ({ ...prev, cooldownChecking: checking }));
+  };
+
+  const checkCooldownStatus = async (userId: string) => {
+    setCooldownChecking(true);
+    setError(null);
+
+    try {
+      const cooldownInfo = await AnxietyService.checkCooldownStatus(userId);
+      setCooldownInfo(cooldownInfo);
+      setCooldownChecking(false);
+      return cooldownInfo;
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to check cooldown status";
+      setError(errorMessage);
+      setCooldownChecking(false);
+      return null;
+    }
   };
 
   const fetchAssessments = async (params?: QueryParams) => {
@@ -103,10 +132,19 @@ export const useAnxiety = () => {
         currentAssessment: newAssessment,
         total: prev.total + 1,
         loading: false,
+        cooldownInfo: newAssessment.cooldownInfo || null,
       }));
 
       return newAssessment;
     } catch (error: any) {
+      if (error.error === "CooldownError") {
+        setCooldownInfo(error.cooldownInfo);
+        const errorMessage = error.message || "Assessment cooldown active. Please try again later.";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+
       const errorMessage = error.message || "Failed to create anxiety assessment";
       setError(errorMessage);
       setLoading(false);
@@ -130,10 +168,19 @@ export const useAnxiety = () => {
         currentAssessment: newAssessment,
         total: prev.total + 1,
         loading: false,
+        cooldownInfo: newAssessment.cooldownInfo || null,
       }));
 
       return newAssessment;
     } catch (error: any) {
+      if (error.error === "CooldownError") {
+        setCooldownInfo(error.cooldownInfo);
+        const errorMessage = error.message || "Assessment cooldown active. Please try again later.";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+
       const errorMessage = error.message || "Failed to create anxiety assessment";
       setError(errorMessage);
       setLoading(false);
@@ -208,6 +255,8 @@ export const useAnxiety = () => {
     total: state.total,
     page: state.page,
     totalPages: state.totalPages,
+    cooldownInfo: state.cooldownInfo,
+    cooldownChecking: state.cooldownChecking,
 
     // Actions
     fetchAssessments,
@@ -219,5 +268,6 @@ export const useAnxiety = () => {
     calculateScore,
     refreshAssessments,
     clearError,
+    checkCooldownStatus,
   };
 };

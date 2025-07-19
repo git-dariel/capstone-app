@@ -34,6 +34,23 @@ export interface GenderMetric {
   count: number;
 }
 
+// Retake Request data interfaces
+export interface RetakeRequestMetrics {
+  pendingRequests: number;
+  approvedThisWeek: number;
+  totalRequests: number;
+}
+
+export interface StatusMetric {
+  status: string;
+  count: number;
+}
+
+export interface AssessmentTypeMetric {
+  assessmentType: string;
+  count: number;
+}
+
 export class MetricsService {
   // Generic method to fetch metrics
   static async fetchMetrics(request: MetricRequest): Promise<MetricResponse> {
@@ -229,6 +246,83 @@ export class MetricsService {
         value: item.count,
         percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
         color: genderColors[item.gender.toLowerCase()] || "#6B7280",
+      })),
+      total,
+    };
+  }
+
+  // Retake Request Metrics
+  static async getRetakeRequestMetrics(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "RetakeRequest",
+      data: ["totalPendingRequests", "totalApprovedThisWeek", "totalRequests"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0] || {};
+
+    return {
+      pendingRequests: data.totalPendingRequests || 0,
+      approvedThisWeek: data.totalApprovedThisWeek || 0,
+      totalRequests: data.totalRequests || 0,
+    };
+  }
+
+  static async getRetakeRequestsByStatus(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "RetakeRequest",
+      data: ["totalRequestsByStatus"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const statusData = response.data[0]?.totalRequestsByStatus || [];
+
+    const statusColors: Record<string, string> = {
+      pending: "#F59E0B",
+      approved: "#10B981",
+      rejected: "#EF4444",
+    };
+
+    const total = statusData.reduce((sum: number, item: any) => sum + item.count, 0);
+
+    return {
+      data: statusData.map((item: any) => ({
+        label: item.status.charAt(0).toUpperCase() + item.status.slice(1),
+        value: item.count,
+        percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+        color: statusColors[item.status.toLowerCase()] || "#6B7280",
+      })),
+      total,
+    };
+  }
+
+  static async getRetakeRequestsByAssessmentType(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "RetakeRequest",
+      data: ["totalRequestsByAssessmentType"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const typeData = response.data[0]?.totalRequestsByAssessmentType || [];
+
+    const typeColors: Record<string, string> = {
+      anxiety: "#3B82F6",
+      depression: "#8B5CF6",
+      stress: "#EF4444",
+      suicide: "#F59E0B",
+    };
+
+    const total = typeData.reduce((sum: number, item: any) => sum + item.count, 0);
+
+    return {
+      data: typeData.map((item: any) => ({
+        label: item.assessmentType.charAt(0).toUpperCase() + item.assessmentType.slice(1),
+        value: item.count,
+        percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+        color: typeColors[item.assessmentType.toLowerCase()] || "#6B7280",
       })),
       total,
     };

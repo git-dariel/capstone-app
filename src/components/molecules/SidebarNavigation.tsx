@@ -11,6 +11,7 @@ import {
   X,
   Clock,
   Users,
+  HeartHandshake,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -100,6 +101,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       icon: <Users className="w-5 h-5" />,
       label: "Accounts",
       path: "/accounts",
+      guidanceOnly: true,
+    },
+    {
+      icon: <HeartHandshake className="w-5 h-5" />,
+      label: "Aid Function",
+      path: "/aid-function",
       guidanceOnly: true,
     },
     {
