@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { DepressionService } from "@/services";
-import type {
-  DepressionAssessment,
-  CreateDepressionAssessmentRequest,
-  UpdateDepressionAssessmentRequest,
-  PaginatedResponse,
-  QueryParams,
+import {
+  DepressionService,
+  type CreateDepressionAssessmentRequest,
+  type DepressionAssessment,
+  type UpdateDepressionAssessmentRequest,
 } from "@/services";
+import type { PaginatedResponse, QueryParams } from "@/services/api.config";
+import type { CooldownInfo } from "@/services/depression.service";
+import { useState } from "react";
 
 interface DepressionState {
   assessments: DepressionAssessment[];
@@ -16,6 +16,8 @@ interface DepressionState {
   total: number;
   page: number;
   totalPages: number;
+  cooldownInfo: CooldownInfo | null;
+  cooldownChecking: boolean;
 }
 
 export const useDepression = () => {
@@ -27,6 +29,8 @@ export const useDepression = () => {
     total: 0,
     page: 1,
     totalPages: 0,
+    cooldownInfo: null,
+    cooldownChecking: false,
   });
 
   const setLoading = (loading: boolean) => {
@@ -39,6 +43,31 @@ export const useDepression = () => {
 
   const clearError = () => {
     setState((prev) => ({ ...prev, error: null }));
+  };
+
+  const setCooldownInfo = (cooldownInfo: CooldownInfo | null) => {
+    setState((prev) => ({ ...prev, cooldownInfo }));
+  };
+
+  const setCooldownChecking = (checking: boolean) => {
+    setState((prev) => ({ ...prev, cooldownChecking: checking }));
+  };
+
+  const checkCooldownStatus = async (userId: string) => {
+    setCooldownChecking(true);
+    setError(null);
+
+    try {
+      const cooldownInfo = await DepressionService.checkCooldownStatus(userId);
+      setCooldownInfo(cooldownInfo);
+      setCooldownChecking(false);
+      return cooldownInfo;
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to check cooldown status";
+      setError(errorMessage);
+      setCooldownChecking(false);
+      return null;
+    }
   };
 
   const fetchAssessments = async (params?: QueryParams) => {
@@ -102,10 +131,19 @@ export const useDepression = () => {
         currentAssessment: newAssessment,
         total: prev.total + 1,
         loading: false,
+        cooldownInfo: newAssessment.cooldownInfo || null,
       }));
 
       return newAssessment;
     } catch (error: any) {
+      if (error.error === "CooldownError") {
+        setCooldownInfo(error.cooldownInfo);
+        const errorMessage = error.message || "Assessment cooldown active. Please try again later.";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+
       const errorMessage = error.message || "Failed to create depression assessment";
       setError(errorMessage);
       setLoading(false);
@@ -133,10 +171,19 @@ export const useDepression = () => {
         currentAssessment: newAssessment,
         total: prev.total + 1,
         loading: false,
+        cooldownInfo: newAssessment.cooldownInfo || null,
       }));
 
       return newAssessment;
     } catch (error: any) {
+      if (error.error === "CooldownError") {
+        setCooldownInfo(error.cooldownInfo);
+        const errorMessage = error.message || "Assessment cooldown active. Please try again later.";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+
       const errorMessage = error.message || "Failed to create depression assessment";
       setError(errorMessage);
       setLoading(false);
@@ -211,6 +258,8 @@ export const useDepression = () => {
     total: state.total,
     page: state.page,
     totalPages: state.totalPages,
+    cooldownInfo: state.cooldownInfo,
+    cooldownChecking: state.cooldownChecking,
 
     // Actions
     fetchAssessments,
@@ -222,5 +271,6 @@ export const useDepression = () => {
     calculateScore,
     refreshAssessments,
     clearError,
+    checkCooldownStatus,
   };
 };

@@ -1,24 +1,30 @@
-import React, { useState } from "react";
+import { Modal } from "@/components/atoms";
 import {
-  AssessmentGrid,
   AnxietyQuestionnaire,
+  AssessmentGrid,
   DepressionQuestionnaire,
+  RetakeRequestForm,
+  RetakeRequestsTable,
   StressQuestionnaire,
   SuicideQuestionnaire,
 } from "@/components/molecules";
-import { useAnxiety, useDepression, useStress, useSuicide, useAuth } from "@/hooks";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
-import { Modal } from "@/components/atoms";
+import { useAnxiety, useAuth, useDepression, useStress, useSuicide } from "@/hooks";
+import type { CooldownInfo } from "@/services/stress.service";
+import { AlertCircle, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import React, { useState } from "react";
 
 type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | null;
+type ResourceView = "assessments" | "retake-requests" | "my-requests";
 
 export const ResourcesContent: React.FC = () => {
+  const [currentView, setCurrentView] = useState<ResourceView>("assessments");
   const [currentAssessment, setCurrentAssessment] = useState<AssessmentType>(null);
   const [submissionState, setSubmissionState] = useState<{
     loading: boolean;
     error: string | null;
     success: boolean;
     results: any;
+    cooldownInfo?: CooldownInfo;
   }>({
     loading: false,
     error: null,
@@ -32,6 +38,8 @@ export const ResourcesContent: React.FC = () => {
   const stressHook = useStress();
   const suicideHook = useSuicide();
 
+  const isStudent = user?.type === "student";
+
   const handleSelectAssessment = (type: AssessmentType) => {
     setCurrentAssessment(type);
     setSubmissionState({ loading: false, error: null, success: false, results: null });
@@ -42,8 +50,27 @@ export const ResourcesContent: React.FC = () => {
     setSubmissionState({ loading: false, error: null, success: false, results: null });
   };
 
+  // const handleBackToMain = () => {
+  //   setCurrentView("assessments");
+  //   setCurrentAssessment(null);
+  //   setSubmissionState({ loading: false, error: null, success: false, results: null });
+  // };
+
   const handleCloseModal = () => {
     setSubmissionState((prev) => ({ ...prev, success: false, results: null }));
+  };
+
+  const formatCooldownMessage = (cooldownInfo: CooldownInfo) => {
+    const { daysRemaining, nextAvailableDate } = cooldownInfo;
+    const nextDate = new Date(nextAvailableDate).toLocaleDateString();
+
+    if (daysRemaining === 1) {
+      return `You can take this assessment again tomorrow (${nextDate}).`;
+    } else if (daysRemaining <= 7) {
+      return `You can take this assessment again in ${daysRemaining} days (${nextDate}).`;
+    } else {
+      return `You can take this assessment again on ${nextDate}.`;
+    }
   };
 
   const handleSubmitAssessment = async (responses: Record<number, number>) => {
@@ -79,12 +106,22 @@ export const ResourcesContent: React.FC = () => {
         results: result,
       });
     } catch (error: any) {
-      setSubmissionState({
-        loading: false,
-        error: error.message || "Failed to submit assessment. Please try again.",
-        success: false,
-        results: null,
-      });
+      if (error.error === "CooldownError") {
+        setSubmissionState({
+          loading: false,
+          error: "Assessment cooldown is active.",
+          success: false,
+          results: null,
+          cooldownInfo: error.cooldownInfo,
+        });
+      } else {
+        setSubmissionState({
+          loading: false,
+          error: error.message || "Failed to submit assessment. Please try again.",
+          success: false,
+          results: null,
+        });
+      }
     }
   };
 
@@ -316,8 +353,15 @@ export const ResourcesContent: React.FC = () => {
         <div className="flex items-start space-x-3">
           <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
           <div>
-            <h4 className="text-sm font-medium text-red-800">Submission Failed</h4>
+            <h4 className="text-sm font-medium text-red-800">
+              {submissionState.cooldownInfo ? "Assessment Cooldown Active" : "Submission Failed"}
+            </h4>
             <p className="text-sm text-red-700 mt-1">{submissionState.error}</p>
+            {submissionState.cooldownInfo && (
+              <p className="text-sm text-red-600 mt-2">
+                {formatCooldownMessage(submissionState.cooldownInfo)}
+              </p>
+            )}
           </div>
         </div>
         <button
@@ -351,31 +395,86 @@ export const ResourcesContent: React.FC = () => {
         {/* Results Modal */}
         {renderResultsModal()}
 
-        {/* Assessment Grid */}
+        {/* Main Content */}
         {currentAssessment === null && (
           <>
+            {/* Page Header */}
             <div className="mb-6 sm:mb-8">
               <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 Mental Health Resources
               </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
-                Take a confidential assessment to better understand your mental health. Choose an
-                assessment below to get started.
+                Access mental health assessments and manage your assessment requests.
               </p>
             </div>
 
-            <AssessmentGrid onSelectAssessment={handleSelectAssessment} />
+            {/* Navigation Tabs (only for students) */}
+            {isStudent && (
+              <div className="mb-6">
+                <div className="border-b border-gray-200">
+                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                    <button
+                      onClick={() => setCurrentView("assessments")}
+                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                        currentView === "assessments"
+                          ? "border-primary-500 text-primary-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <FileText className="w-4 h-4 mr-2 inline" />
+                      Take Assessments
+                    </button>
 
-            <div className="mt-8 sm:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6">
-              <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
-                Important Notice
-              </h2>
-              <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
-                These assessments are screening tools and not diagnostic instruments. If you're
-                experiencing significant distress or having thoughts of self-harm, please contact a
-                mental health professional or call a crisis helpline immediately.
-              </p>
-            </div>
+                    <button
+                      onClick={() => setCurrentView("retake-requests")}
+                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                        currentView === "retake-requests"
+                          ? "border-primary-500 text-primary-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      <Clock className="w-4 h-4 mr-2 inline" />
+                      Request Retake
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentView("my-requests")}
+                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                        currentView === "my-requests"
+                          ? "border-primary-500 text-primary-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      }`}
+                    >
+                      📋 My Requests
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            )}
+
+            {/* Content based on current view */}
+            {(currentView === "assessments" || !isStudent) && (
+              <>
+                <AssessmentGrid onSelectAssessment={handleSelectAssessment} />
+
+                <div className="mt-8 sm:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6">
+                  <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
+                    Important Notice
+                  </h2>
+                  <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
+                    These assessments are screening tools and not diagnostic instruments. If you're
+                    experiencing significant distress or having thoughts of self-harm, please
+                    contact a mental health professional or call a crisis helpline immediately.
+                  </p>
+                </div>
+              </>
+            )}
+
+            {currentView === "retake-requests" && isStudent && <RetakeRequestForm />}
+
+            {currentView === "my-requests" && isStudent && (
+              <RetakeRequestsTable showUserColumn={false} isUserView={true} />
+            )}
           </>
         )}
 

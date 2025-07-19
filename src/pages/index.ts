@@ -10,3 +10,4 @@ export { ResourcesPage } from "./ResourcesPage";
 export { HelpSupportPage } from "./HelpSupportPage";
 export { HistoryPage } from "./HistoryPage";
 export { InsightsPage } from "./InsightsPage";
+export { AidFunctionPage } from "./AidFunctionPage";

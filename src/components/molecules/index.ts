@@ -24,3 +24,5 @@ export { InsightsBarChart } from "./InsightsBarChart";
 export { ContactSupportForm } from "./ContactSupportForm";
 export { AddAdminForm } from "./AddAdminForm";
 export { UsersTable } from "./UsersTable";
+export { RetakeRequestForm } from "./RetakeRequestForm";
+export { RetakeRequestsTable } from "./RetakeRequestsTable";

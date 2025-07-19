@@ -12,6 +12,7 @@ import {
   HelpSupportPage,
   HistoryPage,
   InsightsPage,
+  AidFunctionPage,
 } from "@/pages";
 import { ProtectedRoute, PublicRoute } from "@/components";
 
@@ -115,6 +116,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Aid Function routes - for guidance counselors and admins */}
+          <Route
+            path="/aid-function"
+            element={
+              <ProtectedRoute>
+                <AidFunctionPage />
               </ProtectedRoute>
             }
           />
