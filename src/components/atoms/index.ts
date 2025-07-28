@@ -1,4 +1,5 @@
 export { Avatar } from "./Avatar";
+export { Drawer } from "./Drawer";
 export { FormField } from "./FormField";
 export { FormSelect } from "./FormSelect";
 export { Logo } from "./Logo";

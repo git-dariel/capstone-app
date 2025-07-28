@@ -1,4 +1,4 @@
-import type { QueryParams } from "./api.config";
+import type { QueryParams, PaginatedResponse } from "./api.config";
 import { HttpClient } from "./api.config";
 
 export interface Student {
@@ -7,6 +7,11 @@ export interface Student {
   program: string;
   year: string;
   isActive: boolean;
+  notes?: Array<{
+    title?: string;
+    content?: string;
+    isMinimized?: boolean;
+  }>;
   createdAt: string;
   updatedAt: string;
   person: {
@@ -23,13 +28,44 @@ export interface Student {
     age?: number;
     religion?: string;
     civilStatus?: string;
+    users?: Array<{
+      id: string;
+      anxietyAssessments?: Array<{
+        id: string;
+        severityLevel: "minimal" | "mild" | "moderate" | "severe";
+        assessmentDate: string;
+        totalScore: number;
+      }>;
+      depressionAssessments?: Array<{
+        id: string;
+        severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
+        assessmentDate: string;
+        totalScore: number;
+      }>;
+      stressAssessments?: Array<{
+        id: string;
+        severityLevel: "low" | "moderate" | "high";
+        assessmentDate: string;
+        totalScore: number;
+      }>;
+      suicideAssessments?: Array<{
+        id: string;
+        riskLevel: "low" | "moderate" | "high";
+        assessmentDate: string;
+      }>;
+    }>;
   };
 }
 
 export interface CreateStudentRequest {
-  studentNumber: string;
+  studentNumber?: string;
   program: string;
   year: string;
+  notes?: Array<{
+    title?: string;
+    content?: string;
+    isMinimized?: boolean;
+  }>;
   personId?: string; // If linking to existing person
   // If creating new person
   firstName?: string;
@@ -60,6 +96,11 @@ export interface UpdateStudentRequest {
   studentNumber?: string;
   program?: string;
   year?: string;
+  notes?: Array<{
+    title?: string;
+    content?: string;
+    isMinimized?: boolean;
+  }>;
   firstName?: string;
   lastName?: string;
   middleName?: string;
@@ -75,10 +116,17 @@ export interface UpdateStudentRequest {
 }
 
 export class StudentService {
-  static async getAllStudents(params?: QueryParams): Promise<Student[]> {
+  static async getAllStudents(params?: QueryParams): Promise<PaginatedResponse<Student>> {
     try {
-      const response = await HttpClient.get<Student[]>("/student", params);
-      return response;
+      const response = await HttpClient.get<any>("/student", params);
+      // Backend returns { students, total, page, totalPages } format
+      return {
+        data: response.students || [],
+        total: response.total || 0,
+        page: response.page || 1,
+        limit: params?.limit || 10,
+        totalPages: response.totalPages || 0,
+      };
     } catch (error) {
       throw error;
     }

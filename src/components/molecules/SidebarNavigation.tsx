@@ -12,6 +12,7 @@ import {
   Clock,
   Users,
   HeartHandshake,
+  School,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -98,15 +99,21 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       guidanceOnly: true,
     },
     {
-      icon: <Users className="w-5 h-5" />,
-      label: "Accounts",
-      path: "/accounts",
+      icon: <School className="w-5 h-5" />,
+      label: "Student Records",
+      path: "/students",
       guidanceOnly: true,
     },
     {
       icon: <HeartHandshake className="w-5 h-5" />,
-      label: "Aid Function",
+      label: "Retake Requests",
       path: "/aid-function",
+      guidanceOnly: true,
+    },
+    {
+      icon: <Users className="w-5 h-5" />,
+      label: "Admin Accounts",
+      path: "/accounts",
       guidanceOnly: true,
     },
     {
