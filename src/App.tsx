@@ -13,6 +13,7 @@ import {
   HistoryPage,
   InsightsPage,
   AidFunctionPage,
+  StudentsPage,
 } from "@/pages";
 import { ProtectedRoute, PublicRoute } from "@/components";
 
@@ -84,6 +85,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/students"
+            element={
+              <ProtectedRoute>
+                <StudentsPage />
               </ProtectedRoute>
             }
           />
