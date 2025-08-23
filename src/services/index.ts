@@ -86,3 +86,16 @@ export type {
   StatusMetric,
   AssessmentTypeMetric,
 } from "./metrics.service";
+
+// Message Service
+export { MessageService } from "./message.service";
+export type {
+  Message,
+  CreateMessageRequest,
+  UpdateMessageRequest,
+  MessageQueryParams,
+  MessagePaginatedResponse,
+} from "./message.service";
+
+// Socket Service
+export { socketService, SocketService } from "./socket.service";
