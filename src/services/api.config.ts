@@ -11,7 +11,7 @@ const getBaseURL = (): string => {
   }
 
   // For all other environments (production, staging, etc.), use Heroku
-  return "https://mental-health-dev-796aa66da7d5.herokuapp.com/api";
+  return "https://mental-health-api-6d98f763cd10.herokuapp.com/api";
 };
 
 export const API_CONFIG = {
