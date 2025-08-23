@@ -13,6 +13,7 @@ import {
   Users,
   HeartHandshake,
   School,
+  MessageSquare,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -121,6 +122,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       label: "History",
       path: "/history",
       studentOnly: true,
+    },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "Messages",
+      path: "/messages",
     },
     { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
     { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },

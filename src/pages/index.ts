@@ -12,3 +12,4 @@ export { HistoryPage } from "./HistoryPage";
 export { InsightsPage } from "./InsightsPage";
 export { AidFunctionPage } from "./AidFunctionPage";
 export { StudentsPage } from "./StudentsPage";
+export { MessagesPage } from "./MessagesPage";

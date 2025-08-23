@@ -10,3 +10,4 @@ export { HelpSupportContent } from "./HelpSupportContent";
 export { HistoryContent } from "./HistoryContent";
 export { InsightsContent } from "./InsightsContent";
 export { AidFunctionContent } from "./AidFunctionContent";
+export { MessagesContent } from "./MessagesContent";
