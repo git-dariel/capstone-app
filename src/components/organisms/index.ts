@@ -11,3 +11,4 @@ export { HistoryContent } from "./HistoryContent";
 export { InsightsContent } from "./InsightsContent";
 export { AidFunctionContent } from "./AidFunctionContent";
 export { MessagesContent } from "./MessagesContent";
+export { AppointmentsContent } from "./AppointmentsContent";

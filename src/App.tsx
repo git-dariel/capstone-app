@@ -15,6 +15,7 @@ import {
   AidFunctionPage,
   StudentsPage,
   MessagesPage,
+  AppointmentsPage,
 } from "@/pages";
 import { ProtectedRoute, PublicRoute } from "@/components";
 
@@ -94,6 +95,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StudentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/appointments"
+            element={
+              <ProtectedRoute>
+                <AppointmentsPage />
               </ProtectedRoute>
             }
           />

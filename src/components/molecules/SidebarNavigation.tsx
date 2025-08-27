@@ -14,6 +14,7 @@ import {
   HeartHandshake,
   School,
   MessageSquare,
+  Calendar,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -104,6 +105,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       label: "Student Records",
       path: "/students",
       guidanceOnly: true,
+    },
+    {
+      icon: <Calendar className="w-5 h-5" />,
+      label: "Appointments",
+      path: "/appointments",
     },
     {
       icon: <HeartHandshake className="w-5 h-5" />,

@@ -16,3 +16,5 @@ export { FAQItem } from "./FAQItem";
 export { MessageBubble } from "./MessageBubble";
 export { ConversationItem } from "./ConversationItem";
 export { MessageInput } from "./MessageInput";
+export { AppointmentCard } from "./AppointmentCard";
+export { ScheduleCard } from "./ScheduleCard";

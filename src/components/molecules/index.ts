@@ -32,3 +32,7 @@ export { RetakeRequestsTable } from "./RetakeRequestsTable";
 export { ComposeMessageModal } from "./ComposeMessageModal";
 export { ConversationList } from "./ConversationList";
 export { MessageThread } from "./MessageThread";
+export { AppointmentsTable } from "./AppointmentsTable";
+export { AppointmentModal } from "./AppointmentModal";
+export { SchedulesTable } from "./SchedulesTable";
+export { ScheduleModal } from "./ScheduleModal";
