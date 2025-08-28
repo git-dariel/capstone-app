@@ -107,7 +107,7 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({
         <div className="space-y-1">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">
-              Available Slots: {schedule.maxSlots - schedule.currentSlots}/{schedule.maxSlots}
+              Available Slots: {schedule.maxSlots - schedule.bookedSlots}/{schedule.maxSlots}
             </span>
             <span
               className={cn(
@@ -177,15 +177,13 @@ export const ScheduleCard: React.FC<ScheduleCardProps> = ({
       )}
 
       {/* Full indicator */}
-      {!canBook &&
-        schedule.status === "available" &&
-        schedule.currentSlots >= schedule.maxSlots && (
-          <div className="mt-2 text-center">
-            <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-              Fully Booked
-            </span>
-          </div>
-        )}
+      {!canBook && schedule.status === "available" && schedule.bookedSlots >= schedule.maxSlots && (
+        <div className="mt-2 text-center">
+          <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
+            Fully Booked
+          </span>
+        </div>
+      )}
     </div>
   );
 };
