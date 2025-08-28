@@ -99,3 +99,21 @@ export type {
 
 // Socket Service
 export { socketService, SocketService } from "./socket.service";
+
+// Appointment Service
+export { AppointmentService } from "./appointment.service";
+export type {
+  Appointment,
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest,
+  AppointmentQueryParams,
+} from "./appointment.service";
+
+// Schedule Service
+export { ScheduleService } from "./schedule.service";
+export type {
+  Schedule,
+  CreateScheduleRequest,
+  UpdateScheduleRequest,
+  ScheduleQueryParams,
+} from "./schedule.service";
