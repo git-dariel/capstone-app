@@ -3,7 +3,9 @@ import { AppointmentsContent } from "@/components/organisms";
 import { MainLayout } from "@/components";
 
 const AppointmentsPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"appointments" | "schedules">("appointments");
+  const [activeTab, setActiveTab] = useState<"appointments" | "schedules" | "pending-requests">(
+    "appointments"
+  );
 
   return (
     <MainLayout>

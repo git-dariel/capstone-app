@@ -1,12 +1,11 @@
-import { useState } from "react";
 import { AppointmentService } from "@/services";
 import type {
   Appointment,
+  AppointmentQueryParams,
   CreateAppointmentRequest,
   UpdateAppointmentRequest,
-  AppointmentQueryParams,
 } from "@/services/appointment.service";
-import type { PaginatedResponse } from "@/services/api.config";
+import { useState } from "react";
 
 interface AppointmentsState {
   appointments: Appointment[];
