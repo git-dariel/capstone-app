@@ -12,3 +12,4 @@ export { useMessages } from "./useMessages";
 export { useSocket } from "./useSocket";
 export { useAppointments } from "./useAppointments";
 export { useSchedules } from "./useSchedules";
+export { useToast } from "./useToast";

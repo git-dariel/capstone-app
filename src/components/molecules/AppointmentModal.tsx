@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, FormField, FormSelect } from "@/components/atoms";
+import { Modal, FormField, FormSelect, DateTimePicker } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { useSchedules } from "@/hooks/useSchedules";
 import { useStudents } from "@/hooks/useStudents";
@@ -126,7 +126,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       try {
         await fetchAvailableSchedules();
         if (isGuidanceUser) {
-          await fetchStudents({ limit: 100 }); // Get students for selection
+          await fetchStudents({
+            limit: 100,
+            fields: "id,program,year,person.firstName,person.lastName,person.email",
+          }); // Get students with person info for selection
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -291,9 +294,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               onChange={(value) => handleInputChange("studentId", value)}
               options={(students || []).map((s) => ({
                 value: s.id,
-                label: `${s.person?.firstName ?? "Unknown"} ${s.person?.lastName ?? ""} (${
-                  s.studentNumber
-                })`,
+                label: `${s.person?.firstName ?? "Unknown"} ${s.person?.lastName ?? "Student"} - ${
+                  s.program || "No Program"
+                }`,
               }))}
               disabled={loading || isViewMode}
               required
@@ -323,18 +326,17 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
         {/* Date and Time */}
         <div>
-          <FormField
+          <DateTimePicker
             id="requestedDate"
             label="Preferred Date & Time"
-            type="datetime-local"
             value={formData.requestedDate}
-            onChange={(e) => handleInputChange("requestedDate", e.target.value)}
+            onChange={(value) => handleInputChange("requestedDate", value)}
             disabled={loading || isViewMode}
             required
+            minDate={new Date().toISOString().slice(0, 16)}
+            error={errors.requestedDate}
+            placeholder="Select your preferred appointment date and time"
           />
-          {errors.requestedDate && (
-            <p className="mt-1 text-sm text-red-600">{errors.requestedDate}</p>
-          )}
         </div>
 
         {/* Location */}

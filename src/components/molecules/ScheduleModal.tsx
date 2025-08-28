@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal } from "@/components/atoms";
+import { Modal, DateTimePicker } from "@/components/atoms";
 import type { Schedule } from "@/services";
 
 interface ScheduleModalProps {
@@ -175,25 +175,29 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
         {/* Time Range */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Start Time *</label>
-            <input
-              type="datetime-local"
+            <DateTimePicker
+              id="startTime"
+              label="Start Time"
               value={formData.startTime}
-              onChange={(e) => handleInputChange("startTime", e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              onChange={(value) => handleInputChange("startTime", value)}
+              required
+              minDate={new Date().toISOString().slice(0, 16)}
+              error={errors.startTime}
+              placeholder="Select start date and time"
             />
-            {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">End Time *</label>
-            <input
-              type="datetime-local"
+            <DateTimePicker
+              id="endTime"
+              label="End Time"
               value={formData.endTime}
-              onChange={(e) => handleInputChange("endTime", e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              onChange={(value) => handleInputChange("endTime", value)}
+              required
+              minDate={formData.startTime || new Date().toISOString().slice(0, 16)}
+              error={errors.endTime}
+              placeholder="Select end date and time"
             />
-            {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>}
           </div>
         </div>
 

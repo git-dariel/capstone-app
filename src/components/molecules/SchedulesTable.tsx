@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { Schedule } from "@/services";
+import type { Schedule, Appointment } from "@/services";
 import { ConfirmationModal } from "./ConfirmationModal";
 
 interface SchedulesTableProps {
@@ -11,6 +11,9 @@ interface SchedulesTableProps {
   onBook?: (schedule: Schedule) => void;
   showActions?: boolean;
   searchable?: boolean;
+  userType?: "student" | "guidance";
+  hasActiveAppointmentForSchedule?: (scheduleId: string) => boolean;
+  getExistingAppointmentForSchedule?: (scheduleId: string) => Appointment | null;
 }
 
 export const SchedulesTable: React.FC<SchedulesTableProps> = ({
@@ -22,6 +25,8 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
   onBook,
   showActions = true,
   searchable = true,
+  userType = "student",
+  hasActiveAppointmentForSchedule,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
@@ -213,16 +218,43 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                 {showActions && (
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
-                      {onBook && (
-                        <button
-                          onClick={() => onBook(schedule)}
-                          className="inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                          title="Book Appointment"
-                          disabled={schedule.bookedSlots >= schedule.maxSlots}
-                        >
-                          📅 Book
-                        </button>
-                      )}
+                      {userType === "student" &&
+                        onBook &&
+                        schedule.status === "available" &&
+                        (() => {
+                          const hasExistingAppointment =
+                            hasActiveAppointmentForSchedule?.(schedule.id) || false;
+                          const isFullyBooked = schedule.bookedSlots >= schedule.maxSlots;
+                          const isDisabled = hasExistingAppointment || isFullyBooked;
+
+                          return (
+                            <div className="flex flex-col items-end space-y-1">
+                              <button
+                                onClick={() => onBook(schedule)}
+                                className={`inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md transition-colors ${
+                                  isDisabled
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                }`}
+                                title={
+                                  hasExistingAppointment
+                                    ? "You already have an appointment for this schedule"
+                                    : isFullyBooked
+                                    ? "This schedule is fully booked"
+                                    : "Book Appointment"
+                                }
+                                disabled={isDisabled}
+                              >
+                                📅 {hasExistingAppointment ? "Booked" : "Book"}
+                              </button>
+                              {hasExistingAppointment && (
+                                <span className="text-xs text-orange-600 font-medium">
+                                  Already Booked
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       {onView && (
                         <button
                           onClick={() => onView(schedule)}
@@ -232,7 +264,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           👁️
                         </button>
                       )}
-                      {onEdit && (
+                      {userType === "guidance" && onEdit && (
                         <button
                           onClick={() => onEdit(schedule)}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
@@ -241,7 +273,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           ✏️
                         </button>
                       )}
-                      {onDelete && (
+                      {userType === "guidance" && onDelete && (
                         <button
                           onClick={() => handleDeleteClick(schedule)}
                           className="text-red-600 hover:text-red-900 transition-colors"

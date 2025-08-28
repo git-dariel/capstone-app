@@ -14,6 +14,7 @@ interface AppointmentsTableProps {
   onDelete?: (appointmentId: string) => void;
   showActions?: boolean;
   searchable?: boolean;
+  userType?: "student" | "guidance";
 }
 
 export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
@@ -27,6 +28,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   onDelete,
   showActions = true,
   searchable = true,
+  userType = "student",
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -148,8 +150,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                 );
                 const typeInfo = AppointmentService.getTypeDisplayInfo(appointment.appointmentType);
                 const canCancel = AppointmentService.canCancelAppointment(appointment);
-                const canReschedule = AppointmentService.canRescheduleAppointment(appointment);
-                const canComplete = appointment.status === "confirmed";
+                const canReschedule =
+                  AppointmentService.canRescheduleAppointment(appointment) &&
+                  userType === "guidance";
+                const canComplete = appointment.status === "confirmed" && userType === "guidance";
+                const canEdit = userType === "guidance";
+                const canDelete = userType === "guidance";
 
                 return (
                   <tr
@@ -242,7 +248,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               Reschedule
                             </button>
                           )}
-                          {onEdit && (
+                          {canEdit && onEdit && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -266,7 +272,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               Cancel
                             </button>
                           )}
-                          {onDelete && (
+                          {canDelete && onDelete && (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
