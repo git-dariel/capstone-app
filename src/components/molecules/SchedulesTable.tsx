@@ -59,24 +59,26 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-8">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-            <span className="ml-3 text-gray-600">Loading schedules...</span>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="h-12 bg-gray-200 rounded"></div>
+            ))}
           </div>
         </div>
       </div>
     );
   }
 
-  if (schedules.length === 0) {
+  if (filteredSchedules.length === 0 && !searchable) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-8 text-center">
-          <div className="w-12 h-12 mx-auto mb-4 text-gray-400">📅</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No schedules found</h3>
-          <p className="text-gray-500">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📅</div>
+          <h3 className="mt-2 text-sm font-medium text-gray-900 mb-1">No schedules found</h3>
+          <p className="text-sm text-gray-500">
             {searchable && searchTerm
               ? "No schedules match your search criteria."
               : "There are no schedules to display."}
@@ -97,15 +99,186 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
               placeholder="Search schedules..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             />
             <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">🔍</div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card Layout - visible on small screens */}
+      <div className="block md:hidden">
+        {filteredSchedules.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            {searchTerm ? "No schedules match your search." : "No schedules found."}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredSchedules.map((schedule) => {
+              const hasExistingAppointment =
+                hasActiveAppointmentForSchedule?.(schedule.id) || false;
+              const isFullyBooked = schedule.bookedSlots >= schedule.maxSlots;
+              const isDisabled = hasExistingAppointment || isFullyBooked;
+
+              return (
+                <div
+                  key={schedule.id}
+                  className="p-4 hover:bg-gray-50 touch-manipulation"
+                  onClick={() => onView?.(schedule)}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {schedule.title || "Untitled Schedule"}
+                      </h3>
+                      {schedule.description && (
+                        <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                          {schedule.description}
+                        </p>
+                      )}
+                      {schedule.location && (
+                        <p className="text-xs text-gray-400 mt-1">📍 {schedule.location}</p>
+                      )}
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${
+                        schedule.status === "available"
+                          ? "bg-green-100 text-green-800"
+                          : schedule.status === "booked"
+                          ? "bg-blue-100 text-blue-800"
+                          : schedule.status === "unavailable"
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
+                    </span>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Counselor:</span>
+                      <span className="text-gray-900 truncate">
+                        {schedule.counselor?.person
+                          ? `${schedule.counselor.person.firstName} ${schedule.counselor.person.lastName}`
+                          : "Unassigned"}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Time:</span>
+                      <div className="flex-1">
+                        <div className="text-gray-900">
+                          {new Date(schedule.startTime).toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          to {new Date(schedule.endTime).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Slots:</span>
+                      <div className="flex-1">
+                        <div className="flex items-center">
+                          <span className="text-gray-900 mr-2">
+                            {schedule.maxSlots - schedule.bookedSlots} / {schedule.maxSlots}{" "}
+                            available
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+                          <div
+                            className={`h-2 rounded-full ${
+                              schedule.bookedSlots >= schedule.maxSlots
+                                ? "bg-red-500"
+                                : schedule.bookedSlots >= schedule.maxSlots * 0.8
+                                ? "bg-yellow-500"
+                                : "bg-green-500"
+                            }`}
+                            style={{
+                              width: `${Math.min(
+                                (schedule.bookedSlots / schedule.maxSlots) * 100,
+                                100
+                              )}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  {showActions && (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                      {userType === "student" && onBook && schedule.status === "available" && (
+                        <>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onBook(schedule);
+                            }}
+                            className={`px-3 py-1 text-xs font-medium border rounded-md touch-manipulation ${
+                              isDisabled
+                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
+                            }`}
+                            disabled={isDisabled}
+                          >
+                            📅 {hasExistingAppointment ? "Booked" : "Book"}
+                          </button>
+                          {hasExistingAppointment && (
+                            <span className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded-md">
+                              Already Booked
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {onView && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onView(schedule);
+                          }}
+                          className="px-3 py-1 text-primary-600 hover:text-primary-900 text-xs font-medium border border-primary-200 rounded-md hover:bg-primary-50 touch-manipulation"
+                        >
+                          View
+                        </button>
+                      )}
+                      {userType === "guidance" && onEdit && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(schedule);
+                          }}
+                          className="px-3 py-1 text-blue-600 hover:text-blue-900 text-xs font-medium border border-blue-200 rounded-md hover:bg-blue-50 touch-manipulation"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {userType === "guidance" && onDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(schedule);
+                          }}
+                          className="px-3 py-1 text-red-600 hover:text-red-900 text-xs font-medium border border-red-200 rounded-md hover:bg-red-50 touch-manipulation"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table Layout - hidden on small screens */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>

@@ -165,7 +165,11 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onSuccess })
         <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
           Cancel
         </Button>
-        <Button type="submit" disabled={loading}>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-primary-700 hover:bg-primary-800 text-white"
+        >
           {loading ? "Updating..." : "Update User"}
         </Button>
       </div>
@@ -322,7 +326,7 @@ export const UsersTable: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
           <p className="mt-2 text-gray-600">Loading users...</p>
@@ -333,10 +337,13 @@ export const UsersTable: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
         <div className="p-6 text-center">
-          <p className="text-red-600">{error}</p>
-          <Button onClick={fetchUsers} className="mt-4">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button
+            onClick={fetchUsers}
+            className="touch-manipulation bg-primary-700 hover:bg-primary-800 text-white"
+          >
             Try Again
           </Button>
         </div>
@@ -346,8 +353,8 @@ export const UsersTable: React.FC = () => {
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Guidance Users</h2>
           <p className="text-sm text-gray-600">{users.length} total users</p>
         </div>
@@ -357,103 +364,181 @@ export const UsersTable: React.FC = () => {
             <p className="text-gray-500">No guidance users found.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Details
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {user.person?.firstName || "Unknown"} {user.person?.lastName || "User"}
-                        </div>
-                        <div className="text-sm text-gray-500">@{user.userName || "unknown"}</div>
+          <>
+            {/* Mobile Card Layout - visible on small screens */}
+            <div className="block md:hidden divide-y divide-gray-200">
+              {users.map((user) => (
+                <div key={user.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-gray-900 truncate">
+                        {user.person?.firstName || "Unknown"} {user.person?.lastName || "User"}
+                      </h3>
+                      <p className="text-xs text-gray-500 truncate">
+                        @{user.userName || "unknown"}
+                      </p>
+                    </div>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                        user
+                      )}`}
+                    >
+                      {formatStatus(user)}
+                    </span>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="space-y-2 mb-3">
+                    {user.person?.email && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span className="truncate">{user.person.email}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-1">
-                        {user.person?.email && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Mail className="w-3 h-3 mr-1" />
-                            {user.person.email}
-                          </div>
-                        )}
-                        {user.person?.contactNumber && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Phone className="w-3 h-3 mr-1" />
-                            {user.person.contactNumber}
-                          </div>
-                        )}
+                    )}
+                    {user.person?.contactNumber && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span>{user.person.contactNumber}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-1">
-                        {user.person?.gender && (
-                          <div className="text-sm text-gray-600">Gender: {user.person.gender}</div>
-                        )}
-                        {user.person?.birthDate && (
-                          <div className="flex items-center text-sm text-gray-600">
-                            <Calendar className="w-3 h-3 mr-1" />
-                            {formatDate(user.person.birthDate)}
-                          </div>
-                        )}
+                    )}
+                    {user.person?.gender && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Gender:</span> {user.person.gender}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          user
-                        )}`}
-                      >
-                        {formatStatus(user)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(user)}
-                          className="flex items-center gap-1"
-                        >
-                          <Edit2 className="w-3 h-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setDeletingUser(user)}
-                          className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          Delete
-                        </Button>
+                    )}
+                    {user.person?.birthDate && (
+                      <div className="flex items-center text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                        <span>{formatDate(user.person.birthDate)}</span>
                       </div>
-                    </td>
+                    )}
+                  </div>
+
+                  {/* Card Actions */}
+                  <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
+                    <Button
+                      size="sm"
+                      onClick={() => handleEdit(user)}
+                      className="flex items-center justify-center gap-2 flex-1 touch-manipulation bg-primary-700 hover:bg-primary-800 text-white"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDeletingUser(user)}
+                      className="flex items-center justify-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300 flex-1 touch-manipulation"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table Layout - hidden on small screens */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      User
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact Info
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Details
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {user.person?.firstName || "Unknown"} {user.person?.lastName || "User"}
+                          </div>
+                          <div className="text-sm text-gray-500">@{user.userName || "unknown"}</div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="space-y-1">
+                          {user.person?.email && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Mail className="w-3 h-3 mr-1" />
+                              {user.person.email}
+                            </div>
+                          )}
+                          {user.person?.contactNumber && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Phone className="w-3 h-3 mr-1" />
+                              {user.person.contactNumber}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="space-y-1">
+                          {user.person?.gender && (
+                            <div className="text-sm text-gray-600">
+                              Gender: {user.person.gender}
+                            </div>
+                          )}
+                          {user.person?.birthDate && (
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {formatDate(user.person.birthDate)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                            user
+                          )}`}
+                        >
+                          {formatStatus(user)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleEdit(user)}
+                            className="flex items-center gap-1 bg-primary-700 hover:bg-primary-800 text-white"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                            Edit
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletingUser(user)}
+                            className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Delete
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

@@ -124,8 +124,8 @@ export const DepressionAssessmentTable: React.FC = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="px-6 py-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-4 md:px-6 py-4 border-b border-gray-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <div>
             <h2 className="text-lg font-medium text-gray-900">Depression Assessment Reports</h2>
             <p className="text-sm text-gray-500">
@@ -144,7 +144,7 @@ export const DepressionAssessmentTable: React.FC = () => {
             placeholder="Search students, program, year, or severity level..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             disabled={loading}
           />
         </div>
@@ -177,80 +177,141 @@ export const DepressionAssessmentTable: React.FC = () => {
             </div>
           </div>
         ) : (
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Student
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Score
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Severity Level
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Program
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Year
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Contact Number
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+          <>
+            {/* Mobile Card Layout - visible on small screens */}
+            <div className="block md:hidden divide-y divide-gray-200">
               {assessments.map((assessment) => (
-                <tr key={assessment.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                <div
+                  key={assessment.id}
+                  className="p-4 hover:bg-gray-50 transition-colors touch-manipulation"
+                >
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
                       <Avatar
                         src={assessment.avatar}
                         fallback={assessment.studentName.charAt(0)}
-                        className="mr-3"
+                        className="flex-shrink-0"
                       />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
                           {assessment.studentName}
-                        </div>
+                        </h3>
+                        <p className="text-sm text-gray-500">{assessment.program}</p>
+                        <p className="text-xs text-gray-400">{assessment.year}</p>
                       </div>
                     </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className={cn("text-sm", getScoreColor(assessment.score))}>
-                      {assessment.score}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={cn(
-                        "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                        "inline-flex px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-2",
                         getSeverityColor(assessment.severityLevel)
                       )}
                     >
                       {formatSeverityLevel(assessment.severityLevel)}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {assessment.date}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {assessment.program}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {assessment.year}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {assessment.contactNumber}
-                  </td>
-                </tr>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Score:</span>
+                      <span className={cn("text-sm font-medium", getScoreColor(assessment.score))}>
+                        {assessment.score}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Date:</span>
+                      <span className="text-sm text-gray-900">{assessment.date}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Contact:</span>
+                      <span className="text-sm text-gray-900">{assessment.contactNumber}</span>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+
+            {/* Desktop Table Layout - hidden on small screens */}
+            <div className="hidden md:block">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Severity Level
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Program
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Year
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Contact Number
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {assessments.map((assessment) => (
+                    <tr key={assessment.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Avatar
+                            src={assessment.avatar}
+                            fallback={assessment.studentName.charAt(0)}
+                            className="mr-3"
+                          />
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {assessment.studentName}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={cn("text-sm", getScoreColor(assessment.score))}>
+                          {assessment.score}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
+                            getSeverityColor(assessment.severityLevel)
+                          )}
+                        >
+                          {formatSeverityLevel(assessment.severityLevel)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.date}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.program}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.year}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {assessment.contactNumber}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>
