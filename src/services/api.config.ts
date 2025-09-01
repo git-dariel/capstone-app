@@ -10,8 +10,9 @@ const getBaseURL = (): string => {
     }
   }
 
-  // For all other environments (production, staging, etc.), use Heroku
-  return "https://mental-health-api-6d98f763cd10.herokuapp.com/api";
+  // For all other environments (production, staging, etc.), use Heroku or Vercel
+  // return "https://mental-health-api-6d98f763cd10.herokuapp.com/api";
+  return "https://capstone-api-mental-health.vercel.app/api";
 };
 
 export const API_CONFIG = {
