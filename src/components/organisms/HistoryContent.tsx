@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { Calendar, Clock, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { useAuth } from "@/hooks";
-import { useAnxiety, useDepression, useStress, useSuicide } from "@/hooks";
+import { useAnxiety, useAuth, useDepression, useStress, useSuicide } from "@/hooks";
+import { AlertCircle, Calendar, Clock, Loader2, Search } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
 
 interface AssessmentHistoryItem {
   id: string;
@@ -16,18 +15,21 @@ const getSeverityColor = (severity: string) => {
   switch (severity.toLowerCase()) {
     case "minimal":
     case "low":
-      return "text-green-600 bg-green-50";
+      return "text-green-600 bg-green-50 border-green-200";
     case "mild":
+      return "text-blue-600 bg-blue-50 border-blue-200";
     case "moderate":
-      return "text-yellow-600 bg-yellow-50";
+      return "text-yellow-600 bg-yellow-50 border-yellow-200";
     case "moderately severe":
+      return "text-orange-600 bg-orange-50 border-orange-200";
     case "severe":
-      return "text-orange-600 bg-orange-50";
+    case "high":
+      return "text-red-600 bg-red-50 border-red-200";
     case "extremely severe":
     case "very severe":
-      return "text-red-600 bg-red-50";
+      return "text-red-700 bg-red-100 border-red-300";
     default:
-      return "text-gray-600 bg-gray-50";
+      return "text-gray-600 bg-gray-50 border-gray-200";
   }
 };
 
@@ -49,15 +51,15 @@ const getTypeIcon = (type: string) => {
 const getTypeColor = (type: string) => {
   switch (type) {
     case "anxiety":
-      return "text-blue-700 bg-blue-50";
+      return "text-primary-700 bg-primary-50 border-primary-200";
     case "depression":
-      return "text-purple-700 bg-purple-50";
+      return "text-purple-700 bg-purple-50 border-purple-200";
     case "stress":
-      return "text-red-700 bg-red-50";
+      return "text-orange-700 bg-orange-50 border-orange-200";
     case "suicide":
-      return "text-purple-700 bg-purple-50";
+      return "text-red-700 bg-red-50 border-red-200";
     default:
-      return "text-gray-700 bg-gray-50";
+      return "text-gray-700 bg-gray-50 border-gray-200";
   }
 };
 
@@ -66,33 +68,62 @@ export const HistoryContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [displayCount, setDisplayCount] = useState(10);
 
   const { fetchAssessments: fetchAnxietyAssessments } = useAnxiety();
   const { fetchAssessments: fetchDepressionAssessments } = useDepression();
   const { fetchAssessments: fetchStressAssessments } = useStress();
   const { fetchAssessments: fetchSuicideAssessments } = useSuicide();
 
+  // Helper functions - moved before useMemo to avoid TDZ
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatSeverityLabel = (severity: string) => {
+    switch (severity) {
+      case "moderately_severe":
+        return "Moderately Severe";
+      default:
+        return severity.charAt(0).toUpperCase() + severity.slice(1);
+    }
+  };
+
   const loadAssessmentHistory = async () => {
     if (!user?.id) return;
 
     setLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
     try {
       const [anxietyData, depressionData, stressData, suicideData] = await Promise.all([
         fetchAnxietyAssessments({
-          limit: 50,
+          limit: 100,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
         }),
         fetchDepressionAssessments({
-          limit: 50,
+          limit: 100,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
         }),
         fetchStressAssessments({
-          limit: 50,
+          limit: 100,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
         }),
         fetchSuicideAssessments({
-          limit: 50,
+          limit: 100,
           fields: "id,riskLevel,assessmentDate,createdAt",
         }),
       ]);
@@ -142,7 +173,6 @@ export const HistoryContent: React.FC = () => {
     } catch (error) {
       console.error("Error loading assessment history:", error);
       setError("Failed to load assessment history. Please try again later.");
-      // Set empty history on error to show the empty state
       setAssessmentHistory([]);
     } finally {
       setLoading(false);
@@ -151,48 +181,41 @@ export const HistoryContent: React.FC = () => {
 
   useEffect(() => {
     loadAssessmentHistory();
-  }, [user?.id]); // Only depend on user?.id to prevent infinite loops
+  }, [user?.id]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
+  // Filter assessments based on search term
+  const filteredHistory = useMemo(() => {
+    if (!searchTerm) return assessmentHistory;
+    return assessmentHistory.filter((assessment) => {
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        assessment.type.toLowerCase().includes(searchLower) ||
+        assessment.severityLevel.toLowerCase().includes(searchLower) ||
+        assessment.score.toString().includes(searchLower) ||
+        formatDate(assessment.date || assessment.createdAt)
+          .toLowerCase()
+          .includes(searchLower)
+      );
     });
-  };
+  }, [searchTerm, assessmentHistory]);
 
-  const formatTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // Get assessments to display (limited by displayCount)
+  const displayedHistory = useMemo(() => {
+    return filteredHistory.slice(0, displayCount);
+  }, [filteredHistory, displayCount]);
 
-  const getScoreTrend = (currentIndex: number) => {
-    if (currentIndex === assessmentHistory.length - 1) return null;
+  // Reset display count when search term changes
+  useEffect(() => {
+    setDisplayCount(10);
+  }, [searchTerm]);
 
-    const current = assessmentHistory[currentIndex];
-    const previous = assessmentHistory[currentIndex + 1];
-
-    if (current.type !== previous.type) return null;
-
-    if (current.score > previous.score) return "up";
-    if (current.score < previous.score) return "down";
-    return "same";
-  };
-
-  const getTrendIcon = (trend: string | null) => {
-    switch (trend) {
-      case "up":
-        return <TrendingUp className="w-4 h-4 text-red-500" />;
-      case "down":
-        return <TrendingDown className="w-4 h-4 text-green-500" />;
-      case "same":
-        return <Minus className="w-4 h-4 text-gray-500" />;
-      default:
-        return null;
+  // Infinite scroll handler
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollTop + clientHeight >= scrollHeight - 5) {
+      if (displayCount < filteredHistory.length) {
+        setDisplayCount((prev) => Math.min(prev + 10, filteredHistory.length));
+      }
     }
   };
 
@@ -203,11 +226,12 @@ export const HistoryContent: React.FC = () => {
           <div className="animate-pulse">
             <div className="h-6 sm:h-8 bg-gray-200 rounded w-1/2 sm:w-1/3 mb-3 sm:mb-4"></div>
             <div className="h-3 sm:h-4 bg-gray-200 rounded w-3/4 sm:w-2/3 mb-6 sm:mb-8"></div>
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-16 sm:h-20 bg-gray-200 rounded"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-24 bg-gray-200 rounded"></div>
               ))}
             </div>
+            <div className="h-96 bg-gray-200 rounded"></div>
           </div>
         </div>
       </main>
@@ -225,109 +249,9 @@ export const HistoryContent: React.FC = () => {
           </p>
         </div>
 
-        {/* Assessment History List */}
-        {error ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 text-red-400">
-              <svg className="w-full h-full" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load History</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={loadAssessmentHistory}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              Try Again
-            </button>
-          </div>
-        ) : assessmentHistory.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
-              <Calendar className="w-full h-full" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Assessment History</h3>
-            <p className="text-gray-600">
-              You haven't taken any assessments yet. Start by taking an assessment to track your
-              mental health.
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {assessmentHistory.map((assessment, index) => {
-              const trend = getScoreTrend(index);
-              return (
-                <div
-                  key={assessment.id}
-                  className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow"
-                >
-                  {/* Mobile Layout (flex-col) for screens < md, Desktop Layout (flex-row) for screens >= md */}
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-                    {/* Main Content - Full width on mobile, left side on desktop */}
-                    <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4 flex-1">
-                      {/* Assessment Type */}
-                      <div
-                        className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium w-fit ${getTypeColor(
-                          assessment.type
-                        )}`}
-                      >
-                        <span>{getTypeIcon(assessment.type)}</span>
-                        <span className="capitalize">{assessment.type}</span>
-                      </div>
-
-                      {/* Score and Severity - Stack on mobile, inline on tablet+ */}
-                      <div className="flex flex-col xs:flex-row xs:items-center space-y-2 xs:space-y-0 xs:space-x-3 flex-1">
-                        {assessment.type === "suicide" ? (
-                          <div className="text-lg font-semibold text-gray-900">
-                            Risk Level: {assessment.severityLevel}
-                          </div>
-                        ) : (
-                          <div className="text-lg font-semibold text-gray-900">
-                            Score: {assessment.score}
-                          </div>
-                        )}
-                        <div className="flex items-center space-x-2">
-                          <div
-                            className={`px-2 py-1 rounded-full text-xs font-medium w-fit ${getSeverityColor(
-                              assessment.severityLevel
-                            )}`}
-                          >
-                            {assessment.severityLevel}
-                          </div>
-                          {getTrendIcon(trend)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Date and Time - Full width on mobile, right side on desktop */}
-                    <div className="flex flex-row sm:flex-col sm:text-right space-x-4 sm:space-x-0 border-t md:border-t-0 pt-3 md:pt-0">
-                      <div className="flex items-center text-gray-600 text-sm">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        <span className="text-xs sm:text-sm">
-                          {formatDate(assessment.date || assessment.createdAt)}
-                        </span>
-                      </div>
-                      <div className="flex items-center text-gray-500 text-xs">
-                        <Clock className="w-3 h-3 mr-1" />
-                        <span>{formatTime(assessment.date || assessment.createdAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Summary Stats */}
+        {/* Summary Stats - Moved to top */}
         {assessmentHistory.length > 0 && (
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {["anxiety", "depression", "stress", "suicide"].map((type) => {
               const typeAssessments = assessmentHistory.filter((a) => a.type === type);
               const latestScore = typeAssessments[0]?.score;
@@ -340,7 +264,10 @@ export const HistoryContent: React.FC = () => {
                   : 0;
 
               return (
-                <div key={type} className="bg-white rounded-lg border border-gray-200 p-4">
+                <div
+                  key={type}
+                  className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                >
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="text-base font-medium text-gray-900 capitalize">{type}</h3>
                     <span className="text-2xl">{getTypeIcon(type)}</span>
@@ -348,13 +275,21 @@ export const HistoryContent: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Total:</span>
-                      <span className="text-sm font-medium">{typeAssessments.length}</span>
+                      <span className="text-sm font-medium text-primary-700">
+                        {typeAssessments.length}
+                      </span>
                     </div>
                     {type === "suicide" ? (
                       latestLevel && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Latest:</span>
-                          <span className="text-sm font-medium">{latestLevel}</span>
+                          <span
+                            className={`text-sm font-medium px-2 py-1 rounded-full border ${getSeverityColor(
+                              latestLevel
+                            )}`}
+                          >
+                            {formatSeverityLabel(latestLevel)}
+                          </span>
                         </div>
                       )
                     ) : (
@@ -362,13 +297,17 @@ export const HistoryContent: React.FC = () => {
                         {latestScore !== undefined && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Latest:</span>
-                            <span className="text-sm font-medium">{latestScore}</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {latestScore}
+                            </span>
                           </div>
                         )}
                         {typeAssessments.length > 0 && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Average:</span>
-                            <span className="text-sm font-medium">{averageScore}</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {averageScore}
+                            </span>
                           </div>
                         )}
                       </>
@@ -379,6 +318,208 @@ export const HistoryContent: React.FC = () => {
             })}
           </div>
         )}
+
+        {/* Assessment History Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-medium text-gray-900">Assessment History</h2>
+                <p className="text-sm text-gray-500">
+                  {loading
+                    ? "Loading assessments..."
+                    : `Showing ${displayedHistory.length} of ${filteredHistory.length} assessments`}
+                </p>
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by type, severity, score, or date..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                disabled={loading}
+              />
+            </div>
+          </div>
+
+          <div className="overflow-x-auto max-h-96 overflow-y-auto" onScroll={handleScroll}>
+            {error ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Unable to Load History</h3>
+                  <p className="text-gray-600 mb-4">{error}</p>
+                  <button
+                    onClick={loadAssessmentHistory}
+                    className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : displayedHistory.length === 0 ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    {searchTerm ? "No matching assessments" : "No Assessment History"}
+                  </h3>
+                  <p className="text-gray-600">
+                    {searchTerm
+                      ? "Try adjusting your search terms to find more assessments."
+                      : "You haven't taken any assessments yet. Start by taking an assessment to track your mental health."}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table View - Hidden on mobile */}
+                <table className="hidden md:table w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Assessment Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Score/Level
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Severity
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Time
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {displayedHistory.map((assessment, _index) => {
+                      return (
+                        <tr key={assessment.id} className="hover:bg-primary-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div
+                              className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(
+                                assessment.type
+                              )}`}
+                            >
+                              <span>{getTypeIcon(assessment.type)}</span>
+                              <span className="capitalize">
+                                {assessment.type === "suicide" ? "Suicide Risk" : assessment.type}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {assessment.type === "suicide" ? (
+                              <span className="text-sm font-medium text-gray-900">
+                                Risk Assessment
+                              </span>
+                            ) : (
+                              <span className="text-lg font-semibold text-gray-900">
+                                {assessment.score}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
+                                assessment.severityLevel
+                              )}`}
+                            >
+                              {formatSeverityLabel(assessment.severityLevel)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-gray-600 text-sm">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              <span>{formatDate(assessment.date || assessment.createdAt)}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-gray-500 text-sm">
+                              <Clock className="w-4 h-4 mr-2" />
+                              <span>{formatTime(assessment.date || assessment.createdAt)}</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Mobile Card View - Visible only on mobile */}
+                <div className="md:hidden space-y-4 p-4">
+                  {displayedHistory.map((assessment, _index) => (
+                    <div
+                      key={assessment.id}
+                      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      {/* Assessment Type and Score Row */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div
+                          className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(
+                            assessment.type
+                          )}`}
+                        >
+                          <span>{getTypeIcon(assessment.type)}</span>
+                          <span className="capitalize">
+                            {assessment.type === "suicide" ? "Suicide Risk" : assessment.type}
+                          </span>
+                        </div>
+                        {assessment.type === "suicide" ? (
+                          <span className="text-sm font-medium text-gray-600">Risk Assessment</span>
+                        ) : (
+                          <span className="text-xl font-bold text-gray-900">
+                            {assessment.score}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Severity Badge */}
+                      <div className="mb-3">
+                        <div
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(
+                            assessment.severityLevel
+                          )}`}
+                        >
+                          {formatSeverityLabel(assessment.severityLevel)}
+                        </div>
+                      </div>
+
+                      {/* Date and Time Row */}
+                      <div className="flex items-center justify-between text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-1" />
+                          <span>{formatDate(assessment.date || assessment.createdAt)}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          <span>{formatTime(assessment.date || assessment.createdAt)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Load More Indicator */}
+            {displayCount < filteredHistory.length && (
+              <div className="flex items-center justify-center py-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-center space-x-2 text-gray-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Scroll down to load more...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );

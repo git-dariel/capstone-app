@@ -89,6 +89,8 @@ export const StatsGrid: React.FC = () => {
       subtitle: "Total assessments",
       icon: <Users className="w-6 h-6" />,
       color: "blue" as const,
+      clickable: false,
+      description: "View all student records",
     },
     {
       title: "Anxiety Assessments",
@@ -97,6 +99,8 @@ export const StatsGrid: React.FC = () => {
       icon: <Brain className="w-6 h-6" />,
       color: "yellow" as const,
       type: "anxiety",
+      clickable: true,
+      description: "Click to view detailed insights",
     },
     {
       title: "Depression Assessments",
@@ -105,6 +109,8 @@ export const StatsGrid: React.FC = () => {
       icon: <Heart className="w-6 h-6" />,
       color: "red" as const,
       type: "depression",
+      clickable: true,
+      description: "Click to view detailed insights",
     },
     {
       title: "Stress Assessments",
@@ -113,22 +119,32 @@ export const StatsGrid: React.FC = () => {
       icon: <Zap className="w-6 h-6" />,
       color: "purple" as const,
       type: "stress",
+      clickable: true,
+      description: "Click to view detailed insights",
     },
   ];
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       {dashboardStats.map((stat, index) => (
-        <StatCard
-          key={index}
-          title={stat.title}
-          value={stat.value}
-          subtitle={stat.subtitle}
-          icon={stat.icon}
-          color={stat.color}
-          clickable={stat.type !== undefined}
-          onClick={stat.type ? () => handleStatClick(stat.type) : undefined}
-        />
+        <div key={index} className={`relative ${stat.clickable ? "mb-8" : ""}`}>
+          <StatCard
+            title={stat.title}
+            value={stat.value}
+            subtitle={stat.subtitle}
+            icon={stat.icon}
+            color={stat.color}
+            clickable={stat.clickable}
+            onClick={stat.type ? () => handleStatClick(stat.type) : undefined}
+          />
+          {stat.clickable && (
+            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+              <span className="inline-flex items-center px-3 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full shadow-sm">
+                🖱️ {stat.description}
+              </span>
+            </div>
+          )}
+        </div>
       ))}
     </div>
   );

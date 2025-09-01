@@ -192,42 +192,44 @@ export const ResourcesContent: React.FC = () => {
         title="Assessment Results"
         size="xl"
       >
-        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        <div className="max-w-3xl mx-auto px-3 sm:px-4 lg:px-6">
           {/* Hero Section - Prominent Result Display */}
           <div
-            className={`${severityColors.bg} ${severityColors.border} border-2 rounded-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 text-center`}
+            className={`${severityColors.bg} ${severityColors.border} border-2 rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 text-center`}
           >
-            <div className="flex items-center justify-center mb-3 sm:mb-4">
+            <div className="flex items-center justify-center mb-2 sm:mb-3 lg:mb-4">
               <CheckCircle
-                className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 ${severityColors.icon}`}
+                className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 ${severityColors.icon}`}
               />
             </div>
 
-            <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
               {assessmentName} Assessment Complete
             </h2>
 
             {/* Severity Level - Most Prominent */}
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <p className="text-xs sm:text-sm text-gray-600 mb-2">Your Result</p>
               <div
-                className={`inline-flex items-center px-4 py-2 sm:px-6 sm:py-3 rounded-full text-lg sm:text-xl font-bold ${severityColors.badge}`}
+                className={`inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-full text-base sm:text-lg md:text-xl font-bold ${severityColors.badge}`}
               >
                 {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
               </div>
             </div>
 
             {/* Score Display */}
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-8 mt-6">
+            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-8 mt-4 sm:mt-6">
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Total Score</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900">{totalScore}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+                  {totalScore}
+                </p>
               </div>
-              <div className="hidden sm:block h-12 w-px bg-gray-300"></div>
+              <div className="hidden sm:block h-8 md:h-12 w-px bg-gray-300"></div>
               <div className="sm:hidden w-full h-px bg-gray-300"></div>
               <div>
                 <p className="text-xs sm:text-sm text-gray-600">Assessment Date</p>
-                <p className="text-base sm:text-lg font-medium text-gray-900">
+                <p className="text-sm sm:text-base md:text-lg font-medium text-gray-900">
                   {new Date().toLocaleDateString()}
                 </p>
               </div>
@@ -236,14 +238,14 @@ export const ResourcesContent: React.FC = () => {
 
           {/* Professional Help Alert - High Priority */}
           {(analysis?.needsProfessionalHelp || analysis?.requiresImmediateIntervention) && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 lg:mb-8">
               <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
                 <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0 mx-auto sm:mx-0 sm:mt-1" />
                 <div className="text-center sm:text-left">
-                  <h3 className="text-lg sm:text-xl font-bold text-red-800 mb-2">
+                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-red-800 mb-2">
                     🚨 Professional Support Recommended
                   </h3>
-                  <p className="text-red-700 text-base sm:text-lg mb-4">
+                  <p className="text-sm sm:text-base md:text-lg text-red-700 mb-3 sm:mb-4">
                     Based on your results, we strongly recommend speaking with a mental health
                     professional.
                   </p>
@@ -263,12 +265,12 @@ export const ResourcesContent: React.FC = () => {
 
           {/* Analysis Section */}
           {displayDescription && (
-            <div className="bg-white border border-gray-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center justify-center sm:justify-start">
+            <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center sm:justify-start">
                 📊 What This Means
               </h3>
               <div className="prose prose-gray max-w-none">
-                <p className="text-gray-700 text-base sm:text-lg leading-relaxed text-center sm:text-left">
+                <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed text-center sm:text-left">
                   {displayDescription}
                 </p>
               </div>
@@ -277,12 +279,12 @@ export const ResourcesContent: React.FC = () => {
 
           {/* Recommendations Section */}
           {analysis?.recommendationMessage && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
-              <h3 className="text-lg sm:text-xl font-bold text-blue-900 mb-3 sm:mb-4 flex items-center justify-center sm:justify-start">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6">
+              <h3 className="text-base sm:text-lg md:text-xl font-bold text-blue-900 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center sm:justify-start">
                 💡 Personalized Recommendations
               </h3>
               <div className="prose prose-blue max-w-none">
-                <p className="text-blue-800 text-base sm:text-lg leading-relaxed text-center sm:text-left">
+                <p className="text-blue-800 text-sm sm:text-base md:text-lg leading-relaxed text-center sm:text-left">
                   {analysis.recommendationMessage}
                 </p>
               </div>
@@ -291,18 +293,18 @@ export const ResourcesContent: React.FC = () => {
 
           {/* Score Breakdown - Collapsible/Secondary */}
           {analysis?.scoreBreakdown && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
-              <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-3 sm:mb-4 text-center sm:text-left">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 lg:mb-8">
+              <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 text-center sm:text-left">
                 📈 Detailed Score Breakdown
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
                 {Object.entries(analysis.scoreBreakdown).map(([key, value]) => (
                   <div key={key} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
                     <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
-                      <span className="text-gray-700 font-medium capitalize text-sm sm:text-base mb-1 sm:mb-0">
+                      <span className="text-gray-700 font-medium capitalize text-xs sm:text-sm md:text-base mb-1 sm:mb-0">
                         {key.replace(/_/g, " ")}
                       </span>
-                      <span className="text-lg sm:text-xl font-bold text-gray-900">
+                      <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
                         {value as number}
                       </span>
                     </div>
@@ -313,13 +315,13 @@ export const ResourcesContent: React.FC = () => {
           )}
 
           {/* Action Buttons - Enhanced */}
-          <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
             <button
               onClick={() => {
                 handleCloseModal();
                 window.location.href = "/resources";
               }}
-              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-primary-700 text-white rounded-xl hover:bg-primary-800 transition-all duration-200 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-primary-700 text-white rounded-xl hover:bg-primary-800 transition-all duration-200 font-semibold text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               ✨ Take Another Assessment
             </button>
@@ -328,14 +330,14 @@ export const ResourcesContent: React.FC = () => {
                 handleCloseModal();
                 window.location.href = "/history";
               }}
-              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-semibold text-base sm:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-semibold text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               📋 View All Results
             </button>
           </div>
 
           {/* Additional Resources */}
-          <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-gray-200">
+          <div className="mt-4 sm:mt-6 md:mt-8 pt-3 sm:pt-4 md:pt-6 border-t border-gray-200">
             <p className="text-center text-xs sm:text-sm text-gray-500">
               💙 Remember: Seeking help is a sign of strength, not weakness.
             </p>
@@ -349,27 +351,27 @@ export const ResourcesContent: React.FC = () => {
     if (!submissionState.error) return null;
 
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
-          <div>
-            <h4 className="text-sm font-medium text-red-800">
+      <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 mx-2 sm:mx-0">
+        <div className="flex flex-col sm:flex-row items-start space-y-2 sm:space-y-0 sm:space-x-3">
+          <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 mx-auto sm:mx-0 flex-shrink-0" />
+          <div className="text-center sm:text-left flex-1">
+            <h4 className="text-sm font-medium text-red-800 mb-1">
               {submissionState.cooldownInfo ? "Assessment Cooldown Active" : "Submission Failed"}
             </h4>
-            <p className="text-sm text-red-700 mt-1">{submissionState.error}</p>
+            <p className="text-sm text-red-700 mb-2">{submissionState.error}</p>
             {submissionState.cooldownInfo && (
-              <p className="text-sm text-red-600 mt-2">
+              <p className="text-sm text-red-600 mb-3">
                 {formatCooldownMessage(submissionState.cooldownInfo)}
               </p>
             )}
+            <button
+              onClick={() => setSubmissionState((prev) => ({ ...prev, error: null }))}
+              className="text-sm text-red-600 hover:text-red-700 underline font-medium"
+            >
+              Try Again
+            </button>
           </div>
         </div>
-        <button
-          onClick={() => setSubmissionState((prev) => ({ ...prev, error: null }))}
-          className="mt-3 text-sm text-red-600 hover:text-red-700 underline"
-        >
-          Try Again
-        </button>
       </div>
     );
   };
@@ -379,11 +381,16 @@ export const ResourcesContent: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         {/* Loading Overlay */}
         {submissionState.loading && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4">
-              <div className="flex items-center justify-center space-x-3">
-                <Loader2 className="w-5 h-5 sm:w-6 sm:h-6 text-primary-700 animate-spin" />
-                <p className="text-gray-700 text-sm sm:text-base">Submitting your assessment...</p>
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4 w-full max-w-sm">
+              <div className="flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-primary-700 animate-spin" />
+                <p className="text-gray-700 text-sm sm:text-base text-center">
+                  Submitting your assessment...
+                </p>
+                <div className="text-xs text-gray-500 text-center">
+                  Please wait while we process your responses
+                </div>
               </div>
             </div>
           </div>
@@ -412,14 +419,17 @@ export const ResourcesContent: React.FC = () => {
             {isStudent && (
               <div className="mb-6">
                 <div className="border-b border-gray-200">
-                  <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+                  <nav
+                    className="-mb-px flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-8"
+                    aria-label="Tabs"
+                  >
                     <button
                       onClick={() => setCurrentView("assessments")}
-                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                      className={`whitespace-nowrap py-3 px-4 sm:py-2 sm:px-1 border-b-2 font-medium text-sm rounded-t-lg sm:rounded-none ${
                         currentView === "assessments"
-                          ? "border-primary-500 text-primary-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                          ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 sm:hover:bg-transparent"
+                      } transition-colors duration-200`}
                     >
                       <FileText className="w-4 h-4 mr-2 inline" />
                       Take Assessments
@@ -427,11 +437,11 @@ export const ResourcesContent: React.FC = () => {
 
                     <button
                       onClick={() => setCurrentView("retake-requests")}
-                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                      className={`whitespace-nowrap py-3 px-4 sm:py-2 sm:px-1 border-b-2 font-medium text-sm rounded-t-lg sm:rounded-none ${
                         currentView === "retake-requests"
-                          ? "border-primary-500 text-primary-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                          ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 sm:hover:bg-transparent"
+                      } transition-colors duration-200`}
                     >
                       <Clock className="w-4 h-4 mr-2 inline" />
                       Request Retake
@@ -439,11 +449,11 @@ export const ResourcesContent: React.FC = () => {
 
                     <button
                       onClick={() => setCurrentView("my-requests")}
-                      className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                      className={`whitespace-nowrap py-3 px-4 sm:py-2 sm:px-1 border-b-2 font-medium text-sm rounded-t-lg sm:rounded-none ${
                         currentView === "my-requests"
-                          ? "border-primary-500 text-primary-600"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                      }`}
+                          ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50 sm:hover:bg-transparent"
+                      } transition-colors duration-200`}
                     >
                       📋 My Requests
                     </button>
@@ -457,11 +467,11 @@ export const ResourcesContent: React.FC = () => {
               <>
                 <AssessmentGrid onSelectAssessment={handleSelectAssessment} />
 
-                <div className="mt-8 sm:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6">
-                  <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2">
+                <div className="mt-6 sm:mt-8 lg:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6 mx-2 sm:mx-0">
+                  <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2 text-center sm:text-left">
                     Important Notice
                   </h2>
-                  <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
+                  <p className="text-blue-800 text-xs sm:text-sm leading-relaxed text-center sm:text-left">
                     These assessments are screening tools and not diagnostic instruments. If you're
                     experiencing significant distress or having thoughts of self-harm, please
                     contact a mental health professional or call a crisis helpline immediately.

@@ -117,3 +117,12 @@ export type {
   UpdateScheduleRequest,
   ScheduleQueryParams,
 } from "./schedule.service";
+
+// Dashboard Service
+export { DashboardService } from "./dashboard.service";
+export type {
+  ChartDataPoint,
+  SeverityDistribution,
+  AssessmentBreakdown,
+  DashboardChartsData,
+} from "./dashboard.service";

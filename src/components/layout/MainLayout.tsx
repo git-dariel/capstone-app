@@ -7,9 +7,14 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
+  };
+
+  const toggleSidebarMinimize = () => {
+    setSidebarMinimized(!sidebarMinimized);
   };
 
   return (
@@ -23,7 +28,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </div>
 
       <div className="flex flex-1 overflow-hidden relative">
-        <SidebarNavigation isOpen={sidebarOpen} onToggle={toggleSidebar} />
+        <SidebarNavigation
+          isOpen={sidebarOpen}
+          onToggle={toggleSidebar}
+          isMinimized={sidebarMinimized}
+          onToggleMinimize={toggleSidebarMinimize}
+        />
         <div className="flex-1 overflow-auto">{children}</div>
       </div>
     </div>

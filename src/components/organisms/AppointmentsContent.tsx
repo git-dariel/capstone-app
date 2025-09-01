@@ -642,37 +642,39 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   const hasError = appointmentsError || schedulesError;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header with Tabs and View Toggle */}
       <div className="border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <nav className="flex space-x-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          {/* Navigation Tabs */}
+          <nav className="flex flex-wrap gap-2 sm:space-x-8 sm:gap-0">
             <button
               onClick={() => handleTabClick("appointments")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-3 sm:px-1 rounded-lg sm:rounded-none border sm:border-0 sm:border-b-2 font-medium text-sm transition-colors touch-manipulation ${
                 activeTab === "appointments"
-                  ? "border-primary-500 text-primary-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent sm:border-primary-500"
+                  : "border-gray-200 text-gray-500 hover:text-gray-700 sm:border-transparent sm:hover:border-gray-300"
               }`}
             >
-              Appointments
+              <span className="block sm:inline">Appointments</span>
               {appointments.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                   {appointments.length}
                 </span>
               )}
             </button>
+
             <button
               onClick={() => handleTabClick("schedules")}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-3 sm:px-1 rounded-lg sm:rounded-none border sm:border-0 sm:border-b-2 font-medium text-sm transition-colors touch-manipulation ${
                 activeTab === "schedules"
-                  ? "border-primary-500 text-primary-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent sm:border-primary-500"
+                  : "border-gray-200 text-gray-500 hover:text-gray-700 sm:border-transparent sm:hover:border-gray-300"
               }`}
             >
-              {isStudent ? "Available Schedules" : "Schedules"}
+              <span className="block sm:inline">{isStudent ? "Available" : "Schedules"}</span>
               {(isStudent ? availableSchedules : schedules).length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                   {(isStudent ? availableSchedules : schedules).length}
                 </span>
               )}
@@ -682,15 +684,15 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             {isGuidance && (
               <button
                 onClick={() => handleTabClick("pending-requests")}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`py-2 px-3 sm:px-1 rounded-lg sm:rounded-none border sm:border-0 sm:border-b-2 font-medium text-sm transition-colors touch-manipulation ${
                   activeTab === "pending-requests"
-                    ? "border-primary-500 text-primary-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    ? "border-primary-500 text-primary-600 bg-primary-50 sm:bg-transparent sm:border-primary-500"
+                    : "border-gray-200 text-gray-500 hover:text-gray-700 sm:border-transparent sm:hover:border-gray-300"
                 }`}
               >
-                Pending Requests
+                <span className="block sm:inline">Requests</span>
                 {pendingRequests.length > 0 && (
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                  <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                     {pendingRequests.length}
                   </span>
                 )}
@@ -699,10 +701,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
           </nav>
 
           {/* View Toggle */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
             <button
               onClick={() => setViewMode("list")}
-              className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-initial touch-manipulation ${
                 viewMode === "list"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -713,7 +715,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             </button>
             <button
               onClick={() => setViewMode("calendar")}
-              className={`flex items-center px-3 py-1 rounded-md text-sm font-medium transition-colors ${
+              className={`flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-initial touch-manipulation ${
                 viewMode === "calendar"
                   ? "bg-white text-gray-900 shadow-sm"
                   : "text-gray-500 hover:text-gray-700"
@@ -727,9 +729,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       </div>
 
       {/* Action Bar */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
             {activeTab === "appointments"
               ? "Appointments"
               : activeTab === "pending-requests"
@@ -738,7 +740,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               ? "Available Schedules"
               : "Schedules"}
           </h2>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="mt-1 text-sm text-gray-500 pr-4">
             {activeTab === "appointments"
               ? isStudent
                 ? "View your booked appointments with guidance counselors"
@@ -750,27 +752,36 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               : "Configure available time slots and schedules"}
           </p>
         </div>
-        {/* Action buttons for both students and guidance */}
-        {isGuidance && (
-          <button
-            onClick={activeTab === "appointments" ? handleCreateAppointment : handleCreateSchedule}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <span className="mr-2">+</span>
-            {activeTab === "appointments" ? "New Appointment" : "New Schedule"}
-          </button>
-        )}
 
-        {/* Request Appointment button for students */}
-        {isStudent && activeTab === "appointments" && (
-          <button
-            onClick={handleRequestAppointment}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <span className="mr-2">+</span>
-            Request Appointment
-          </button>
-        )}
+        {/* Action buttons for both students and guidance */}
+        <div className="flex-shrink-0">
+          {isGuidance && (
+            <button
+              onClick={
+                activeTab === "appointments" ? handleCreateAppointment : handleCreateSchedule
+              }
+              className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 touch-manipulation"
+            >
+              <span className="mr-2">+</span>
+              <span className="hidden sm:inline">
+                {activeTab === "appointments" ? "New Appointment" : "New Schedule"}
+              </span>
+              <span className="sm:hidden">{activeTab === "appointments" ? "New" : "Schedule"}</span>
+            </button>
+          )}
+
+          {/* Request Appointment button for students */}
+          {isStudent && activeTab === "appointments" && (
+            <button
+              onClick={handleRequestAppointment}
+              className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 touch-manipulation"
+            >
+              <span className="mr-2">+</span>
+              <span className="hidden sm:inline">Request Appointment</span>
+              <span className="sm:hidden">Request</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Error Display */}

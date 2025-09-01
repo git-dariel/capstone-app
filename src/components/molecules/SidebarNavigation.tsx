@@ -15,6 +15,8 @@ import {
   School,
   MessageSquare,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -25,21 +27,35 @@ interface NavItemProps {
   label: string;
   isActive?: boolean;
   onClick?: () => void;
+  isMinimized?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive = false, onClick }) => {
+const NavItem: React.FC<NavItemProps> = ({
+  icon,
+  label,
+  isActive = false,
+  onClick,
+  isMinimized = false,
+}) => {
   return (
     <button
       onClick={onClick}
       className={cn(
-        "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+        "w-full flex items-center rounded-lg text-sm font-medium transition-colors group relative",
+        isMinimized ? "justify-center px-3 py-3" : "space-x-3 px-3 py-2",
         isActive
           ? "bg-primary-50 text-primary-700"
           : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
       )}
+      title={isMinimized ? label : undefined}
     >
-      <span className="w-5 h-5">{icon}</span>
-      <span>{label}</span>
+      <span className="w-5 h-5 flex-shrink-0">{icon}</span>
+      {!isMinimized && <span className="truncate">{label}</span>}
+      {isMinimized && (
+        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
+          {label}
+        </div>
+      )}
     </button>
   );
 };
@@ -47,12 +63,16 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, isActive = false, onClic
 interface SidebarNavigationProps {
   isOpen?: boolean;
   onToggle?: () => void;
+  isMinimized?: boolean;
+  onToggleMinimize?: () => void;
   className?: string;
 }
 
 export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   isOpen = true,
   onToggle,
+  isMinimized = false,
+  onToggleMinimize,
   className = "",
 }) => {
   const navigate = useNavigate();
@@ -178,18 +198,14 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
 
   return (
     <>
-      {/* Mobile Overlay */}
-      {isMobile && isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={onToggle} />
-      )}
-
       {/* Sidebar */}
       <div
         className={cn(
-          "bg-white border-r border-gray-200 flex flex-col h-full transition-transform duration-300 ease-in-out z-50",
+          "bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ease-in-out z-50",
           // Desktop styles
-          "md:w-64 md:relative md:transform-none",
-          // Mobile styles - drawer
+          isMinimized ? "md:w-16" : "md:w-64",
+          "md:relative md:transform-none",
+          // Mobile styles - drawer (always full width on mobile)
           "fixed left-0 top-0 w-64 md:translate-x-0",
           isMobile ? (isOpen ? "translate-x-0" : "-translate-x-full") : "",
           className
@@ -208,7 +224,21 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           </div>
         )}
 
-        <nav className="flex-1 px-4 py-6">
+        <nav className="flex-1 px-4 py-6 relative">
+          {/* Desktop Minimize Toggle Button */}
+          {!isMobile && onToggleMinimize && (
+            <button
+              onClick={onToggleMinimize}
+              className="absolute top-2 right-2 p-1 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors z-10"
+              title={isMinimized ? "Expand sidebar" : "Minimize sidebar"}
+            >
+              {isMinimized ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
+            </button>
+          )}
           <div className="space-y-1">
             {navigationItems.map((item) => (
               <NavItem
@@ -217,6 +247,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 label={item.label}
                 isActive={location.pathname === item.path}
                 onClick={() => handleMobileNavigation(item.path, item.label)}
+                isMinimized={!isMobile && isMinimized}
               />
             ))}
           </div>
@@ -231,6 +262,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 label={item.label}
                 isActive={location.pathname === item.path}
                 onClick={() => handleMobileNavigation(item.path, item.label)}
+                isMinimized={!isMobile && isMinimized}
               />
             ))}
           </div>

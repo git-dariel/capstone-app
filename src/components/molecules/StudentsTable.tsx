@@ -346,8 +346,8 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   return (
     <>
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
             <div>
               <h2 className="text-lg font-medium text-gray-900">Students</h2>
               <p className="text-sm text-gray-500">
@@ -359,10 +359,10 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
             {onCreate && (
               <Button
                 onClick={onCreate}
-                className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2"
+                className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2 justify-center md:justify-start w-full md:w-auto"
               >
                 <Plus className="w-4 h-4" />
-                Add Student
+                <span className="md:inline">Add Student</span>
               </Button>
             )}
           </div>
@@ -375,7 +375,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
               placeholder="Search by name, program, year, email, notes, or assessment..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
               disabled={loading}
             />
           </div>
@@ -408,107 +408,32 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
               </div>
             </div>
           ) : (
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Student
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Program & Year
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact Info
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Gender
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Latest Assessment
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Notes
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date Added
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+            <>
+              {/* Mobile Card Layout - visible on small screens */}
+              <div className="block md:hidden divide-y divide-gray-200">
                 {students.map((student) => (
-                  <tr
+                  <div
                     key={student.id}
-                    className="hover:bg-[#fdf2f6] transition-colors cursor-pointer group relative"
+                    className="p-4 hover:bg-[#fdf2f6] transition-colors touch-manipulation"
                     onClick={() => handleView(student)}
-                    title="Click to view student details"
                   >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+                    {/* Card Header */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
                         <Avatar
                           src={student.avatar}
                           fallback={student.studentName.charAt(0)}
-                          className="mr-3"
+                          className="flex-shrink-0"
                         />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
                             {student.studentName}
-                          </div>
+                          </h3>
+                          <p className="text-sm text-gray-500">{student.program}</p>
+                          <p className="text-xs text-gray-400">{student.year}</p>
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.program}</div>
-                      <div className="text-sm text-gray-500">{student.year}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.email}</div>
-                      <div className="text-sm text-gray-500">{student.contactNumber}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {student.gender}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {renderAssessmentInfo(student.latestAssessment)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="space-y-1 max-w-xs">
-                        {student.notes && student.notes.length > 0 ? (
-                          <>
-                            {student.notes.length === 1 ? (
-                              // Single note: show the title
-                              <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
-                                {student.notes[0].title ? (
-                                  <div className="text-xs font-medium text-primary-900 truncate">
-                                    {student.notes[0].title}
-                                  </div>
-                                ) : (
-                                  <div className="text-xs text-primary-700 italic">
-                                    Untitled note
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              // Multiple notes: show highlighted count
-                              <div className="bg-primary-50 border border-primary-200 rounded-md text-center py-1">
-                                <div className="text-xs font-medium text-primary-900 truncate">
-                                  {student.notes.length} notes
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-xs text-gray-400">No notes</div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(student.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-1 ml-2">
                         {onEdit && (
                           <Button
                             variant="ghost"
@@ -517,7 +442,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                               e.stopPropagation();
                               handleEdit(student);
                             }}
-                            className="text-primary-600 hover:text-primary-900 hover:bg-primary-50"
+                            className="text-primary-600 hover:text-primary-900 hover:bg-primary-50 p-1"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -530,17 +455,207 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                               e.stopPropagation();
                               handleDeleteClick(student);
                             }}
-                            className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                            className="text-red-600 hover:text-red-900 hover:bg-red-50 p-1"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
-                    </td>
-                  </tr>
+                    </div>
+
+                    {/* Card Body */}
+                    <div className="space-y-3">
+                      {/* Contact Info */}
+                      <div className="space-y-1">
+                        <div className="text-sm text-gray-900">{student.email}</div>
+                        <div className="text-sm text-gray-500 flex items-center">
+                          <span className="mr-2">📱</span>
+                          {student.contactNumber}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          Gender: {student.gender} • Added: {formatDate(student.createdAt)}
+                        </div>
+                      </div>
+
+                      {/* Latest Assessment */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <div className="text-xs font-medium text-gray-600 mb-2">
+                          Latest Assessment
+                        </div>
+                        {renderAssessmentInfo(student.latestAssessment)}
+                      </div>
+
+                      {/* Notes */}
+                      <div className="space-y-1">
+                        <div className="text-xs font-medium text-gray-600">Notes</div>
+                        {student.notes && student.notes.length > 0 ? (
+                          <>
+                            {student.notes.length === 1 ? (
+                              <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
+                                {student.notes[0].title ? (
+                                  <div className="text-xs font-medium text-primary-900 truncate">
+                                    {student.notes[0].title}
+                                  </div>
+                                ) : (
+                                  <div className="text-xs text-primary-700 italic">
+                                    Untitled note
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="bg-primary-50 border border-primary-200 rounded-md text-center py-1">
+                                <div className="text-xs font-medium text-primary-900 truncate">
+                                  {student.notes.length} notes
+                                </div>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-400">No notes</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+
+              {/* Desktop Table Layout - hidden on small screens */}
+              <div className="hidden md:block">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Student
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Program & Year
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Contact Info
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Gender
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Latest Assessment
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Notes
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date Added
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {students.map((student) => (
+                      <tr
+                        key={student.id}
+                        className="hover:bg-[#fdf2f6] transition-colors cursor-pointer group relative"
+                        onClick={() => handleView(student)}
+                        title="Click to view student details"
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <Avatar
+                              src={student.avatar}
+                              fallback={student.studentName.charAt(0)}
+                              className="mr-3"
+                            />
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.studentName}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{student.program}</div>
+                          <div className="text-sm text-gray-500">{student.year}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{student.email}</div>
+                          <div className="text-sm text-gray-500">{student.contactNumber}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.gender}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {renderAssessmentInfo(student.latestAssessment)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="space-y-1 max-w-xs">
+                            {student.notes && student.notes.length > 0 ? (
+                              <>
+                                {student.notes.length === 1 ? (
+                                  // Single note: show the title
+                                  <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
+                                    {student.notes[0].title ? (
+                                      <div className="text-xs font-medium text-primary-900 truncate">
+                                        {student.notes[0].title}
+                                      </div>
+                                    ) : (
+                                      <div className="text-xs text-primary-700 italic">
+                                        Untitled note
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  // Multiple notes: show highlighted count
+                                  <div className="bg-primary-50 border border-primary-200 rounded-md text-center py-1">
+                                    <div className="text-xs font-medium text-primary-900 truncate">
+                                      {student.notes.length} notes
+                                    </div>
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <div className="text-xs text-gray-400">No notes</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(student.createdAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            {onEdit && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(student);
+                                }}
+                                className="text-primary-600 hover:text-primary-900 hover:bg-primary-50"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {onDelete && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteClick(student);
+                                }}
+                                className="text-red-600 hover:text-red-900 hover:bg-red-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

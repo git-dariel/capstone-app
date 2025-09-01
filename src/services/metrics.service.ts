@@ -180,16 +180,16 @@ export class MetricsService {
     const programData = await this.getByProgram(assessmentType, filter);
     const total = programData.reduce((sum, item) => sum + item.count, 0);
 
-    // Generate colors for each program
+    // Generate colors for each program - matching InsightsBarChart colors
     const colors = [
-      "#3B82F6",
-      "#EF4444",
-      "#10B981",
-      "#F59E0B",
-      "#8B5CF6",
-      "#EC4899",
-      "#06B6D4",
-      "#84CC16",
+      "#3b82f6", // Blue
+      "#ef4444", // Red
+      "#10b981", // Green
+      "#f59e0b", // Yellow
+      "#8b5cf6", // Purple
+      "#ec4899", // Pink
+      "#06b6d4", // Cyan
+      "#84cc16", // Lime
     ];
 
     return {
@@ -211,7 +211,7 @@ export class MetricsService {
     const yearData = await this.getByYear(assessmentType, filter);
     const total = yearData.reduce((sum, item) => sum + item.count, 0);
 
-    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444"];
+    const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
 
     return {
       data: yearData.map((item, index) => ({
@@ -233,11 +233,11 @@ export class MetricsService {
     const total = genderData.reduce((sum, item) => sum + item.count, 0);
 
     const genderColors: Record<string, string> = {
-      male: "#3B82F6",
-      female: "#EC4899",
-      other: "#10B981",
-      others: "#10B981",
-      unknown: "#6B7280",
+      male: "#3b82f6",
+      female: "#ec4899",
+      other: "#10b981",
+      others: "#10b981",
+      unknown: "#6b7280",
     };
 
     return {

@@ -122,12 +122,14 @@ export const StudentsContent: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-6">
-      <div className="mb-5">
-        <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="mb-4 md:mb-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Student Records</h1>
-            <p className="text-gray-600 mt-1">Comprehensive view of all student records</p>
+            <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Student Records</h1>
+            <p className="text-gray-600 mt-1 text-sm md:text-base">
+              Comprehensive view of all student records
+            </p>
           </div>
         </div>
       </div>

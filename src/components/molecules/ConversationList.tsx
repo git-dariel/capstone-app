@@ -41,18 +41,23 @@ export const ConversationList: React.FC<ConversationListProps> = ({
   );
 
   return (
-    <div className={cn("flex flex-col h-full bg-white border-r border-gray-200", className)}>
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white border-r border-gray-200 lg:border-r",
+        className
+      )}
+    >
       {/* Header */}
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary-600" />
+      <div className="p-3 sm:p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
             Messages
           </h2>
           <Button
             onClick={onComposeNew}
             size="sm"
-            className="bg-primary-600 hover:bg-primary-700 text-white rounded-full p-2"
+            className="bg-primary-600 hover:bg-primary-700 text-white rounded-full p-2 touch-manipulation"
             title="Compose new message"
           >
             <Plus className="w-4 h-4" />
@@ -67,7 +72,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => handleSearch(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2.5 sm:py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
           />
         </div>
       </div>
@@ -89,12 +94,12 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             ))}
           </div>
         ) : filteredConversations.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <MessageCircle className="w-12 h-12 text-gray-300 mb-4" />
+          <div className="flex flex-col items-center justify-center h-full p-6 sm:p-8 text-center">
+            <MessageCircle className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mb-3 sm:mb-4" />
             <h3 className="text-sm font-medium text-gray-900 mb-2">
               {searchQuery ? "No conversations found" : "No conversations yet"}
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 leading-relaxed">
               {searchQuery
                 ? "Try adjusting your search terms"
                 : "Start a conversation by composing a new message"}
@@ -103,7 +108,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
               <Button
                 onClick={onComposeNew}
                 size="sm"
-                className="bg-primary-600 hover:bg-primary-700 text-white"
+                className="bg-primary-600 hover:bg-primary-700 text-white text-sm py-2 px-4 touch-manipulation"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Compose Message
@@ -111,7 +116,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
             )}
           </div>
         ) : (
-          <div className="p-2">
+          <div className="p-1 sm:p-2">
             {filteredConversations.map((conversation) => (
               <ConversationItem
                 key={conversation.id}
@@ -122,7 +127,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 unreadCount={conversation.unreadCount}
                 isActive={activeConversationId === conversation.id}
                 onClick={() => onConversationSelect(conversation.id)}
-                className="mb-2"
+                className="mb-1 sm:mb-2"
               />
             ))}
           </div>
@@ -130,10 +135,11 @@ export const ConversationList: React.FC<ConversationListProps> = ({
       </div>
 
       {/* Connection status indicator */}
-      <div className="p-3 border-t border-gray-200">
+      <div className="p-2 sm:p-3 border-t border-gray-200">
         <div className="flex items-center gap-2 text-xs text-gray-500">
-          <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-          Real-time messaging enabled
+          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          <span className="hidden sm:inline">Real-time messaging enabled</span>
+          <span className="sm:hidden">Connected</span>
         </div>
       </div>
     </div>

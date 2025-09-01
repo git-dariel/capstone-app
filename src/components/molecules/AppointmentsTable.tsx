@@ -98,15 +98,167 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
               placeholder="Search appointments..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             />
             <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">🔍</div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Mobile Card Layout - visible on small screens */}
+      <div className="block md:hidden">
+        {filteredAppointments.length === 0 ? (
+          <div className="p-6 text-center text-gray-500">
+            {searchTerm ? "No appointments match your search." : "No appointments found."}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {filteredAppointments.map((appointment) => {
+              const statusInfo = AppointmentService.getStatusDisplayInfo(appointment.status);
+              const priorityInfo = AppointmentService.getPriorityDisplayInfo(appointment.priority);
+              const typeInfo = AppointmentService.getTypeDisplayInfo(appointment.appointmentType);
+              const canCancel = AppointmentService.canCancelAppointment(appointment);
+              const canReschedule =
+                AppointmentService.canRescheduleAppointment(appointment) && userType === "guidance";
+              const canComplete = appointment.status === "confirmed" && userType === "guidance";
+              const canEdit = userType === "guidance";
+              const canDelete = userType === "guidance";
+
+              return (
+                <div
+                  key={appointment.id}
+                  className="p-4 hover:bg-gray-50 touch-manipulation"
+                  onClick={() => onView?.(appointment)}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <span className="mr-2 flex-shrink-0">{typeInfo.icon}</span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">
+                          {appointment.title}
+                        </h3>
+                        {appointment.description && (
+                          <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                            {appointment.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-2 ${statusInfo.bgColor} ${statusInfo.color}`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="space-y-2 mb-3">
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Student:</span>
+                      <span className="text-gray-900 truncate">
+                        {appointment.student?.person.firstName}{" "}
+                        {appointment.student?.person.lastName}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Counselor:</span>
+                      <span className="text-gray-900 truncate">
+                        {appointment.counselor?.person.firstName}{" "}
+                        {appointment.counselor?.person.lastName}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center text-sm">
+                      <span className="text-gray-500 w-20 flex-shrink-0">Date:</span>
+                      <span className="text-gray-900">{formatDate(appointment.requestedDate)}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center">
+                        <span className="text-gray-500 w-20 flex-shrink-0">Duration:</span>
+                        <span className="text-gray-900">{appointment.duration} min</span>
+                      </div>
+                      {appointment.priority !== "normal" && (
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${priorityInfo.bgColor} ${priorityInfo.color}`}
+                        >
+                          {priorityInfo.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Actions */}
+                  {showActions && (
+                    <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                      {canComplete && onComplete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onComplete(appointment);
+                          }}
+                          className="px-3 py-1 text-green-600 hover:text-green-900 text-xs font-medium border border-green-200 rounded-md hover:bg-green-50 touch-manipulation"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {canReschedule && onReschedule && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReschedule(appointment);
+                          }}
+                          className="px-3 py-1 text-blue-600 hover:text-blue-900 text-xs font-medium border border-blue-200 rounded-md hover:bg-blue-50 touch-manipulation"
+                        >
+                          Reschedule
+                        </button>
+                      )}
+                      {canEdit && onEdit && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(appointment);
+                          }}
+                          className="px-3 py-1 text-primary-600 hover:text-primary-900 text-xs font-medium border border-primary-200 rounded-md hover:bg-primary-50 touch-manipulation"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {canCancel && onCancel && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCancel(appointment);
+                          }}
+                          className="px-3 py-1 text-red-600 hover:text-red-900 text-xs font-medium border border-red-200 rounded-md hover:bg-red-50 touch-manipulation"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      {canDelete && onDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(appointment);
+                          }}
+                          className="px-3 py-1 text-gray-600 hover:text-red-600 text-xs font-medium border border-gray-200 rounded-md hover:bg-gray-50 touch-manipulation"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table Layout - hidden on small screens */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>

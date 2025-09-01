@@ -44,12 +44,12 @@ export const AidFunctionContent: React.FC = () => {
   }
 
   return (
-    <main className="flex-1 p-6 bg-gray-50 overflow-auto">
+    <main className="flex-1 p-4 md:p-6 bg-gray-50 overflow-auto">
       <div className="max-w-7xl mx-auto">
         {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Aid Functions</h1>
-          <p className="text-gray-600 mt-1">
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-xl md:text-2xl font-semibold text-gray-900">Retake Requests</h1>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">
             Manage student retake requests and assessment cooldown periods
           </p>
         </div>
@@ -57,10 +57,10 @@ export const AidFunctionContent: React.FC = () => {
         {/* Navigation Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto" aria-label="Tabs">
               <button
                 onClick={() => setCurrentView("retake-requests")}
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex-shrink-0 ${
                   currentView === "retake-requests"
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -75,7 +75,7 @@ export const AidFunctionContent: React.FC = () => {
               {/* Future tab for additional aid functions */}
               <button
                 onClick={() => setCurrentView("cooldown-management")}
-                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex-shrink-0 ${
                   currentView === "cooldown-management"
                     ? "border-primary-500 text-primary-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
@@ -92,11 +92,11 @@ export const AidFunctionContent: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {currentView === "retake-requests" && (
             <div>
               {/* Overview Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -267,7 +267,7 @@ export const AidFunctionContent: React.FC = () => {
               <RetakeRequestsTable showUserColumn={true} isUserView={false} />
 
               {/* Information Panel */}
-              <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="mt-6 md:mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4 md:p-6">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -301,7 +301,7 @@ export const AidFunctionContent: React.FC = () => {
           )}
 
           {currentView === "cooldown-management" && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 md:p-8">
               <div className="text-center">
                 <div className="mx-auto w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
                   <svg
