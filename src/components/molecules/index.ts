@@ -14,6 +14,8 @@ export { StressAssessmentTable } from "./StressAssessmentTable";
 export { StudentsTable } from "./StudentsTable";
 export { StudentDrawer } from "./StudentModal";
 export { ViewStudentDrawer } from "./ViewStudentDrawer";
+export { ConsentRecordsTable } from "./ConsentRecordsTable";
+export { ViewConsentDrawer } from "./ViewConsentDrawer";
 export { AssessmentGrid } from "./AssessmentGrid";
 export { AnxietyQuestionnaire } from "./AnxietyQuestionnaire";
 export { DepressionQuestionnaire } from "./DepressionQuestionnaire";

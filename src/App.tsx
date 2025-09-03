@@ -4,6 +4,7 @@ import {
   SignInPage,
   SignUpPage,
   ConsentPage,
+  ConsentRecordsPage,
   MentalHealthResultsPage,
   DashboardPage,
   ReportsPage,
@@ -95,6 +96,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StudentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/consent-records"
+            element={
+              <ProtectedRoute>
+                <ConsentRecordsPage />
               </ProtectedRoute>
             }
           />

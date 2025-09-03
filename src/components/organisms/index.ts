@@ -5,6 +5,7 @@ export { DashboardContent } from "./DashboardContent";
 export { ReportsContent } from "./ReportsContent";
 export { AccountsContent } from "./AccountsContent";
 export { StudentsContent } from "./StudentsContent";
+export { ConsentRecordsContent } from "./ConsentRecordsContent";
 export { ResourcesContent } from "./ResourcesContent";
 export { HelpSupportContent } from "./HelpSupportContent";
 export { HistoryContent } from "./HistoryContent";

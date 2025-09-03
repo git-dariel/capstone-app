@@ -17,6 +17,7 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  ClipboardList,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -120,6 +121,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       path: "/reports",
       guidanceOnly: true,
     },
+    { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
+    {
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "Messages",
+      path: "/messages",
+    },
     {
       icon: <School className="w-5 h-5" />,
       label: "Student Records",
@@ -150,11 +157,10 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       studentOnly: true,
     },
     {
-      icon: <MessageSquare className="w-5 h-5" />,
-      label: "Messages",
-      path: "/messages",
+      icon: <ClipboardList className="w-5 h-5" />,
+      label: "Consent Records",
+      path: "/consent-records",
     },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
     { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },
   ];
 

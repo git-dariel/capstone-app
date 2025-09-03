@@ -232,9 +232,63 @@ export interface GetConsentResponse {
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
+  student?: {
+    id: string;
+    studentNumber: string;
+    program: string;
+    year: string;
+    person: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      gender: string;
+      age: number;
+    };
+  };
+}
+
+export interface GetAllConsentsResponse {
+  consents: GetConsentResponse[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface ConsentFilters {
+  page?: number;
+  limit?: number;
+  sort?: string;
+  order?: "asc" | "desc";
+  fields?: string;
+  query?: string;
 }
 
 export class ConsentService {
+  /**
+   * Get all consents with pagination and filtering (for guidance users)
+   */
+  static async getAllConsents(filters: ConsentFilters = {}): Promise<GetAllConsentsResponse> {
+    try {
+      const params = new URLSearchParams();
+
+      if (filters.page) params.append("page", filters.page.toString());
+      if (filters.limit) params.append("limit", filters.limit.toString());
+      if (filters.sort) params.append("sort", filters.sort);
+      if (filters.order) params.append("order", filters.order);
+      if (filters.fields) params.append("fields", filters.fields);
+      if (filters.query) params.append("query", filters.query);
+
+      const queryString = params.toString();
+      const url = `/consent${queryString ? `?${queryString}` : ""}`;
+
+      const response = await HttpClient.get<GetAllConsentsResponse>(url);
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.message || "Failed to get consents");
+    }
+  }
+
   /**
    * Create a new consent form
    */
