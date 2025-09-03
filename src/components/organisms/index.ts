@@ -7,6 +7,8 @@ export { AccountsContent } from "./AccountsContent";
 export { StudentsContent } from "./StudentsContent";
 export { ConsentRecordsContent } from "./ConsentRecordsContent";
 export { ResourcesContent } from "./ResourcesContent";
+export { ActivitiesContent } from "./ActivitiesContent";
+export { TimerPage } from "./TimerPage";
 export { HelpSupportContent } from "./HelpSupportContent";
 export { HistoryContent } from "./HistoryContent";
 export { InsightsContent } from "./InsightsContent";

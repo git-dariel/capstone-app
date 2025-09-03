@@ -10,6 +10,8 @@ import {
   ReportsPage,
   AccountsPage,
   ResourcesPage,
+  ActivitiesPage,
+  ActivityTimerPage,
   HelpSupportPage,
   HistoryPage,
   InsightsPage,
@@ -136,6 +138,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ResourcesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute>
+                <ActivitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-timer"
+            element={
+              <ProtectedRoute>
+                <ActivityTimerPage />
               </ProtectedRoute>
             }
           />

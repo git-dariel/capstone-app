@@ -8,6 +8,8 @@ export { DashboardPage } from "./DashboardPage";
 export { ReportsPage } from "./ReportsPage";
 export { AccountsPage } from "./AccountsPage";
 export { ResourcesPage } from "./ResourcesPage";
+export { ActivitiesPage } from "./ActivitiesPage";
+export { ActivityTimerPage } from "./ActivityTimerPage";
 export { HelpSupportPage } from "./HelpSupportPage";
 export { HistoryPage } from "./HistoryPage";
 export { InsightsPage } from "./InsightsPage";

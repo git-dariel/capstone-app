@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  Heart,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -122,6 +123,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       guidanceOnly: true,
     },
     { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
+    {
+      icon: <Heart className="w-5 h-5" />,
+      label: "Activities",
+      path: "/activities",
+      studentOnly: true,
+    },
     {
       icon: <MessageSquare className="w-5 h-5" />,
       label: "Messages",
