@@ -4,11 +4,14 @@ import {
   SignInPage,
   SignUpPage,
   ConsentPage,
+  ConsentRecordsPage,
   MentalHealthResultsPage,
   DashboardPage,
   ReportsPage,
   AccountsPage,
   ResourcesPage,
+  ActivitiesPage,
+  ActivityTimerPage,
   HelpSupportPage,
   HistoryPage,
   InsightsPage,
@@ -99,6 +102,14 @@ function App() {
             }
           />
           <Route
+            path="/consent-records"
+            element={
+              <ProtectedRoute>
+                <ConsentRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/appointments"
             element={
               <ProtectedRoute>
@@ -127,6 +138,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <ResourcesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activities"
+            element={
+              <ProtectedRoute>
+                <ActivitiesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-timer"
+            element={
+              <ProtectedRoute>
+                <ActivityTimerPage />
               </ProtectedRoute>
             }
           />
