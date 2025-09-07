@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { FormField } from "@/components/atoms/FormField";
 import { FormSelect } from "@/components/atoms/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -71,18 +70,6 @@ const concernLevels = [
   { value: "most_important", label: "Most Important" },
 ];
 
-const stressLevelOptions = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-];
-
-const performanceChangeOptions = [
-  { value: "improved", label: "Improved" },
-  { value: "same", label: "Same" },
-  { value: "declined", label: "Declined" },
-];
-
 export const ConsentForm: React.FC<ConsentFormProps> = ({
   studentId,
   onSubmit,
@@ -117,9 +104,6 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       career: undefined,
     },
     services: "general_information",
-    sleep_duration: "8",
-    stress_level: "medium",
-    academic_performance_change: "same",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,9 +130,6 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
     formData.physical_problem &&
     formData.physical_symptoms &&
     formData.services &&
-    formData.sleep_duration &&
-    formData.stress_level &&
-    formData.academic_performance_change &&
     // Check that at least some concerns are filled
     Object.values(formData.concerns).some((value) => value !== undefined);
 
@@ -338,43 +319,6 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
           required
           disabled={loading}
         />
-      </div>
-
-      {/* Health and Wellness */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Health and Wellness</h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            id="sleep_duration"
-            label="Average hours of sleep per night *"
-            type="number"
-            value={formData.sleep_duration}
-            onChange={(e) => handleFieldChange("sleep_duration", e.target.value)}
-            required
-            disabled={loading}
-          />
-
-          <FormSelect
-            id="stress_level"
-            label="Current stress level *"
-            value={formData.stress_level}
-            onChange={(value) => handleFieldChange("stress_level", value)}
-            options={stressLevelOptions}
-            required
-            disabled={loading}
-          />
-
-          <FormSelect
-            id="academic_performance"
-            label="Academic performance change *"
-            value={formData.academic_performance_change}
-            onChange={(value) => handleFieldChange("academic_performance_change", value)}
-            options={performanceChangeOptions}
-            required
-            disabled={loading}
-          />
-        </div>
       </div>
 
       {/* Disclaimer */}

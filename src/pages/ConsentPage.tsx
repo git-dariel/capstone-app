@@ -52,14 +52,10 @@ export const ConsentPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await ConsentService.createConsent(formData);
+      await ConsentService.createConsent(formData);
 
-      // Navigate to results page with the mental health prediction
-      navigate("/consent/results", {
-        state: {
-          consentResponse: response,
-          mentalHealthPrediction: response.mentalHealthPrediction,
-        },
+      // Navigate to inventory page after consent completion
+      navigate("/inventory", {
         replace: true,
       });
     } catch (err: any) {

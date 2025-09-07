@@ -2,6 +2,7 @@ export { HomePage } from "./HomePage";
 export { SignInPage } from "./SignInPage";
 export { SignUpPage } from "./SignUpPage";
 export { ConsentPage } from "./ConsentPage";
+export { InventoryPage } from "./InventoryPage";
 export { ConsentRecordsPage } from "./ConsentRecordsPage";
 export { MentalHealthResultsPage } from "./MentalHealthResultsPage";
 export { DashboardPage } from "./DashboardPage";

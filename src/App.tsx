@@ -4,6 +4,7 @@ import {
   SignInPage,
   SignUpPage,
   ConsentPage,
+  InventoryPage,
   ConsentRecordsPage,
   MentalHealthResultsPage,
   DashboardPage,
@@ -59,6 +60,24 @@ function App() {
           />
           <Route
             path="/consent/results"
+            element={
+              <ProtectedRoute>
+                <MentalHealthResultsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Inventory routes - protected but don't require completion */}
+          <Route
+            path="/inventory"
+            element={
+              <ProtectedRoute>
+                <InventoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory/results"
             element={
               <ProtectedRoute>
                 <MentalHealthResultsPage />

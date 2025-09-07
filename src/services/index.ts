@@ -24,8 +24,17 @@ export type {
   ConsentFormData,
   ConsentResponse,
   GetConsentResponse,
-  MentalHealthPrediction,
+  MentalHealthPrediction as ConsentMentalHealthPrediction,
 } from "./consent.service";
+
+// Inventory Service
+export { InventoryService } from "./inventory.service";
+export type {
+  InventoryFormData,
+  InventoryResponse,
+  GetInventoryResponse,
+  MentalHealthPrediction,
+} from "./inventory.service";
 
 // Person Service
 export { PersonService } from "./person.service";

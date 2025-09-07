@@ -6,6 +6,7 @@ export { useStress } from "./useStress";
 export { useSuicide } from "./useSuicide";
 export { useStudents } from "./useStudents";
 export { useConsent } from "./useConsent";
+export { useInventory } from "./useInventory";
 export { useInsights } from "./useInsights";
 export { useRetakeRequest } from "./useRetakeRequest";
 export { useRetakeRequestMetrics } from "./useRetakeRequestMetrics";
