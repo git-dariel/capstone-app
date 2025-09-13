@@ -7,7 +7,7 @@ import { Button } from "@/components/ui";
 
 // Constants for consistent data fetching
 const CONSENT_FIELDS =
-  "id,studentId,referred,with_whom_do_you_live,financial_status,what_brings_you_to_guidance,physical_problem,physical_symptoms,concerns,services,sleep_duration,stress_level,academic_performance_change,createdAt,updatedAt,isDeleted,student.id,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.age";
+  "id,studentId,referred,with_whom_do_you_live,financial_status,what_brings_you_to_guidance,physical_problem,physical_symptoms,concerns,services,createdAt,updatedAt,isDeleted,student.id,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.age";
 
 export const ConsentRecordsContent: React.FC = () => {
   const { user, student } = useAuth();
@@ -180,20 +180,6 @@ export const ConsentRecordsContent: React.FC = () => {
         <div className="bg-white p-4 rounded-lg shadow-sm border">
           <h3 className="text-sm font-medium text-gray-500">Total Records</h3>
           <p className="text-2xl font-semibold text-gray-900 mt-1">{totalConsents}</p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <h3 className="text-sm font-medium text-gray-500">High Stress</h3>
-          <p className="text-2xl font-semibold text-red-600 mt-1">
-            {consents.filter((c) => c.stress_level === "high").length}
-          </p>
-        </div>
-
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <h3 className="text-sm font-medium text-gray-500">Declined Performance</h3>
-          <p className="text-2xl font-semibold text-orange-600 mt-1">
-            {consents.filter((c) => c.academic_performance_change === "declined").length}
-          </p>
         </div>
 
         <div className="bg-white p-4 rounded-lg shadow-sm border">

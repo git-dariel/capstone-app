@@ -153,29 +153,6 @@ export interface ConsentFormData {
     | "career_exploration"
     | "individual_counseling"
     | "referral_for_university";
-  sleep_duration: string;
-  stress_level: "low" | "medium" | "high";
-  academic_performance_change: "same" | "improved" | "declined";
-}
-
-export interface MentalHealthPrediction {
-  academicPerformanceOutlook: "Improved" | "Same" | "Declined";
-  confidence: string;
-  modelAccuracy: {
-    decisionTree: string;
-    randomForest: string;
-  };
-  riskFactors: string[];
-  mentalHealthRisk: {
-    level: string;
-    description: string;
-    needsAttention: boolean;
-    urgency: string;
-    assessmentSummary: string;
-    disclaimer: string;
-  };
-  inputData: any;
-  recommendations: string[];
 }
 
 export interface ConsentResponse {
@@ -192,9 +169,6 @@ export interface ConsentResponse {
     physical_symptoms: string;
     concerns: any;
     services: string;
-    sleep_duration: string;
-    stress_level: string;
-    academic_performance_change: string;
     createdAt: string;
     updatedAt: string;
     student: {
@@ -212,7 +186,6 @@ export interface ConsentResponse {
       };
     };
   };
-  mentalHealthPrediction?: MentalHealthPrediction;
 }
 
 export interface GetConsentResponse {
@@ -226,9 +199,6 @@ export interface GetConsentResponse {
   physical_symptoms: string;
   concerns: any;
   services: string;
-  sleep_duration: string;
-  stress_level: string;
-  academic_performance_change: string;
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
@@ -325,32 +295,6 @@ export class ConsentService {
       return consent !== null;
     } catch (error) {
       return false;
-    }
-  }
-
-  /**
-   * Get mental health prediction for a student
-   */
-  static async getMentalHealthPrediction(
-    studentId: string,
-    overrideData?: {
-      gender?: string;
-      age?: number;
-      educationLevel?: string;
-      sleepDuration?: number;
-      stressLevel?: string;
-    }
-  ): Promise<MentalHealthPrediction> {
-    try {
-      const response = await HttpClient.post<{ prediction: MentalHealthPrediction }>(
-        `/consent/predict/${studentId}`,
-        overrideData || {}
-      );
-      return response.prediction;
-    } catch (error: any) {
-      throw new Error(
-        error.response?.data?.error || error.message || "Failed to get mental health prediction"
-      );
     }
   }
 }

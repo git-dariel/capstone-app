@@ -45,38 +45,6 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
     ? `${consent.student.person.firstName} ${consent.student.person.lastName}`
     : "Unknown Student";
 
-  const getBadgeStyle = (type: string, value: string) => {
-    const baseClasses = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
-
-    if (type === "stress") {
-      switch (value) {
-        case "low":
-          return `${baseClasses} bg-green-100 text-green-800`;
-        case "medium":
-          return `${baseClasses} bg-yellow-100 text-yellow-800`;
-        case "high":
-          return `${baseClasses} bg-red-100 text-red-800`;
-        default:
-          return `${baseClasses} bg-gray-100 text-gray-800`;
-      }
-    }
-
-    if (type === "performance") {
-      switch (value) {
-        case "improved":
-          return `${baseClasses} bg-green-100 text-green-800`;
-        case "same":
-          return `${baseClasses} bg-blue-100 text-blue-800`;
-        case "declined":
-          return `${baseClasses} bg-red-100 text-red-800`;
-        default:
-          return `${baseClasses} bg-gray-100 text-gray-800`;
-      }
-    }
-
-    return `${baseClasses} bg-gray-100 text-gray-800`;
-  };
-
   const renderConcerns = (concerns: any) => {
     if (!concerns || typeof concerns !== "object") {
       return (
@@ -236,12 +204,6 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sleep Duration</label>
-              <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
-                {consent.sleep_duration || "N/A"}
-              </div>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Submission Date
               </label>
@@ -274,24 +236,6 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
               </label>
               <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md">
                 {formatLabel(consent.physical_symptoms) || "N/A"}
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Stress Level</label>
-              <div className="py-2 px-3 bg-gray-50 rounded-md">
-                <span className={getBadgeStyle("stress", consent.stress_level)}>
-                  {formatLabel(consent.stress_level)}
-                </span>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Academic Performance Change
-              </label>
-              <div className="py-2 px-3 bg-gray-50 rounded-md">
-                <span className={getBadgeStyle("performance", consent.academic_performance_change)}>
-                  {formatLabel(consent.academic_performance_change)}
-                </span>
               </div>
             </div>
           </div>

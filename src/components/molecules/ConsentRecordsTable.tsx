@@ -14,8 +14,6 @@ interface ConsentTableData {
   gender: string;
   avatar?: string;
   referred: string;
-  stressLevel: string;
-  academicPerformance: string;
   createdAt: string;
   what_brings_you_to_guidance?: string;
 }
@@ -32,36 +30,6 @@ const formatLabel = (value: string) => {
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-};
-
-const getStressLevelBadge = (level: string) => {
-  const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-
-  switch (level) {
-    case "low":
-      return `${baseClasses} bg-green-100 text-green-800`;
-    case "medium":
-      return `${baseClasses} bg-yellow-100 text-yellow-800`;
-    case "high":
-      return `${baseClasses} bg-red-100 text-red-800`;
-    default:
-      return `${baseClasses} bg-gray-100 text-gray-800`;
-  }
-};
-
-const getPerformanceBadge = (performance: string) => {
-  const baseClasses = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
-
-  switch (performance) {
-    case "improved":
-      return `${baseClasses} bg-green-100 text-green-800`;
-    case "same":
-      return `${baseClasses} bg-blue-100 text-blue-800`;
-    case "declined":
-      return `${baseClasses} bg-red-100 text-red-800`;
-    default:
-      return `${baseClasses} bg-gray-100 text-gray-800`;
-  }
 };
 
 export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
@@ -85,8 +53,6 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
       email: consent.student?.person.email || "N/A",
       gender: consent.student?.person.gender || "N/A",
       referred: formatLabel(consent.referred),
-      stressLevel: consent.stress_level,
-      academicPerformance: consent.academic_performance_change,
       createdAt: consent.createdAt,
       what_brings_you_to_guidance: consent.what_brings_you_to_guidance,
     }));
@@ -104,8 +70,6 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
         item.program.toLowerCase().includes(query) ||
         item.email.toLowerCase().includes(query) ||
         item.referred.toLowerCase().includes(query) ||
-        item.stressLevel.toLowerCase().includes(query) ||
-        item.academicPerformance.toLowerCase().includes(query) ||
         item.what_brings_you_to_guidance?.toLowerCase().includes(query)
     );
   }, [tableData, localSearchQuery]);
@@ -269,19 +233,6 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
                         </div>
                       </div>
 
-                      {/* Status Indicators */}
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-xs font-medium text-gray-600 mb-2">Status</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className={getStressLevelBadge(consent.stressLevel)}>
-                            Stress: {formatLabel(consent.stressLevel)}
-                          </span>
-                          <span className={getPerformanceBadge(consent.academicPerformance)}>
-                            Performance: {formatLabel(consent.academicPerformance)}
-                          </span>
-                        </div>
-                      </div>
-
                       {/* What brings to guidance */}
                       {consent.what_brings_you_to_guidance && (
                         <div className="space-y-1">
@@ -319,12 +270,6 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Referred By
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      What Brings to Guidance
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Date Submitted
@@ -368,30 +313,6 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{consent.referred}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="space-y-1">
-                            <span className={getStressLevelBadge(consent.stressLevel)}>
-                              {formatLabel(consent.stressLevel)} stress
-                            </span>
-                            <br />
-                            <span className={getPerformanceBadge(consent.academicPerformance)}>
-                              {formatLabel(consent.academicPerformance)} performance
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="max-w-xs">
-                            {consent.what_brings_you_to_guidance ? (
-                              <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
-                                <div className="text-xs text-primary-700 line-clamp-2">
-                                  {consent.what_brings_you_to_guidance}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="text-xs text-gray-400">No response</div>
-                            )}
-                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(consent.createdAt)}
