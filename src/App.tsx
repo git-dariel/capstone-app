@@ -1,35 +1,36 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ProtectedRoute, PublicRoute } from "@/components";
 import {
-  HomePage,
-  SignInPage,
-  SignUpPage,
-  ConsentPage,
-  InventoryPage,
-  ConsentRecordsPage,
-  MentalHealthResultsPage,
-  DashboardPage,
-  ReportsPage,
   AccountsPage,
-  ResourcesPage,
   ActivitiesPage,
   ActivityTimerPage,
+  AidFunctionPage,
+  AppointmentsPage,
+  ConsentPage,
+  ConsentRecordsPage,
+  DashboardPage,
   HelpSupportPage,
   HistoryPage,
+  HomePage,
   InsightsPage,
-  AidFunctionPage,
-  StudentsPage,
+  InventoryPage,
+  LandingPage,
+  MentalHealthResultsPage,
   MessagesPage,
-  AppointmentsPage,
+  ReportsPage,
+  ResourcesPage,
+  SignInPage,
+  SignUpPage,
+  StudentsPage,
 } from "@/pages";
-import { ProtectedRoute, PublicRoute } from "@/components";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 
 function App() {
   return (
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route - redirect to signin for unauthenticated users */}
-          <Route path="/" element={<Navigate to="/signin" replace />} />
+          {/* Default route - show landing page */}
+          <Route path="/" element={<LandingPage />} />
 
           {/* Public routes - redirect to home if already authenticated */}
           <Route
