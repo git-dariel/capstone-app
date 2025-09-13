@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import pupLogo from "@/assets/PUPLogo.png";
 import iskoImage from "@/assets/isko.png";
+import { InstallAppButton } from "@/components/atoms";
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -587,6 +588,15 @@ export const LandingPage: React.FC = () => {
                 >
                   Sign In
                 </button>
+              </div>
+
+              {/* Install App Button */}
+              <div className="flex justify-center mt-6">
+                <InstallAppButton
+                  variant="outline"
+                  size="lg"
+                  className="bg-white/80 backdrop-blur-sm border-primary-300 text-primary-700 hover:bg-primary-50"
+                />
               </div>
 
               <div className="pt-8 border-t border-primary-200">
