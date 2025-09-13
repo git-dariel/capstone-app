@@ -20,12 +20,7 @@ export type {
 
 // Consent Service
 export { ConsentService } from "./consent.service";
-export type {
-  ConsentFormData,
-  ConsentResponse,
-  GetConsentResponse,
-  MentalHealthPrediction as ConsentMentalHealthPrediction,
-} from "./consent.service";
+export type { ConsentFormData, ConsentResponse, GetConsentResponse } from "./consent.service";
 
 // Inventory Service
 export { InventoryService } from "./inventory.service";

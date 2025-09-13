@@ -157,6 +157,7 @@ export interface ConsentFormData {
 
 export interface ConsentResponse {
   message: string;
+  disclaimer?: string;
   consent: {
     id: string;
     studentId: string;
