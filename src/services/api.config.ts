@@ -6,13 +6,13 @@ const getBaseURL = (): string => {
 
     // If running on localhost, use local API
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
-      return "http://localhost:5001/api";
+      return "http://localhost:5000/api";
     }
   }
 
   // For all other environments (production, staging, etc.), use Heroku or Vercel
-  return "https://mental-health-api-6d98f763cd10.herokuapp.com/api";
-  // return "https://capstone-api-mental-health.vercel.app/api";
+  // return "https://mental-health-api-6d98f763cd10.herokuapp.com/api";
+  return "https://capstone-api-mental-health.vercel.app/api";
 };
 
 export const API_CONFIG = {

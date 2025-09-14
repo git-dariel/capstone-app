@@ -50,3 +50,4 @@ export { CalendarModal } from "./CalendarModal";
 export { DateEventsDrawer } from "./DateEventsDrawer";
 export { RequestAppointmentModal } from "./RequestAppointmentModal";
 export { PendingRequestsTable } from "./PendingRequestsTable";
+export { OTPVerificationModal } from "./OTPVerificationModal";

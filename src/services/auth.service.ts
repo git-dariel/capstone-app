@@ -102,6 +102,22 @@ export interface AuthResponse {
   user: User;
   student?: Student;
   token?: string;
+  emailVerificationRequired?: boolean;
+  otpSent?: boolean;
+}
+
+export interface VerifyEmailRequest {
+  email: string;
+  otp: string;
+}
+
+export interface ResendOTPRequest {
+  email: string;
+}
+
+export interface VerifyEmailResponse {
+  message: string;
+  verified: boolean;
 }
 
 export class AuthService {
@@ -202,6 +218,32 @@ export class AuthService {
 
   static getCurrentStudent(): Student | null {
     return TokenManager.getStudent();
+  }
+
+  static async verifyEmail(verificationData: VerifyEmailRequest): Promise<VerifyEmailResponse> {
+    try {
+      const response = await HttpClient.post<VerifyEmailResponse>(
+        "/auth/verify-email",
+        verificationData
+      );
+      return response as unknown as VerifyEmailResponse;
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  static async resendOTP(
+    resendData: ResendOTPRequest
+  ): Promise<{ message: string; otpSent: boolean }> {
+    try {
+      const response = await HttpClient.post<{ message: string; otpSent: boolean }>(
+        "/auth/resend-otp",
+        resendData
+      );
+      return response as unknown as { message: string; otpSent: boolean };
+    } catch (error: any) {
+      throw error;
+    }
   }
 
   static isAuthenticated(): boolean {
