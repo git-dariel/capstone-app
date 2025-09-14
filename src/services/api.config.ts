@@ -6,7 +6,7 @@ const getBaseURL = (): string => {
 
     // If running on localhost, use local API
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
-      return "http://localhost:5001/api";
+      return "http://localhost:5000/api";
     }
   }
 

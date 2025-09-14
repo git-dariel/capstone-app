@@ -21,3 +21,4 @@ export { AppointmentCard } from "./AppointmentCard";
 export { ScheduleCard } from "./ScheduleCard";
 export { Toast, ToastContainer } from "./Toast";
 export { DateTimePicker } from "./DateTimePicker";
+export { OTPInput } from "./OTPInput";
