@@ -145,6 +145,19 @@ export const useAuth = () => {
 
       const response: AuthResponse = await AuthService.login(loginData);
 
+      // Check if email verification is required
+      if (response.emailVerificationRequired && response.otpSent) {
+        // Don't set user data yet, just stop loading and return response for OTP handling
+        setAuthState((prev) => ({
+          ...prev,
+          loading: false,
+          error: null,
+        }));
+        console.log("Login requires email verification. OTP sent to email.");
+        return response;
+      }
+
+      // Proceed with normal login flow if email is already verified
       setAuthState((prev) => ({
         ...prev,
         user: response.user,
@@ -183,6 +196,37 @@ export const useAuth = () => {
       }));
       throw error;
     }
+  };
+
+  const completeSignInAfterVerification = async (userData: AuthResponse) => {
+    // Complete the sign-in process after successful email verification
+    setAuthState((prev) => ({
+      ...prev,
+      user: userData.user,
+      student: userData.student || null,
+      loading: false,
+      error: null,
+    }));
+
+    // Small delay to ensure state is set before navigation
+    setTimeout(async () => {
+      // Check if user is a student and needs to complete consent
+      if (userData.user.type === "student" && userData.student?.id) {
+        try {
+          const hasConsent = await ConsentService.hasConsent(userData.student.id);
+          if (!hasConsent) {
+            navigate("/consent", { replace: true });
+            return;
+          }
+        } catch (error) {
+          console.error("Error checking consent:", error);
+          // If consent check fails, continue to normal navigation
+        }
+      }
+
+      const from = (location.state as any)?.from?.pathname || "/home";
+      navigate(from, { replace: true });
+    }, 100);
   };
 
   const signOut = async () => {
@@ -232,6 +276,7 @@ export const useAuth = () => {
     signUp,
     signIn,
     signOut,
+    completeSignInAfterVerification,
     clearError,
     isAuthenticated,
   };

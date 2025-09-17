@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Logo } from "@/components/atoms";
 import { SignInForm } from "@/components/molecules";
+import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
 import { Button } from "@/components/ui/button";
 import { HeartHandshake, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks";
+import { AuthService } from "@/services/auth.service";
+import type { AuthResponse } from "@/services/auth.service";
 
 interface SignInFormData {
   email: string;
@@ -11,26 +14,106 @@ interface SignInFormData {
 }
 
 export const SignInCard: React.FC = () => {
-  const { signIn, loading, error, clearError } = useAuth();
-  const [userType, setUserType] = React.useState<"guidance" | "student">("student");
+  const { signIn, loading, error, clearError, completeSignInAfterVerification } = useAuth();
+  const [userType, setUserType] = useState<"guidance" | "student">("student");
+
+  // OTP Modal state
+  const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [pendingAuthData, setPendingAuthData] = useState<AuthResponse | null>(null);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   const handleSignIn = async (data: SignInFormData) => {
     try {
       // Clear any previous errors
       clearError();
+      setOtpError(null);
 
       // Attempt login with selected user type
-      await signIn({
+      const response = await signIn({
         email: data.email,
         password: data.password,
         type: userType,
       });
 
-      // Success handling is done in the hook (navigation)
-      console.log("Login successful!");
+      // Check if email verification is required
+      if (response?.emailVerificationRequired && response?.otpSent) {
+        console.log("Login requires email verification. OTP sent to email.");
+        setUserEmail(data.email);
+        setPendingAuthData(response);
+        setIsOTPModalOpen(true);
+      } else {
+        // Success handling is done in the hook (navigation)
+        console.log("Login successful!");
+      }
     } catch (error: any) {
       // Error handling is done in the hook (setting error state)
       console.error("Login failed:", error.message);
+    }
+  };
+
+  const handleOTPVerify = async (otp: string) => {
+    setOtpLoading(true);
+    setOtpError(null);
+
+    try {
+      const response = await AuthService.verifyEmail({
+        email: userEmail,
+        otp: otp,
+      });
+
+      if (response.verified && pendingAuthData) {
+        console.log("Email verification successful! Completing sign-in...");
+        setIsOTPModalOpen(false);
+        // Complete the sign-in process with the pending auth data
+        await completeSignInAfterVerification(pendingAuthData);
+      }
+    } catch (error: any) {
+      console.error("OTP verification failed:", error.message);
+      setOtpError(error.message || "Verification failed. Please try again.");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleOTPResend = async () => {
+    setResendLoading(true);
+    setOtpError(null);
+
+    try {
+      const response = await AuthService.resendOTP({
+        email: userEmail,
+      });
+
+      if (response.otpSent) {
+        console.log("New OTP sent successfully!");
+      }
+    } catch (error: any) {
+      console.error("Failed to resend OTP:", error.message);
+      setOtpError(error.message || "Failed to resend verification code.");
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  const handleOTPModalClose = () => {
+    setIsOTPModalOpen(false);
+    setOtpError(null);
+    setPendingAuthData(null);
+    // Stay on sign-in page when modal is closed manually
+  };
+
+  const handleSuccessNavigation = async () => {
+    // This will be called by the modal after showing success for 3 seconds
+    setIsOTPModalOpen(false);
+    setOtpLoading(false);
+    setPendingAuthData(null);
+
+    if (pendingAuthData) {
+      // Complete the sign-in process
+      await completeSignInAfterVerification(pendingAuthData);
     }
   };
 
@@ -73,6 +156,19 @@ export const SignInCard: React.FC = () => {
       </div>
 
       <SignInForm onSubmit={handleSignIn} loading={loading} error={error} />
+
+      {/* OTP Verification Modal */}
+      <OTPVerificationModal
+        isOpen={isOTPModalOpen}
+        onClose={handleOTPModalClose}
+        onVerify={handleOTPVerify}
+        onResend={handleOTPResend}
+        onSuccessNavigation={handleSuccessNavigation}
+        email={userEmail}
+        loading={otpLoading}
+        resendLoading={resendLoading}
+        error={otpError}
+      />
     </div>
   );
 };
