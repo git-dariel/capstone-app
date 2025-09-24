@@ -21,6 +21,11 @@ export const SignInCard: React.FC = () => {
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [pendingAuthData, setPendingAuthData] = useState<AuthResponse | null>(null);
+  const [pendingCredentials, setPendingCredentials] = useState<{
+    email: string;
+    password: string;
+    type: "guidance" | "student";
+  } | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
@@ -43,6 +48,7 @@ export const SignInCard: React.FC = () => {
         console.log("Login requires email verification. OTP sent to email.");
         setUserEmail(data.email);
         setPendingAuthData(response);
+        setPendingCredentials({ email: data.email, password: data.password, type: userType });
         setIsOTPModalOpen(true);
       } else {
         // Success handling is done in the hook (navigation)
@@ -64,11 +70,20 @@ export const SignInCard: React.FC = () => {
         otp: otp,
       });
 
-      if (response.verified && pendingAuthData) {
+      // Backend returns { emailVerified: true } when successful
+      const isVerified = response.emailVerified ?? response.verified;
+      if (isVerified) {
         console.log("Email verification successful! Completing sign-in...");
+        // Re-attempt login with original credentials to establish session/cookie
+        if (pendingCredentials) {
+          await signIn(pendingCredentials);
+        }
+        setPendingAuthData(null);
+        setPendingCredentials(null);
         setIsOTPModalOpen(false);
-        // Complete the sign-in process with the pending auth data
-        await completeSignInAfterVerification(pendingAuthData);
+      } else {
+        // This shouldn't happen if backend is working correctly
+        setOtpError("Verification failed. Please try again.");
       }
     } catch (error: any) {
       console.error("OTP verification failed:", error.message);
