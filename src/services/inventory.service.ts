@@ -234,9 +234,6 @@ export interface InventoryFormData {
     remarks?: string; // Optional in schema
   };
   student_signature: string;
-  sleep_duration: string;
-  stress_level: "low" | "medium" | "high";
-  academic_performance_change: "same" | "improved" | "declined";
 }
 
 export interface MentalHealthPrediction {
@@ -268,9 +265,6 @@ export interface InventoryResponse {
     height: string;
     weight: string;
     coplexion: string;
-    sleep_duration: string;
-    stress_level: string;
-    academic_performance_change: string;
     createdAt: string;
     updatedAt: string;
     student: {
@@ -297,9 +291,6 @@ export interface GetInventoryResponse {
   height: string;
   weight: string;
   coplexion: string;
-  sleep_duration: string;
-  stress_level: string;
-  academic_performance_change: string;
   createdAt: string;
   updatedAt: string;
   student?: {
@@ -411,12 +402,22 @@ export class InventoryService {
     overrideData?: {
       gender?: string;
       age?: number;
-      educationLevel?: string;
-      sleepDuration?: number;
-      stressLevel?: string;
+      highSchoolAverage?: number;
+      natureOfSchooling?: string;
       parentsMaritalRelationship?: string;
+      numberOfChildren?: number;
+      ordinalPosition?: string;
       whoFinancesYourSchooling?: string;
       parentsTotalMonthlyIncome?: string;
+      quietPlaceToStudy?: string;
+      natureOfResidence?: string;
+      visionProblems?: string;
+      generalHealthProblems?: string;
+      psychologicalConsultation?: string;
+      favoriteSubject?: string;
+      leastFavoriteSubject?: string;
+      academicOrganizations?: string;
+      organizationPosition?: string;
     }
   ): Promise<MentalHealthPrediction> {
     try {

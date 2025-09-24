@@ -37,18 +37,6 @@ const statusOptions = [
   { value: "deceased", label: "Deceased" },
 ];
 
-const stressLevelOptions = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
-];
-
-const performanceChangeOptions = [
-  { value: "improved", label: "Improved" },
-  { value: "same", label: "Same" },
-  { value: "declined", label: "Declined" },
-];
-
 const relationshipOptions = [
   { value: "parent", label: "Parent" },
   { value: "child", label: "Child" },
@@ -157,9 +145,6 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
     weight: "",
     coplexion: "",
     student_signature: "",
-    sleep_duration: "8",
-    stress_level: "medium",
-    academic_performance_change: "same",
     person_to_be_contacted_in_case_of_accident_or_illness: {
       firstName: "",
       lastName: "",
@@ -1578,36 +1563,6 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
               disabled={loading}
             />
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField
-            id="sleep_duration"
-            label="Average hours of sleep per night *"
-            type="number"
-            value={formData.sleep_duration}
-            onChange={(e) => handleFieldChange("sleep_duration", e.target.value)}
-            required
-            disabled={loading}
-          />
-          <FormSelect
-            id="stress_level"
-            label="Current stress level *"
-            value={formData.stress_level}
-            onChange={(value) => handleFieldChange("stress_level", value)}
-            options={stressLevelOptions}
-            required
-            disabled={loading}
-          />
-          <FormSelect
-            id="academic_performance_change"
-            label="Academic performance change *"
-            value={formData.academic_performance_change}
-            onChange={(value) => handleFieldChange("academic_performance_change", value)}
-            options={performanceChangeOptions}
-            required
-            disabled={loading}
-          />
         </div>
       </div>
 
