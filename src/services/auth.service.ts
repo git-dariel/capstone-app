@@ -117,7 +117,9 @@ export interface ResendOTPRequest {
 
 export interface VerifyEmailResponse {
   message: string;
-  verified: boolean;
+  // Backend may return either of these flags
+  verified?: boolean;
+  emailVerified?: boolean;
 }
 
 export class AuthService {
@@ -127,6 +129,13 @@ export class AuthService {
 
       // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
+
+      // If email verification is required, DO NOT persist auth yet
+      if (authData.emailVerificationRequired) {
+        // Ensure we don't store any user/token while waiting for OTP verification
+        TokenManager.removeUser();
+        return authData;
+      }
 
       // Validate that we have a user object at minimum
       if (!authData.user || !authData.user.id) {

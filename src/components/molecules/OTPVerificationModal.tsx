@@ -71,29 +71,11 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
 
   const handleVerify = async () => {
     if (otp.length === 6) {
-      try {
-        await onVerify(otp);
-        // If we reach here without error, verification was successful
-        // Check if there's no error from parent component
-        if (!error) {
-          setIsSuccess(true);
-          setSuccessCountdown(3); // Reset countdown
-        }
-      } catch (verifyError) {
-        // Error will be handled by parent component
-        setIsSuccess(false);
-      }
+      await onVerify(otp);
+      // Success/error handling is now entirely managed by parent component
+      // The modal will be closed by parent on success
     }
   };
-
-  // Watch for successful verification (when loading stops and no error)
-  useEffect(() => {
-    if (!loading && !error && otp.length === 6 && !isSuccess) {
-      // This means verification was successful
-      setIsSuccess(true);
-      setSuccessCountdown(3);
-    }
-  }, [loading, error, otp.length, isSuccess]);
 
   const handleResend = async () => {
     await onResend();
