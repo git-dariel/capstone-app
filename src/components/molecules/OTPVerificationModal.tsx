@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { Modal } from "@/components/atoms/Modal";
+import { Modal, FullScreenLoading } from "@/components/atoms";
 import { OTPInput } from "@/components/atoms/OTPInput";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 import { Mail, RefreshCw, CheckCircle } from "lucide-react";
 
 interface OTPVerificationModalProps {
@@ -91,22 +91,24 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Verify" size="md">
-      <div className="text-center py-2">
-        {/* Icon */}
-        <div className="flex justify-center mb-4">
-          <div
-            className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-300 ${
-              isSuccess ? "bg-green-100" : "bg-primary-100"
-            }`}
-          >
-            {isSuccess ? (
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            ) : (
-              <Mail className="w-8 h-8 text-primary-600" />
-            )}
+    <>
+      <FullScreenLoading isLoading={loading} message="Verifying your code..." />
+      <Modal isOpen={isOpen} onClose={onClose} title="Verify" size="md">
+        <div className="text-center py-2">
+          {/* Icon */}
+          <div className="flex justify-center mb-4">
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                isSuccess ? "bg-green-100" : "bg-primary-100"
+              }`}
+            >
+              {isSuccess ? (
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              ) : (
+                <Mail className="w-8 h-8 text-primary-600" />
+              )}
+            </div>
           </div>
-        </div>
 
         {/* Title and Description */}
         <h2 className="text-xl font-semibold text-gray-900 mb-2">
@@ -137,16 +139,10 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
             <Button
               onClick={handleVerify}
               disabled={otp.length !== 6 || loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 rounded-lg mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              variant="primary"
+              className="w-full font-medium py-3 rounded-lg mb-4"
             >
-              {loading ? (
-                <div className="flex items-center justify-center">
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Verifying...
-                </div>
-              ) : (
-                "Verify"
-              )}
+              Verify
             </Button>
 
             {/* Resend Section */}
@@ -204,5 +200,6 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
         )}
       </div>
     </Modal>
+    </>
   );
 };

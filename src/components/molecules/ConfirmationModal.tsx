@@ -59,15 +59,13 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           </Button>
           <Button
             type="button"
+            loading={loading}
+            loadingText="Processing..."
             onClick={onConfirm}
-            disabled={loading}
-            className={`w-full sm:w-auto order-1 sm:order-2 ${
-              isDestructive
-                ? "bg-red-600 hover:bg-red-700 text-white"
-                : "bg-primary-700 hover:bg-primary-800 text-white"
-            }`}
+            variant={isDestructive ? "destructive" : "primary"}
+            className="w-full sm:w-auto order-1 sm:order-2"
           >
-            {loading ? "Processing..." : confirmText}
+            {confirmText}
           </Button>
         </div>
       </div>

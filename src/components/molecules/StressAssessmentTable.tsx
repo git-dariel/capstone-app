@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search, AlertCircle, Loader2 } from "lucide-react";
-import { Avatar } from "@/components/atoms";
+import { Search, AlertCircle } from "lucide-react";
+import { Avatar, LoadingScreen } from "@/components/atoms";
 import { cn } from "@/lib/utils";
 import { useStress } from "@/hooks";
 import type { StressAssessment as ApiStressAssessment } from "@/services";
@@ -159,12 +159,12 @@ export const StressAssessmentTable: React.FC = () => {
             </div>
           </div>
         ) : loading ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span className="text-sm">Loading stress assessments...</span>
-            </div>
-          </div>
+          <LoadingScreen 
+            isLoading={true} 
+            message="Loading stress assessments..." 
+            size="md"
+            className="py-8"
+          />
         ) : assessments.length === 0 ? (
           <div className="flex items-center justify-center py-8">
             <div className="text-center text-gray-500">

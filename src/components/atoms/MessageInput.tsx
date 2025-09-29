@@ -95,11 +95,12 @@ export const MessageInput: React.FC<MessageInputProps> = ({
       <Button
         type="submit"
         disabled={!message.trim() || disabled || isLoading}
+        loading={isLoading}
+        loadingText="Sending..."
         size="sm"
+        variant="primary"
         className={cn(
           "px-4 py-3 rounded-2xl flex-shrink-0",
-          "bg-primary-600 hover:bg-primary-700 text-white",
-          "disabled:bg-gray-300 disabled:cursor-not-allowed",
           "transition-all duration-200"
         )}
       >

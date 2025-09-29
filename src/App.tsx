@@ -1,4 +1,5 @@
 import { ProtectedRoute, PublicRoute } from "@/components";
+import { SplashScreen } from "@/components/atoms";
 import {
   AccountsPage,
   ActivitiesPage,
@@ -16,6 +17,7 @@ import {
   LandingPage,
   MentalHealthResultsPage,
   MessagesPage,
+  NotFoundPage,
   ReportsPage,
   ResourcesPage,
   SignInPage,
@@ -23,8 +25,20 @@ import {
   StudentsPage,
 } from "@/pages";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import { useState } from "react";
 
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
+
+  // Show splash screen on every app load
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} duration={2000} />;
+  }
+
   return (
     <Router>
       <div className="App">
@@ -213,6 +227,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* 404 Catch-all route - must be last */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
     </Router>

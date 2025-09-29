@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Modal } from "@/components/atoms";
+import { Modal, FullScreenLoading } from "@/components/atoms";
 import { FormField, FormSelect } from "@/components/atoms";
 import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
@@ -333,6 +333,10 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
 
   return (
     <>
+      <FullScreenLoading 
+        isLoading={loading} 
+        message={isViewMode ? "Updating announcement..." : "Creating announcement..."} 
+      />
       <Modal isOpen={isOpen} onClose={handleClose} title={getModalTitle()} size="lg">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {error && (
@@ -407,15 +411,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                   disabled={!isFormValid || loading}
                   className="bg-primary-700 hover:bg-primary-800 text-white w-full sm:w-auto"
                 >
-                  <span className="text-sm sm:text-base">
-                    {loading
-                      ? isViewMode
-                        ? "Updating..."
-                        : "Creating..."
-                      : isViewMode
-                      ? "Update Announcement"
-                      : "Create Announcement"}
-                  </span>
+                  {isViewMode ? "Update Announcement" : "Create Announcement"}
                 </Button>
               )}
             </div>

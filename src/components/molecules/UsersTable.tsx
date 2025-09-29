@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/atoms/Modal";
+import { Button } from "@/components/ui";
+import { Modal, LoadingScreen } from "@/components/atoms";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { FormField } from "@/components/atoms/FormField";
 import { FormSelect } from "@/components/atoms/FormSelect";
@@ -167,10 +167,12 @@ const EditUserForm: React.FC<EditUserFormProps> = ({ user, onClose, onSuccess })
         </Button>
         <Button
           type="submit"
+          loading={loading}
+          loadingText="Updating..."
+          variant="primary"
           disabled={loading}
-          className="bg-primary-700 hover:bg-primary-800 text-white"
         >
-          {loading ? "Updating..." : "Update User"}
+          Update User
         </Button>
       </div>
     </form>
@@ -327,10 +329,12 @@ export const UsersTable: React.FC = () => {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="p-6 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
-        </div>
+        <LoadingScreen 
+          isLoading={true} 
+          message="Loading users..." 
+          size="md" 
+          className="p-6"
+        />
       </div>
     );
   }
@@ -342,7 +346,8 @@ export const UsersTable: React.FC = () => {
           <p className="text-red-600 mb-4">{error}</p>
           <Button
             onClick={fetchUsers}
-            className="touch-manipulation bg-primary-700 hover:bg-primary-800 text-white"
+            variant="primary"
+            className="touch-manipulation"
           >
             Try Again
           </Button>
@@ -419,8 +424,9 @@ export const UsersTable: React.FC = () => {
                   <div className="flex flex-col sm:flex-row gap-2 pt-3 border-t border-gray-100">
                     <Button
                       size="sm"
+                      variant="primary"
                       onClick={() => handleEdit(user)}
-                      className="flex items-center justify-center gap-2 flex-1 touch-manipulation bg-primary-700 hover:bg-primary-800 text-white"
+                      className="flex items-center justify-center gap-2 flex-1 touch-manipulation"
                     >
                       <Edit2 className="w-4 h-4" />
                       Edit
@@ -516,8 +522,9 @@ export const UsersTable: React.FC = () => {
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
+                            variant="primary"
                             onClick={() => handleEdit(user)}
-                            className="flex items-center gap-1 bg-primary-700 hover:bg-primary-800 text-white"
+                            className="flex items-center gap-1"
                           >
                             <Edit2 className="w-3 h-3" />
                             Edit

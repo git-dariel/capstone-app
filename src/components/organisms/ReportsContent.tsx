@@ -6,7 +6,7 @@ import {
 } from "@/components/molecules";
 import { useAnxiety, useDepression, useStress } from "@/hooks";
 import { Button } from "@/components/ui";
-import { Download, Loader2 } from "lucide-react";
+import { Download } from "lucide-react";
 import { UserService } from "@/services";
 
 export const ReportsContent: React.FC = () => {
@@ -78,22 +78,14 @@ export const ReportsContent: React.FC = () => {
             <div className="flex items-center space-x-3">
               <Button
                 onClick={handleExportCsv}
-                disabled={isExporting}
+                loading={isExporting}
+                loadingText="Exporting..."
                 variant="outline"
                 size="default"
                 className="flex items-center space-x-2 w-full md:w-auto justify-center"
               >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Exporting...</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4" />
-                    <span>Export Data</span>
-                  </>
-                )}
+                <Download className="w-4 h-4" />
+                <span>Export Data</span>
               </Button>
             </div>
           </div>

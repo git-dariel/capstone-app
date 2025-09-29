@@ -175,7 +175,8 @@ export const MessagesContent: React.FC = () => {
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Button
                     onClick={() => setShowComposeModal(true)}
-                    className="bg-primary-600 hover:bg-primary-700 text-white text-sm sm:text-base py-2 sm:py-3 px-4 sm:px-6"
+                    variant="primary"
+                    className="text-sm sm:text-base py-2 sm:py-3 px-4 sm:px-6"
                   >
                     <MessageSquare className="w-4 h-4 mr-2" />
                     Compose Message

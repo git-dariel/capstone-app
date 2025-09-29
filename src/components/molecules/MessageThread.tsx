@@ -124,17 +124,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               variant="outline"
               size="sm"
               onClick={onLoadMore}
-              disabled={loading}
+              loading={loading}
+              loadingText="Loading..."
               className="text-primary-600 border-primary-200 hover:bg-primary-50 text-xs sm:text-sm py-2 px-3 sm:px-4 touch-manipulation"
             >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin" />
-                  Loading...
-                </div>
-              ) : (
-                "Load older messages"
-              )}
+              Load older messages
             </Button>
           </div>
         )}
