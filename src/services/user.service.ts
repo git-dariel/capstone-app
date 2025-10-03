@@ -40,6 +40,17 @@ export interface UpdateUserRequest {
   civilStatus?: string;
 }
 
+export interface ExportFilters {
+  program?: string;
+  gender?: string;
+  severityLevel?: string;
+  status?: string;
+  assessmentType?: string;
+  studentId?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
 export class UserService {
   static async getAllUsers(params?: QueryParams): Promise<User[]> {
     try {
@@ -77,9 +88,22 @@ export class UserService {
     }
   }
 
-  static async exportStudentDataCsv(): Promise<void> {
+  static async exportStudentDataCsv(filters?: ExportFilters): Promise<void> {
     try {
-      const response = await fetch(`${API_CONFIG.baseURL}/user/export/csv`, {
+      // Build query parameters from filters
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            params.append(key, String(value));
+          }
+        });
+      }
+
+      const queryString = params.toString();
+      const url = `${API_CONFIG.baseURL}/user/export/csv${queryString ? `?${queryString}` : ""}`;
+
+      const response = await fetch(url, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${TokenManager.getToken()}`,
@@ -87,17 +111,28 @@ export class UserService {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to export CSV data");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to export CSV data");
       }
 
       // Create blob from response
       const blob = await response.blob();
 
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers.get("content-disposition");
+      let filename = "student_mental_health_data.csv";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
       // Create download link
-      const url = window.URL.createObjectURL(blob);
+      const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url;
-      link.download = "student_mental_health_data.csv";
+      link.href = downloadUrl;
+      link.download = filename;
 
       // Trigger download
       document.body.appendChild(link);
@@ -105,7 +140,7 @@ export class UserService {
 
       // Cleanup
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       throw error;
     }
