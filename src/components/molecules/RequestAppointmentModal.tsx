@@ -3,7 +3,7 @@ import { Modal, DateTimePicker } from "@/components/atoms";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useSchedules, useAuth } from "@/hooks";
+import { useSchedules } from "@/hooks";
 import { HttpClient } from "@/services/api.config";
 import type { Schedule } from "@/services";
 
@@ -54,7 +54,6 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
   onSubmit,
   loading = false,
 }) => {
-  const {} = useAuth();
   const { schedules, fetchSchedules } = useSchedules();
   const [counselors, setCounselors] = useState<any[]>([]);
   const [availableSchedules, setAvailableSchedules] = useState<Schedule[]>([]);
