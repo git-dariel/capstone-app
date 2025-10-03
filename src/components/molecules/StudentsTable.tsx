@@ -183,7 +183,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
           (student.latestAssessment.riskLevel &&
             student.latestAssessment.riskLevel.toLowerCase().includes(searchLower)));
 
-      // Notes search
+      // Consultant Records search
       const notesMatch =
         student.notes &&
         student.notes.some(
@@ -485,9 +485,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                         {renderAssessmentInfo(student.latestAssessment)}
                       </div>
 
-                      {/* Notes */}
+                      {/* Consultant Records */}
                       <div className="space-y-1">
-                        <div className="text-xs font-medium text-gray-600">Notes</div>
+                        <div className="text-xs font-medium text-gray-600">Consultant Records</div>
                         {student.notes && student.notes.length > 0 ? (
                           <>
                             {student.notes.length === 1 ? (
@@ -498,20 +498,20 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                                   </div>
                                 ) : (
                                   <div className="text-xs text-primary-700 italic">
-                                    Untitled note
+                                    Untitled consultant record
                                   </div>
                                 )}
                               </div>
                             ) : (
                               <div className="bg-primary-50 border border-primary-200 rounded-md text-center py-1">
                                 <div className="text-xs font-medium text-primary-900 truncate">
-                                  {student.notes.length} notes
+                                  {student.notes.length} consultant records
                                 </div>
                               </div>
                             )}
                           </>
                         ) : (
-                          <div className="text-xs text-gray-400">No notes</div>
+                          <div className="text-xs text-gray-400">No consultant records</div>
                         )}
                       </div>
                     </div>
@@ -540,7 +540,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                         Latest Assessment
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Notes
+                        Consultant Records
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Date Added
@@ -599,7 +599,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                                       </div>
                                     ) : (
                                       <div className="text-xs text-primary-700 italic">
-                                        Untitled note
+                                        Untitled consultant record
                                       </div>
                                     )}
                                   </div>
@@ -607,13 +607,13 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                                   // Multiple notes: show highlighted count
                                   <div className="bg-primary-50 border border-primary-200 rounded-md text-center py-1">
                                     <div className="text-xs font-medium text-primary-900 truncate">
-                                      {student.notes.length} notes
+                                      {student.notes.length} consultant records
                                     </div>
                                   </div>
                                 )}
                               </>
                             ) : (
-                              <div className="text-xs text-gray-400">No notes</div>
+                              <div className="text-xs text-gray-400">No consultant records</div>
                             )}
                           </div>
                         </td>

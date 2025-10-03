@@ -14,6 +14,7 @@ import {
   HomePage,
   InsightsPage,
   InventoryPage,
+  InventoryRecordsPage,
   LandingPage,
   MentalHealthResultsPage,
   MessagesPage,
@@ -132,6 +133,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StudentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory-records"
+            element={
+              <ProtectedRoute>
+                <InventoryRecordsPage />
               </ProtectedRoute>
             }
           />
