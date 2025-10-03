@@ -1727,10 +1727,13 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
       <div className="flex justify-end space-x-4">
         <Button
           type="submit"
+          loading={loading}
+          loadingText="Submitting..."
+          variant="primary"
           disabled={loading}
-          className="bg-primary-700 hover:bg-primary-800 text-white px-8 py-2"
+          className="px-8 py-2"
         >
-          {loading ? "Submitting..." : "Complete Inventory"}
+          Complete Inventory
         </Button>
       </div>
     </form>

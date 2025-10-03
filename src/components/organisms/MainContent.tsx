@@ -158,6 +158,8 @@ export const MainContent: React.FC = () => {
             <Button
               onClick={handleOpenCreateModal}
               className="bg-primary-500 hover:bg-primary-600 text-white px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center space-x-2 w-full sm:w-auto"
+              loading={loading}
+              loadingText="Loading..."
             >
               <Plus className="w-4 h-4" />
               <span className="text-sm sm:text-base">New Announcement</span>
@@ -187,13 +189,10 @@ export const MainContent: React.FC = () => {
                   onClick={
                     showAllAnnouncements ? handleViewLessAnnouncements : handleViewAllAnnouncements
                   }
-                  disabled={loading}
+                  loading={loading}
+                  loadingText="Loading..."
                 >
-                  {loading
-                    ? "Loading..."
-                    : showAllAnnouncements
-                    ? "View Less"
-                    : `View All (${total})`}
+                  {showAllAnnouncements ? "View Less" : `View All (${total})`}
                 </Button>
               )}
             </div>
@@ -233,6 +232,8 @@ export const MainContent: React.FC = () => {
                       <Button
                         onClick={handleOpenCreateModal}
                         className="mt-4 bg-primary-600 hover:bg-primary-700 text-white w-full sm:w-auto"
+                        loading={loading}
+                        loadingText="Loading..."
                       >
                         Create Announcement
                       </Button>

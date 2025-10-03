@@ -187,11 +187,12 @@ export const RetakeRequestsTable: React.FC<RetakeRequestsTableProps> = ({
               variant="outline"
               size="sm"
               onClick={loadRequests}
-              disabled={loading}
+              loading={loading}
+              loadingText="Loading..."
               className="flex items-center justify-center w-full sm:w-auto"
             >
               <Search className="w-4 h-4 mr-2" />
-              {loading ? "Loading..." : "Refresh"}
+              Refresh
             </Button>
           </div>
         </div>

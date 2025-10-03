@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
-import { QuestionCard } from "@/components/atoms";
+import { QuestionCard, FullScreenLoading } from "@/components/atoms";
 import { Button } from "@/components/ui";
 
 interface DepressionQuestionnaireProps {
   onBack: () => void;
   onSubmit: (responses: Record<number, number>) => void;
+  loading?: boolean;
 }
 
 export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = ({
   onBack,
   onSubmit,
+  loading = false,
 }) => {
   const [responses, setResponses] = useState<Record<number, number>>({});
 
@@ -81,16 +83,18 @@ export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = (
   const interpretation = getScoreInterpretation(totalScore);
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={onBack}
-            className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back to Assessments</span>
+    <>
+      <FullScreenLoading isLoading={loading} message="Submitting your depression assessment..." />
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={onBack}
+              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Assessments</span>
           </button>
         </div>
 
@@ -141,13 +145,15 @@ export const DepressionQuestionnaire: React.FC<DepressionQuestionnaireProps> = (
       <div className="text-center">
         <Button
           onClick={handleSubmit}
-          disabled={!isComplete}
-          className="px-8 py-3 bg-primary-700 hover:bg-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!isComplete || loading}
+          variant="primary"
+          className="px-8 py-3"
         >
           <Send className="w-4 h-4 mr-2" />
           Submit Assessment
         </Button>
       </div>
     </div>
+    </>
   );
 };

@@ -1,4 +1,4 @@
-import { Modal } from "@/components/atoms";
+import { Modal, LoadingSpinner } from "@/components/atoms";
 import {
   AnxietyQuestionnaire,
   AssessmentGrid,
@@ -10,7 +10,7 @@ import {
 } from "@/components/molecules";
 import { useAnxiety, useAuth, useDepression, useStress, useSuicide } from "@/hooks";
 import type { CooldownInfo } from "@/services/stress.service";
-import { AlertCircle, CheckCircle, Clock, FileText, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock, FileText } from "lucide-react";
 import React, { useState } from "react";
 
 type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | null;
@@ -384,7 +384,7 @@ export const ResourcesContent: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4 w-full max-w-sm">
               <div className="flex flex-col items-center justify-center space-y-3">
-                <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-primary-700 animate-spin" />
+                <LoadingSpinner size="lg" variant="lottie" />
                 <p className="text-gray-700 text-sm sm:text-base text-center">
                   Submitting your assessment...
                 </p>
@@ -490,19 +490,19 @@ export const ResourcesContent: React.FC = () => {
 
         {/* Questionnaires */}
         {currentAssessment === "anxiety" && (
-          <AnxietyQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
+          <AnxietyQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
         )}
 
         {currentAssessment === "depression" && (
-          <DepressionQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
+          <DepressionQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
         )}
 
         {currentAssessment === "stress" && (
-          <StressQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
+          <StressQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
         )}
 
         {currentAssessment === "suicide" && (
-          <SuicideQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} />
+          <SuicideQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
         )}
       </div>
     </main>

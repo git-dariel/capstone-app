@@ -1,5 +1,6 @@
 export { HomePage } from "./HomePage";
 export { LandingPage } from "./LandingPage";
+export { NotFoundPage } from "./NotFoundPage";
 export { SignInPage } from "./SignInPage";
 export { SignUpPage } from "./SignUpPage";
 export { ConsentPage } from "./ConsentPage";

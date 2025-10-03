@@ -1,6 +1,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/atoms/LoadingSpinner";
 
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
@@ -33,12 +34,63 @@ export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
+  loading?: boolean;
+  loadingText?: string;
+  loadingSpinnerSize?: "sm" | "md" | "lg" | "xl";
+  children: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
+  ({ 
+    className, 
+    variant, 
+    size, 
+    asChild = false, 
+    loading = false,
+    loadingText,
+    loadingSpinnerSize = "sm",
+    children,
+    disabled,
+    ...props 
+  }, ref) => {
+    
+    const isDisabled = disabled || loading;
+    
+    const getSpinnerSize = () => {
+      if (loadingSpinnerSize !== "sm") return loadingSpinnerSize;
+      
+      switch (size) {
+        case "sm":
+          return "sm";
+        case "lg":
+          return "md";
+        case "icon":
+          return "md";
+        default:
+          return "sm";
+      }
+    };
+
     return (
-      <button className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+      <button 
+        className={cn(buttonVariants({ variant, size, className }))} 
+        ref={ref} 
+        disabled={isDisabled}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <LoadingSpinner 
+              size={getSpinnerSize()} 
+              className="mr-2" 
+              variant="lottie" 
+            />
+            {loadingText || "Loading..."}
+          </>
+        ) : (
+          children
+        )}
+      </button>
     );
   }
 );

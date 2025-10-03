@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Logo } from "@/components/atoms";
 import { SignInForm } from "@/components/molecules";
 import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 import { HeartHandshake, GraduationCap } from "lucide-react";
 import { useAuth } from "@/hooks";
 import { AuthService } from "@/services/auth.service";
@@ -147,11 +147,8 @@ export const SignInCard: React.FC = () => {
         <Button
           onClick={() => setUserType("guidance")}
           disabled={loading}
-          className={`flex-1 py-3 gap-2 ${
-            userType === "guidance"
-              ? "bg-primary-700 hover:bg-primary-800 text-white"
-              : "border-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
-          }`}
+          variant={userType === "guidance" ? "primary" : "outline"}
+          className="flex-1 py-3 gap-2"
         >
           <HeartHandshake className="w-5 h-5" />
           Guidance
@@ -159,11 +156,8 @@ export const SignInCard: React.FC = () => {
         <Button
           onClick={() => setUserType("student")}
           disabled={loading}
-          className={`flex-1 py-3 gap-2 ${
-            userType === "student"
-              ? "bg-primary-700 hover:bg-primary-800 text-white"
-              : "border-2 border-gray-200 bg-white hover:bg-gray-50 text-gray-700"
-          }`}
+          variant={userType === "student" ? "primary" : "outline"}
+          className="flex-1 py-3 gap-2"
         >
           <GraduationCap className="w-5 h-5" />
           Student

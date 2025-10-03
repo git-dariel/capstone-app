@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { FormField } from "@/components/atoms/FormField";
+import { FormField, FullScreenLoading } from "@/components/atoms";
 import { FormSelect } from "@/components/atoms/FormSelect";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui";
 import {
   programOptions,
   relationshipOptions,
@@ -144,12 +144,14 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
     formData.guardian.relationship.trim();
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-1.5">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-2 py-1.5 rounded-lg text-xs col-span-2">
-          {error}
-        </div>
-      )}
+    <>
+      <FullScreenLoading isLoading={loading} message="Creating your account..." />
+      <form onSubmit={handleSubmit} className="space-y-1.5">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 px-2 py-1.5 rounded-lg text-xs col-span-2">
+            {error}
+          </div>
+        )}
 
       {/* Two Column Grid Layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -326,9 +328,10 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
       <Button
         type="submit"
         disabled={!isFormValid || loading}
-        className="w-full bg-primary-700 hover:bg-primary-800 text-white font-medium py-2 rounded-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        variant="primary"
+        className="w-full font-medium py-2 rounded-full mt-2"
       >
-        {loading ? "Creating Account..." : "Sign Up"}
+        Sign Up
       </Button>
 
       <div className="text-center text-xs text-gray-600 mt-1.5">
@@ -338,5 +341,6 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
         </a>
       </div>
     </form>
+    </>
   );
 };
