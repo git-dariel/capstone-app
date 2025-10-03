@@ -109,7 +109,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   const isStudent = user?.type === "student";
 
   const allNavigationItems = [
-    { icon: <Home className="w-5 h-5" />, label: "Home", path: "/home" },
+    {
+      icon: <Home className="w-5 h-5" />,
+      label: "Annoucements",
+      path: "/home",
+      guidanceOnly: true,
+    },
     {
       icon: <BarChart3 className="w-5 h-5" />,
       label: "Dashboard",

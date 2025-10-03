@@ -13,17 +13,73 @@ import {
   Clock,
   Menu,
   X,
+  Bell,
+  FileText,
+  Download,
 } from "lucide-react";
 import pupLogo from "@/assets/PUPLogo.png";
 import iskoImage from "@/assets/isko.png";
-import { InstallAppButton } from "@/components/atoms";
+import { InstallAppButton, Avatar } from "@/components/atoms";
+import { useAnnouncement } from "@/hooks";
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"home" | "announcements">("home");
+  const { announcements, loading, fetchAnnouncements } = useAnnouncement();
 
   // Animation refs
   const mainRef = useRef<HTMLDivElement>(null);
+
+  // Fetch announcements when tab is switched to announcements
+  useEffect(() => {
+    if (activeTab === "announcements") {
+      fetchAnnouncements({ limit: 50 });
+    }
+  }, [activeTab]); // Remove fetchAnnouncements from dependencies to prevent infinite loop
+
+  // Helper function to format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+
+    if (diffInHours < 1) return "Just now";
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return "Yesterday";
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    });
+  };
+
+  // Helper function to get category color
+  const getCategoryColor = (status: string) => {
+    switch (status) {
+      case "academic":
+        return "bg-blue-100 text-blue-800";
+      case "career":
+        return "bg-green-100 text-green-800";
+      case "wellness":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  // Helper function to check if attachment is an image
+  const isImageFile = (filename: string): boolean => {
+    if (!filename) return false;
+    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
+    const lowerFilename = filename.toLowerCase();
+    return (
+      imageExtensions.some((ext) => lowerFilename.endsWith(ext)) ||
+      lowerFilename.startsWith("data:image/") ||
+      lowerFilename.includes("image")
+    );
+  };
 
   const features = [
     {
@@ -79,7 +135,7 @@ export const LandingPage: React.FC = () => {
 
   // Initialize animations using anime.js
   useEffect(() => {
-    if (!mainRef.current) return;
+    if (!mainRef.current || activeTab !== "home") return;
 
     // Hero section entrance animations with delayed sequence
 
@@ -180,10 +236,12 @@ export const LandingPage: React.FC = () => {
 
     // Add hover effects after initial animation
     setTimeout(addHoverEffects, 1000);
-  }, []);
+  }, [activeTab]); // Add activeTab as dependency to re-run animations when switching to home
 
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
+    if (activeTab !== "home") return;
+
     const observerOptions = {
       threshold: 0.1,
       rootMargin: "0px 0px -100px 0px",
@@ -247,10 +305,11 @@ export const LandingPage: React.FC = () => {
     setTimeout(observeSections, 100);
 
     return () => observer.disconnect();
-  }, []);
+  }, [activeTab]); // Add activeTab as dependency
 
-  return (
-    <div ref={mainRef} className="min-h-screen bg-white">
+  // Render announcements content
+  const renderAnnouncements = () => (
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="bg-white shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -267,19 +326,47 @@ export const LandingPage: React.FC = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-3">
-              <button
-                onClick={() => navigate("/signin")}
-                className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => navigate("/signup")}
-                className="px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm cursor-pointer"
-              >
-                Get Started
-              </button>
+            <div className="hidden md:flex items-center space-x-4">
+              {/* Tab Navigation */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab("home")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                    activeTab === "home"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => setActiveTab("announcements")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "announcements"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Announcements</span>
+                </button>
+              </div>
+
+              {/* Auth Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => navigate("/signin")}
+                  className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
             </div>
 
             {/* Mobile Menu Button */}
@@ -298,6 +385,361 @@ export const LandingPage: React.FC = () => {
           {isMenuOpen && (
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-3 space-y-3">
+                {/* Mobile Tab Navigation */}
+                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+                  <button
+                    onClick={() => {
+                      setActiveTab("home");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
+                      activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
+                    }`}
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("announcements");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
+                      activeTab === "announcements"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Bell className="w-3 h-3" />
+                    <span>Announcements</span>
+                  </button>
+                </div>
+
+                {/* Auth Buttons */}
+                <button
+                  onClick={() => {
+                    navigate("/signin");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 bg-white text-primary-700 border-2 border-primary-700 font-medium rounded-lg hover:bg-primary-50 transition-colors duration-200 text-center cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/signup");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm text-center"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Header Section */}
+      <section className="bg-white border-b border-gray-200 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-2">
+              <Bell className="w-6 h-6 text-primary-700" />
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Latest Announcements</h1>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+              Stay updated with the latest news, events, and important information from the Office
+              of Guidance and Counseling Services.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Announcements Feed */}
+      <section className="py-8">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          {loading ? (
+            <div className="space-y-6">
+              {[...Array(3)].map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-2xl p-6 border border-gray-200 animate-pulse"
+                  style={{
+                    boxShadow: `15px 15px 30px rgba(163, 18, 97, 0.05), 
+                                -15px -15px 30px rgba(255, 255, 255, 0.9)`,
+                  }}
+                >
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                      <div className="h-3 bg-gray-200 rounded w-16"></div>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-full"></div>
+                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+                <Bell className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No announcements yet</h3>
+              <p className="text-gray-600">
+                Check back later for updates from the guidance office.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {announcements.map((announcement) => (
+                <div
+                  key={announcement.id}
+                  className="bg-white rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-200 group"
+                  style={{
+                    boxShadow: `15px 15px 30px rgba(163, 18, 97, 0.05), 
+                                -15px -15px 30px rgba(255, 255, 255, 0.9),
+                                inset 3px 3px 6px rgba(255, 255, 255, 0.8),
+                                inset -3px -3px 6px rgba(163, 18, 97, 0.02)`,
+                  }}
+                >
+                  {/* Post Header */}
+                  <div className="p-6 pb-4">
+                    <div className="flex items-center space-x-3">
+                      <Avatar
+                        fallback="GC"
+                        className="w-12 h-12 bg-primary-100 text-primary-700 font-semibold"
+                      />
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-gray-900">Guidance Counselor</h4>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(announcement.createdAt)}
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(
+                          announcement.status
+                        )}`}
+                      >
+                        {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Post Content */}
+                  <div className="px-6 pb-4">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-900 leading-tight">
+                        {announcement.title}
+                      </h3>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                        {announcement.description}
+                      </p>
+                    </div>
+
+                    {/* Attachment Display */}
+                    {announcement.attachement && (
+                      <div className="mt-4">
+                        {isImageFile(announcement.attachement) ? (
+                          <div className="rounded-xl overflow-hidden border border-gray-200">
+                            <img
+                              src={announcement.attachement}
+                              alt="Announcement attachment"
+                              className="w-full h-auto max-h-96 object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                              }}
+                            />
+                            <div className="hidden bg-gray-100 p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
+                                  <FileText className="w-5 h-5 text-gray-600" />
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">Attachment</p>
+                                  <p className="text-xs text-gray-500">Click to view full size</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center space-x-3 hover:bg-gray-100 transition-colors cursor-pointer">
+                            <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
+                              <FileText className="w-5 h-5 text-gray-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">Attachment</p>
+                              <p className="text-xs text-gray-500">Click to download or view</p>
+                            </div>
+                            <Download className="w-4 h-4 text-gray-400" />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Post Footer */}
+                  <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span className="flex items-center space-x-1">
+                        <span>📢</span>
+                        <span>Official Announcement</span>
+                      </span>
+                      <span className="text-primary-600 font-medium">
+                        Office of Guidance & Counseling
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-12 bg-white border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Stay Connected with Our Services</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Sign in to access personalized mental health assessments, counseling appointments, and
+              exclusive resources.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => navigate("/signin")}
+                className="inline-flex items-center px-6 py-3 bg-primary-700 text-white font-semibold rounded-xl hover:bg-primary-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Sign In to Portal
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+              <button
+                onClick={() => navigate("/signup")}
+                className="inline-flex items-center px-6 py-3 bg-white text-primary-700 font-semibold rounded-xl border-2 border-primary-200 hover:border-primary-300 transition-all duration-300"
+              >
+                Create Account
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+
+  // Render home content
+  const renderHome = () => (
+    <div ref={mainRef} className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center space-x-3">
+              <img src={pupLogo} alt="PUP Logo" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <div>
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">
+                  Office of Guidance and Counseling Services
+                </h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Mental Health Platform</p>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              {/* Tab Navigation */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab("home")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                    activeTab === "home"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => setActiveTab("announcements")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "announcements"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Announcements</span>
+                </button>
+              </div>
+
+              {/* Auth Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => navigate("/signin")}
+                  className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white">
+              <div className="px-4 py-3 space-y-3">
+                {/* Mobile Tab Navigation */}
+                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+                  <button
+                    onClick={() => {
+                      setActiveTab("home");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
+                      activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
+                    }`}
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("announcements");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
+                      activeTab === "announcements"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Bell className="w-3 h-3" />
+                    <span>Announcements</span>
+                  </button>
+                </div>
+
+                {/* Auth Buttons */}
                 <button
                   onClick={() => {
                     navigate("/signin");
@@ -638,4 +1080,7 @@ export const LandingPage: React.FC = () => {
       </footer>
     </div>
   );
+
+  // Main render function
+  return <>{activeTab === "home" ? renderHome() : renderAnnouncements()}</>;
 };

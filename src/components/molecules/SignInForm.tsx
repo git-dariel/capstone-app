@@ -75,6 +75,13 @@ export const SignInForm: React.FC<SignInFormProps> = ({ onSubmit, loading = fals
             Sign up
           </a>
         </div>
+
+        <div className="text-center text-xs text-gray-600 mt-3">
+          Go back to landing page?{" "}
+          <a href="/" className="text-primary-700 hover:text-primary-800 font-medium">
+            Landing page
+          </a>
+        </div>
       </form>
     </>
   );
