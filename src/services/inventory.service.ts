@@ -293,6 +293,28 @@ export interface GetInventoryResponse {
   coplexion: string;
   createdAt: string;
   updatedAt: string;
+  predictionGenerated?: boolean;
+  predictionUpdatedAt?: string;
+  mentalHealthPrediction?: {
+    academicPerformanceOutlook: "improved" | "same" | "declined";
+    confidence: number;
+    modelAccuracy: {
+      decisionTree: number;
+      randomForest: number;
+    };
+    riskFactors: string[];
+    mentalHealthRisk: {
+      level: "low" | "moderate" | "high" | "critical";
+      description: string;
+      needsAttention: boolean;
+      urgency: "none" | "monitor" | "schedule" | "immediate";
+      assessmentSummary: string;
+      disclaimer: string;
+    };
+    inputData: any;
+    recommendations: string[];
+    predictionDate: string;
+  };
   student?: {
     id: string;
     studentNumber: string;
@@ -429,6 +451,28 @@ export class InventoryService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.error || error.message || "Failed to get mental health prediction"
+      );
+    }
+  }
+
+  /**
+   * Get stored mental health prediction for a student
+   */
+  static async getStoredPrediction(studentId: string): Promise<{
+    prediction: GetInventoryResponse["mentalHealthPrediction"];
+    predictionGenerated: boolean;
+    predictionUpdatedAt?: string;
+  }> {
+    try {
+      const response = await HttpClient.get<{
+        prediction: GetInventoryResponse["mentalHealthPrediction"];
+        predictionGenerated: boolean;
+        predictionUpdatedAt?: string;
+      }>(`/inventory/student/${studentId}/prediction`);
+      return response;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || error.message || "Failed to get stored prediction"
       );
     }
   }

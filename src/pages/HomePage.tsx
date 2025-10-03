@@ -31,7 +31,10 @@ export const HomePage: React.FC = () => {
             return;
           }
 
-          console.log("Both consent and inventory completed, staying on home page");
+          console.log("Both consent and inventory completed, redirecting student to resources");
+          // Redirect students to resources page after completing requirements
+          navigate("/resources", { replace: true });
+          return;
         } catch (error) {
           console.error("Error checking completion status:", error);
           // Continue to home page if checks fail

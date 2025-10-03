@@ -3,11 +3,11 @@ import {
   AnxietyAssessmentTable,
   DepressionAssessmentTable,
   StressAssessmentTable,
+  ExportFilterDropdown,
 } from "@/components/molecules";
 import { useAnxiety, useDepression, useStress } from "@/hooks";
-import { Button } from "@/components/ui";
-import { Download } from "lucide-react";
 import { UserService } from "@/services";
+import type { ExportFilters } from "@/services";
 
 export const ReportsContent: React.FC = () => {
   const { fetchAssessments: fetchAnxiety } = useAnxiety();
@@ -46,16 +46,18 @@ export const ReportsContent: React.FC = () => {
     fetchAllAssessments();
   }, []); // Empty dependency array to run only once on mount
 
-  const handleExportCsv = async () => {
+  const handleExportCsv = async (filters: ExportFilters) => {
     setIsExporting(true);
     try {
-      await UserService.exportStudentDataCsv();
+      await UserService.exportStudentDataCsv(filters);
       // Show success message (you could add a toast notification here)
       console.log("CSV export successful");
     } catch (error) {
       console.error("Error exporting CSV:", error);
       // Show error message (you could add a toast notification here)
-      alert("Failed to export CSV data. Please try again.");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to export CSV data. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsExporting(false);
     }
@@ -76,17 +78,7 @@ export const ReportsContent: React.FC = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <Button
-                onClick={handleExportCsv}
-                loading={isExporting}
-                loadingText="Exporting..."
-                variant="outline"
-                size="default"
-                className="flex items-center space-x-2 w-full md:w-auto justify-center"
-              >
-                <Download className="w-4 h-4" />
-                <span>Export Data</span>
-              </Button>
+              <ExportFilterDropdown onExport={handleExportCsv} isExporting={isExporting} />
             </div>
           </div>
         </div>

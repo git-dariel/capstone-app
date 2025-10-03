@@ -6,6 +6,8 @@ export { ReportsContent } from "./ReportsContent";
 export { AccountsContent } from "./AccountsContent";
 export { StudentsContent } from "./StudentsContent";
 export { ConsentRecordsContent } from "./ConsentRecordsContent";
+export { InventoryRecordsContent } from "./InventoryRecordsContent";
+export { ConsultantRecordsContent } from "./ConsultantRecordsContent";
 export { ResourcesContent } from "./ResourcesContent";
 export { ActivitiesContent } from "./ActivitiesContent";
 export { TimerPage } from "./TimerPage";

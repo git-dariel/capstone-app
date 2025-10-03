@@ -8,7 +8,7 @@ export type { LoginRequest, RegisterRequest, User, Student, AuthResponse } from 
 
 // User Service
 export { UserService } from "./user.service";
-export type { User as UserProfile, UpdateUserRequest } from "./user.service";
+export type { User as UserProfile, UpdateUserRequest, ExportFilters } from "./user.service";
 
 // Student Service
 export { StudentService } from "./student.service";

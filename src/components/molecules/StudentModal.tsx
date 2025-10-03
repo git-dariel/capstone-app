@@ -365,11 +365,12 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
           {/* Notes Section */}
           <div className="space-y-4">
             <h3 className="text-md font-semibold text-gray-900 border-b border-gray-200 pb-2">
-              Guidance Notes
+              Guidance Consultant Records
             </h3>
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-600">
-                Add consultation notes, recommendations, or observations for the student.
+                Add consultation consultant records, recommendations, or observations for the
+                student.
               </p>
               <Button
                 type="button"
@@ -380,7 +381,7 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                 className="text-primary-600 border-primary-600 hover:bg-primary-50 transition-all duration-200 hover:scale-105 hover:shadow-md"
               >
                 <Plus className="w-4 h-4 mr-1 transition-transform duration-200 group-hover:rotate-90" />
-                Add Note
+                Add Record
               </Button>
             </div>
 
@@ -389,8 +390,8 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-primary-400 rounded-full animate-pulse"></div>
                   <span className="text-primary-800">
-                    No guidance notes yet. Add notes about consultations, recommendations, or
-                    observations.
+                    No guidance consultant records yet. Add consultant records about consultations,
+                    recommendations, or observations.
                   </span>
                 </div>
               </div>
@@ -406,7 +407,9 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                     }}
                   >
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-primary-800">Note {index + 1}</span>
+                      <span className="text-sm font-medium text-primary-800">
+                        Consultant Record {index + 1}
+                      </span>
                       <div className="flex items-center space-x-1">
                         <Button
                           type="button"
@@ -415,7 +418,11 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                           onClick={() => handleToggleMinimize(index)}
                           disabled={loading}
                           className="text-primary-600 hover:text-primary-800 hover:bg-primary-200 transition-all duration-200 hover:scale-110"
-                          title={note.isMinimized ? "Expand note" : "Minimize note"}
+                          title={
+                            note.isMinimized
+                              ? "Expand consultant record"
+                              : "Minimize consultant record"
+                          }
                         >
                           {note.isMinimized ? (
                             <ChevronDown className="w-4 h-4 transition-transform duration-200" />
@@ -430,7 +437,7 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                           onClick={() => handleRemoveNote(index)}
                           disabled={loading}
                           className="text-red-600 hover:text-red-900 hover:bg-red-50 transition-all duration-200 hover:scale-110"
-                          title="Delete note"
+                          title="Delete consultant record"
                         >
                           <X className="w-4 h-4 transition-transform duration-200 hover:rotate-90" />
                         </Button>
@@ -450,7 +457,7 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                           label="Title"
                           value={note.title || ""}
                           onChange={(e) => handleNoteChange(index, "title", e.target.value)}
-                          placeholder="Enter note title (e.g., Consultation, Follow-up)"
+                          placeholder="Enter consultant record title (e.g., Consultation, Follow-up)"
                           disabled={loading}
                         />
 
@@ -462,7 +469,7 @@ export const StudentDrawer: React.FC<StudentDrawerProps> = ({
                             id={`note-content-${index}`}
                             value={note.content || ""}
                             onChange={(e) => handleNoteChange(index, "content", e.target.value)}
-                            placeholder="Enter detailed note content..."
+                            placeholder="Enter detailed consultant record content..."
                             disabled={loading}
                             rows={3}
                             className="w-full rounded-md border border-primary-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-primary-50 disabled:text-primary-600 transition-all duration-200 focus:scale-[1.01]"

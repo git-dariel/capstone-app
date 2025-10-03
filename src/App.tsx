@@ -8,12 +8,14 @@ import {
   AppointmentsPage,
   ConsentPage,
   ConsentRecordsPage,
+  ConsultantRecordsPage,
   DashboardPage,
   HelpSupportPage,
   HistoryPage,
   HomePage,
   InsightsPage,
   InventoryPage,
+  InventoryRecordsPage,
   LandingPage,
   MentalHealthResultsPage,
   MessagesPage,
@@ -136,10 +138,26 @@ function App() {
             }
           />
           <Route
+            path="/inventory-records"
+            element={
+              <ProtectedRoute>
+                <InventoryRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/consent-records"
             element={
               <ProtectedRoute>
                 <ConsentRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/consultant-records"
+            element={
+              <ProtectedRoute>
+                <ConsultantRecordsPage />
               </ProtectedRoute>
             }
           />

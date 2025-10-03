@@ -296,7 +296,7 @@ export const ViewStudentDrawer: React.FC<ViewStudentDrawerProps> = ({
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
             <FileText className="w-5 h-5 text-primary-600" />
-            <span>Notes ({student.notes?.length || 0})</span>
+            <span>Consultant Records ({student.notes?.length || 0})</span>
           </h3>
           <div className="space-y-3">
             {student.notes && student.notes.length > 0 ? (
@@ -304,10 +304,10 @@ export const ViewStudentDrawer: React.FC<ViewStudentDrawerProps> = ({
                 <div key={index} className="bg-primary-50 border border-primary-200 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h4 className="font-medium text-primary-900">
-                      {note.title || `Note ${index + 1}`}
+                      {note.title || `Consultant Record ${index + 1}`}
                     </h4>
                     <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
-                      Note #{index + 1}
+                      Consultant Record #{index + 1}
                     </span>
                   </div>
                   {note.content && (
@@ -320,7 +320,9 @@ export const ViewStudentDrawer: React.FC<ViewStudentDrawerProps> = ({
             ) : (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">No notes available for this student</p>
+                <p className="text-sm text-gray-500">
+                  No consultant records available for this student
+                </p>
               </div>
             )}
           </div>
