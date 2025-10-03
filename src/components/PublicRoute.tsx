@@ -7,7 +7,7 @@ interface PublicRouteProps {
 }
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
-  const { isAuthenticated, initialized, loading } = useAuth();
+  const { isAuthenticated, initialized, loading, user } = useAuth();
 
   // Show loading spinner while authentication state is being initialized
   if (!initialized || loading) {
@@ -20,7 +20,6 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
 
   // Redirect authenticated users to appropriate default page based on user type
   if (isAuthenticated()) {
-    const { user } = useAuth();
     const defaultRoute = user?.type === "student" ? "/resources" : "/home";
     return <Navigate to={defaultRoute} replace />;
   }
