@@ -333,9 +333,9 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
 
   return (
     <>
-      <FullScreenLoading 
-        isLoading={loading} 
-        message={isViewMode ? "Updating announcement..." : "Creating announcement..."} 
+      <FullScreenLoading
+        isLoading={loading}
+        message={isViewMode ? "Updating announcement..." : "Working on it..."}
       />
       <Modal isOpen={isOpen} onClose={handleClose} title={getModalTitle()} size="lg">
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">

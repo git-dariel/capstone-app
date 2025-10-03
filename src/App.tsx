@@ -8,6 +8,7 @@ import {
   AppointmentsPage,
   ConsentPage,
   ConsentRecordsPage,
+  ConsultantRecordsPage,
   DashboardPage,
   HelpSupportPage,
   HistoryPage,
@@ -149,6 +150,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ConsentRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/consultant-records"
+            element={
+              <ProtectedRoute>
+                <ConsultantRecordsPage />
               </ProtectedRoute>
             }
           />

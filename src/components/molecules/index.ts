@@ -54,3 +54,7 @@ export { RequestAppointmentModal } from "./RequestAppointmentModal";
 export { PendingRequestsTable } from "./PendingRequestsTable";
 export { OTPVerificationModal } from "./OTPVerificationModal";
 export { ExportFilterDropdown } from "./ExportFilterDropdown";
+export { ConsultantRecordCard } from "./ConsultantRecordCard";
+export { ConsultantRecordModal } from "./ConsultantRecordModal";
+export { StackedConsultantCards } from "./StackedConsultantCards";
+export { StudentRecordsModal } from "./StudentRecordsModal";
