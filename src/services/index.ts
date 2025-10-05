@@ -130,3 +130,14 @@ export type {
   AssessmentBreakdown,
   DashboardChartsData,
 } from "./dashboard.service";
+
+// Student Dashboard Service
+export { StudentDashboardService } from "./student-dashboard.service";
+export type {
+  PersonalSummary,
+  AssessmentHistoryItem,
+  AssessmentTrends,
+  AssessmentStats,
+  ProgressInsight,
+  AssessmentTrend,
+} from "./student-dashboard.service";

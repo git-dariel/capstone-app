@@ -25,6 +25,7 @@ import {
   SignInPage,
   SignUpPage,
   StudentsPage,
+  StudentDashboardPage,
 } from "@/pages";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { useState } from "react";
@@ -118,6 +119,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student-dashboard"
+            element={
+              <ProtectedRoute>
+                <StudentDashboardPage />
               </ProtectedRoute>
             }
           />

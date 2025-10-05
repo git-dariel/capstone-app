@@ -17,3 +17,4 @@ export { InsightsContent } from "./InsightsContent";
 export { AidFunctionContent } from "./AidFunctionContent";
 export { MessagesContent } from "./MessagesContent";
 export { AppointmentsContent } from "./AppointmentsContent";
+export { StudentDashboardContent } from "./StudentDashboardContent";

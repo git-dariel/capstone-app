@@ -65,6 +65,36 @@ export class MetricsService {
     }
   }
 
+  // Method to fetch dashboard metrics for authenticated users
+  static async fetchDashboardMetrics(data: string[]): Promise<MetricResponse> {
+    try {
+      console.log("📤 Sending dashboard metrics request:", JSON.stringify(data, null, 2));
+      const response = await HttpClient.post<MetricResponse>("/metrics/student/dashboard", {
+        data,
+      });
+      console.log("📥 Received dashboard metrics response:", response);
+      return response as any;
+    } catch (error) {
+      console.error("Error fetching dashboard metrics:", error);
+      throw error;
+    }
+  }
+
+  // Method to fetch guidance dashboard metrics
+  static async fetchGuidanceDashboardMetrics(data: string[]): Promise<MetricResponse> {
+    try {
+      console.log("📤 Sending guidance dashboard metrics request:", JSON.stringify(data, null, 2));
+      const response = await HttpClient.post<MetricResponse>("/metrics/guidance/dashboard", {
+        data,
+      });
+      console.log("📥 Received guidance dashboard metrics response:", response);
+      return response as any;
+    } catch (error) {
+      console.error("Error fetching guidance dashboard metrics:", error);
+      throw error;
+    }
+  }
+
   // Get available years dynamically from the database
   static async getAvailableYears(): Promise<number[]> {
     try {

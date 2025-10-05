@@ -20,7 +20,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({ children }) => {
 
   // Redirect authenticated users to appropriate default page based on user type
   if (isAuthenticated()) {
-    const defaultRoute = user?.type === "student" ? "/resources" : "/home";
+    const defaultRoute = user?.type === "student" ? "/student-dashboard" : "/home";
     return <Navigate to={defaultRoute} replace />;
   }
 
