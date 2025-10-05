@@ -183,7 +183,7 @@ export const useAuth = () => {
         }
 
         // Set default route based on user type
-        const defaultRoute = response.user.type === "student" ? "/resources" : "/home";
+        const defaultRoute = response.user.type === "student" ? "/student-dashboard" : "/home";
         const from = (location.state as any)?.from?.pathname || defaultRoute;
         navigate(from, { replace: true });
       }, 100);
@@ -226,7 +226,9 @@ export const useAuth = () => {
         }
       }
 
-      const from = (location.state as any)?.from?.pathname || "/home";
+      // Set default route based on user type
+      const defaultRoute = userData.user.type === "student" ? "/student-dashboard" : "/home";
+      const from = (location.state as any)?.from?.pathname || defaultRoute;
       navigate(from, { replace: true });
     }, 100);
   };

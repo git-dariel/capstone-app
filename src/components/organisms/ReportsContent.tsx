@@ -4,6 +4,7 @@ import {
   DepressionAssessmentTable,
   StressAssessmentTable,
   ExportFilterDropdown,
+  StudentProgressTable,
 } from "@/components/molecules";
 import { useAnxiety, useDepression, useStress } from "@/hooks";
 import { UserService } from "@/services";
@@ -77,7 +78,7 @@ export const ReportsContent: React.FC = () => {
                 Comprehensive view of all student mental health assessments
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-end space-x-3">
               <ExportFilterDropdown onExport={handleExportCsv} isExporting={isExporting} />
             </div>
           </div>
@@ -85,6 +86,9 @@ export const ReportsContent: React.FC = () => {
 
         {/* Assessment Tables */}
         <div className="space-y-6 md:space-y-8">
+          {/* Student Progress Overview Table */}
+          <StudentProgressTable />
+
           {/* Anxiety Assessment Table */}
           <AnxietyAssessmentTable />
 

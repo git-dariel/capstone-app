@@ -127,6 +127,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       path: "/reports",
       guidanceOnly: true,
     },
+    {
+      icon: <BarChart3 className="w-5 h-5" />,
+      label: "My Dashboard",
+      path: "/student-dashboard",
+      studentOnly: true,
+    },
     { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
     {
       icon: <Heart className="w-5 h-5" />,
@@ -158,6 +164,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       guidanceOnly: true,
     },
     {
+      icon: <ClipboardList className="w-5 h-5" />,
+      label: "Consent Records",
+      path: "/consent-records",
+    },
+    {
       icon: <Calendar className="w-5 h-5" />,
       label: "Appointments",
       path: "/appointments",
@@ -179,11 +190,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       label: "History",
       path: "/history",
       studentOnly: true,
-    },
-    {
-      icon: <ClipboardList className="w-5 h-5" />,
-      label: "Consent Records",
-      path: "/consent-records",
     },
     { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },
   ];

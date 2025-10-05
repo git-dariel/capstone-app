@@ -49,7 +49,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
         disabled={isExporting}
         variant="outline"
         size="default"
-        className="flex items-center space-x-2 w-full md:w-auto justify-center relative"
+        className="flex items-center space-x-2 w-auto justify-center relative"
       >
         {isExporting ? (
           <>
@@ -72,7 +72,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
 
       {/* Filter Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
+        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-lg shadow-lg z-50 p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-gray-500" />
@@ -184,7 +184,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
             </div>
 
             {/* Name Filters */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                 <Input
@@ -221,25 +221,30 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-6 pt-4 border-t border-gray-200 gap-3">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleClearFilters}
               disabled={!hasActiveFilters}
-              className="text-gray-600 hover:text-gray-800"
+              className="text-gray-600 hover:text-gray-800 w-full sm:w-auto"
             >
               Clear Filters
             </Button>
-            <div className="flex space-x-2">
-              <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsOpen(false)}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
               <Button
                 onClick={handleExport}
                 disabled={isExporting}
                 size="sm"
-                className="flex items-center space-x-2"
+                className="flex items-center justify-center space-x-2 w-full sm:w-auto"
               >
                 {isExporting ? (
                   <>
