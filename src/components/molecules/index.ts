@@ -4,6 +4,7 @@ export { ConsentForm } from "./ConsentForm";
 export { InventoryForm } from "./InventoryForm";
 export { TopNavigation } from "./TopNavigation";
 export { SidebarNavigation, MobileMenuToggle } from "./SidebarNavigation";
+export { UserDropdown } from "./UserDropdown";
 export { AnnouncementCard } from "./AnnouncementCard";
 export { AnnouncementModal } from "./AnnouncementModal";
 export { ConfirmationModal } from "./ConfirmationModal";

@@ -5,6 +5,7 @@ export { useDepression } from "./useDepression";
 export { useStress } from "./useStress";
 export { useSuicide } from "./useSuicide";
 export { useStudents } from "./useStudents";
+export { useUsers } from "./useUsers";
 export { useConsent } from "./useConsent";
 export { useInventory } from "./useInventory";
 export { useInsights } from "./useInsights";

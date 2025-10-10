@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, FormField, FormSelect, DateTimePicker } from "@/components/atoms";
+import { Modal, FormField, FormSelect } from "@/components/atoms";
 import { Button } from "@/components/ui";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useSchedules } from "@/hooks/useSchedules";
-import { useStudents } from "@/hooks/useStudents";
+import { useUsers } from "@/hooks/useUsers";
 import { useAuth } from "@/hooks";
 import type { CreateAppointmentRequest, UpdateAppointmentRequest, Appointment } from "@/services";
 
@@ -42,7 +47,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 }) => {
   const { user, student } = useAuth();
   const { availableSchedules, fetchAvailableSchedules } = useSchedules();
-  const { students, fetchStudents } = useStudents();
+  const { users: studentUsers, fetchUsers } = useUsers();
 
   const [formData, setFormData] = useState<AppointmentFormData>({
     studentId: student?.id || "",
@@ -91,8 +96,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     } else {
       // Reset for create mode
       setFormData({
-        studentId: student?.id || "",
-        counselorId: "",
+        studentId: student?.id || "", // For students, this will be their ID, for guidance users it will be empty
+        counselorId: isGuidanceUser ? user?.id || "" : "", // For guidance users, set their ID as counselor
         scheduleId: "",
         title: "",
         description: "",
@@ -108,7 +113,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       });
     }
     setErrors({});
-  }, [appointment, student, isOpen]);
+  }, [appointment, student, isOpen, isGuidanceUser, user]);
 
   // Fetch data when modal opens (once per open). Guard against StrictMode double-invoke.
   const hasLoadedRef = useRef(false);
@@ -126,10 +131,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       try {
         await fetchAvailableSchedules();
         if (isGuidanceUser) {
-          await fetchStudents({
+          // Fetch users with type=student using the proper service
+          await fetchUsers({
+            type: "student",
             limit: 100,
-            fields: "id,program,year,person.firstName,person.lastName,person.email",
-          }); // Get students with person info for selection
+            fields: "id,person.firstName,person.lastName,person.email",
+          });
         }
       } catch (error) {
         console.error("Error loading data:", error);
@@ -143,7 +150,15 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     field: keyof AppointmentFormData,
     value: string | number | boolean
   ) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    console.log(`Changing ${field} to:`, value);
+    console.log(`Previous formData.${field}:`, formData[field]);
+
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+      console.log(`New formData after ${field} change:`, newData);
+      return newData;
+    });
+
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -156,12 +171,21 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       newErrors.title = "Title is required";
     }
 
-    if (!formData.scheduleId) {
-      newErrors.scheduleId = "Please select a schedule";
+    if (isGuidanceUser && !formData.studentId) {
+      newErrors.studentId = "Please select a student";
     }
+
+    // Schedule selection is optional - guidance can assign later
 
     if (!formData.requestedDate) {
       newErrors.requestedDate = "Please select a date and time";
+    } else {
+      // Validate time range (8 AM to 8 PM)
+      const selectedDate = new Date(formData.requestedDate);
+      const hours = selectedDate.getHours();
+      if (hours < 8 || hours >= 20) {
+        newErrors.requestedDate = "Appointments can only be scheduled between 8:00 AM and 8:00 PM";
+      }
     }
 
     if (isEditMode && appointment?.status === "cancelled" && !formData.cancellationReason.trim()) {
@@ -194,7 +218,20 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         followUpDate: formData.followUpDate
           ? new Date(formData.followUpDate).toISOString()
           : undefined,
+        // Only include scheduleId if it's selected
+        ...(formData.scheduleId && { scheduleId: formData.scheduleId }),
       };
+
+      console.log("Submitting appointment data:", submitData);
+      console.log("Selected student ID:", formData.studentId);
+      console.log("Available student users:", studentUsers);
+      console.log("Student options:", [
+        { value: "", label: "Please Select a Student" },
+        ...(Array.isArray(studentUsers) ? studentUsers : []).map((user) => ({
+          value: user.id,
+          label: `${user.person?.firstName ?? "Unknown"} ${user.person?.lastName ?? "Student"}`,
+        })),
+      ]);
 
       await onSubmit(submitData);
     } catch (error) {
@@ -292,12 +329,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               label="Student"
               value={formData.studentId}
               onChange={(value) => handleInputChange("studentId", value)}
-              options={(students || []).map((s) => ({
-                value: s.id,
-                label: `${s.person?.firstName ?? "Unknown"} ${s.person?.lastName ?? "Student"} - ${
-                  s.program || "No Program"
-                }`,
-              }))}
+              options={[
+                { value: "", label: "Please Select a Student" },
+                ...(Array.isArray(studentUsers) ? studentUsers : []).map((user, index) => ({
+                  value: user.id, // Use user id directly since these are user records
+                  label: `${user.person?.firstName ?? "Unknown"} ${
+                    user.person?.lastName ?? "Student"
+                  }`,
+                  key: `user-${user.id}-${index}`, // Unique key for React
+                })),
+              ]}
               disabled={loading || isViewMode}
               required
             />
@@ -309,34 +350,91 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         <div>
           <FormSelect
             id="scheduleId"
-            label="Available Schedule"
+            label="Available Schedule (Optional)"
             value={formData.scheduleId}
             onChange={(value) => handleInputChange("scheduleId", value)}
-            options={(availableSchedules || []).map((s) => ({
-              value: s.id,
-              label: `${s.title} - ${new Date(s.startTime).toLocaleString()} (${(
-                s.counselor?.person?.firstName ?? ""
-              ).trim()} ${(s.counselor?.person?.lastName ?? "").trim()})`,
-            }))}
+            options={[
+              { value: "", label: "No specific schedule - counselor will assign later" },
+              ...(availableSchedules || []).map((s) => ({
+                value: s.id,
+                label: `${s.title} - ${new Date(s.startTime).toLocaleString()} (${(
+                  s.counselor?.person?.firstName ?? ""
+                ).trim()} ${(s.counselor?.person?.lastName ?? "").trim()})`,
+              })),
+            ]}
             disabled={loading || isViewMode}
-            required
           />
           {errors.scheduleId && <p className="mt-1 text-sm text-red-600">{errors.scheduleId}</p>}
         </div>
 
         {/* Date and Time */}
-        <div>
-          <DateTimePicker
-            id="requestedDate"
-            label="Preferred Date & Time"
-            value={formData.requestedDate}
-            onChange={(value) => handleInputChange("requestedDate", value)}
-            disabled={loading || isViewMode}
-            required
-            minDate={new Date().toISOString().slice(0, 16)}
-            error={errors.requestedDate}
-            placeholder="Select your preferred appointment date and time"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Preferred Date <span className="text-red-500">*</span>
+            </label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading || isViewMode}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.requestedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.requestedDate ? (
+                    format(new Date(formData.requestedDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.requestedDate ? new Date(formData.requestedDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const currentTime = formData.requestedDate.slice(11, 16) || "09:00";
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("requestedDate", `${year}-${month}-${day}T${currentTime}`);
+                    }
+                  }}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Preferred Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="time"
+              value={formData.requestedDate.slice(11, 16) || "09:00"}
+              onChange={(e) => {
+                const currentDate =
+                  formData.requestedDate.slice(0, 10) || new Date().toISOString().slice(0, 10);
+                handleInputChange("requestedDate", `${currentDate}T${e.target.value}`);
+              }}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading || isViewMode}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+            />
+            {errors.requestedDate && (
+              <p className="mt-1 text-sm text-red-600">{errors.requestedDate}</p>
+            )}
+          </div>
         </div>
 
         {/* Location */}

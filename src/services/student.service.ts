@@ -3,6 +3,7 @@ import { HttpClient } from "./api.config";
 
 export interface Student {
   id: string;
+  userId?: string; // User ID from the user table (for appointment system)
   studentNumber: string;
   program: string;
   year: string;

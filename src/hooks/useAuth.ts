@@ -266,6 +266,20 @@ export const useAuth = () => {
     setAuthState((prev) => ({ ...prev, error: null }));
   };
 
+  const refreshAuth = async () => {
+    try {
+      const user = AuthService.getCurrentUser();
+      const student = AuthService.getCurrentStudent();
+      setAuthState((prev) => ({
+        ...prev,
+        user,
+        student,
+      }));
+    } catch (error) {
+      console.error("Error refreshing auth:", error);
+    }
+  };
+
   const isAuthenticated = () => {
     // Use the hook's state instead of calling AuthService directly
     return !!(authState.user && authState.user.id);
@@ -282,6 +296,7 @@ export const useAuth = () => {
     signOut,
     completeSignInAfterVerification,
     clearError,
+    refreshAuth,
     isAuthenticated,
   };
 };
