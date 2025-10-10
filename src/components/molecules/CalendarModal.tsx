@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Modal, FormField, FormSelect, DateTimePicker } from "@/components/atoms";
+import { Modal, FormField, FormSelect } from "@/components/atoms";
 import { Button } from "@/components/ui";
-import { useAuth, useStudents } from "@/hooks";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useAuth, useUsers } from "@/hooks";
 
 import type { CreateAppointmentRequest, CreateScheduleRequest } from "@/services";
 
@@ -50,7 +55,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
   mode,
 }) => {
   const { user, student } = useAuth();
-  const { students, fetchStudents } = useStudents();
+  const { users: studentUsers, fetchUsers } = useUsers();
   const isGuidanceUser = user?.type === "guidance";
 
   const [appointmentData, setAppointmentData] = useState<AppointmentFormData>({
@@ -92,6 +97,8 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         setAppointmentData((prev) => ({
           ...prev,
           requestedDate: dateTimeString,
+          // Ensure counselorId is set for guidance users
+          counselorId: isGuidanceUser ? user?.id || "" : prev.counselorId,
         }));
       } else {
         setScheduleData((prev) => ({
@@ -101,14 +108,19 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
         }));
       }
     }
-  }, [selectedDate, isOpen, mode]);
+  }, [selectedDate, isOpen, mode, isGuidanceUser, user]);
 
-  // Fetch students for guidance users
+  // Fetch student users for guidance users
   useEffect(() => {
     if (isOpen && isGuidanceUser && mode === "appointment") {
-      fetchStudents({ limit: 100 }).catch(console.error);
+      // Fetch users with type=student using the proper service
+      fetchUsers({
+        type: "student",
+        limit: 100,
+        fields: "id,person.firstName,person.lastName,person.middleName",
+      }).catch(console.error);
     }
-  }, [isOpen, isGuidanceUser, mode, fetchStudents]);
+  }, [isOpen, isGuidanceUser, mode, fetchUsers]);
 
   const formatDateForInput = (date: Date, time?: string): string => {
     // Convert to Philippines timezone first
@@ -159,6 +171,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
       newErrors.studentId = "Student selection is required";
     }
 
+    if (isGuidanceUser && !appointmentData.counselorId) {
+      newErrors.counselorId = "Counselor ID is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -205,6 +221,10 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
           ...appointmentData,
           requestedDate: new Date(appointmentData.requestedDate).toISOString(),
         };
+
+        console.log("CalendarModal submitting appointment data:", submitData);
+        console.log("CalendarModal appointmentData before submit:", appointmentData);
+
         await onCreateAppointment(submitData);
         onClose();
       } catch (error) {
@@ -318,12 +338,21 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                   label="Student"
                   value={appointmentData.studentId}
                   onChange={(value) => handleAppointmentChange("studentId", value)}
-                  options={(students || []).map((s) => ({
-                    value: s.id,
-                    label: `${s.person?.firstName ?? "Unknown"} ${s.person?.lastName ?? ""} (${
-                      s.studentNumber
-                    })`,
-                  }))}
+                  options={[
+                    { value: "", label: "Please Select a Student" },
+                    ...(Array.isArray(studentUsers) ? studentUsers : []).map((user, index) => {
+                      const firstName = user.person?.firstName || "";
+                      const lastName = user.person?.lastName || "";
+                      const fullName = `${firstName} ${lastName}`.trim();
+                      const displayName = fullName || "Unknown Student";
+
+                      return {
+                        value: user.id, // Use user id directly since these are user records
+                        label: displayName,
+                        key: `user-${user.id}-${index}`, // Unique key for React
+                      };
+                    }),
+                  ]}
                   disabled={loading}
                   required
                 />
@@ -333,18 +362,82 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
               </div>
             )}
 
-            <div>
-              <DateTimePicker
-                id="requestedDate"
-                label="Date & Time"
-                value={appointmentData.requestedDate}
-                onChange={(value) => handleAppointmentChange("requestedDate", value)}
-                disabled={loading}
-                required
-                minDate={new Date().toISOString().slice(0, 16)}
-                error={errors.requestedDate}
-                placeholder="Select appointment date and time"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={loading}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !appointmentData.requestedDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {appointmentData.requestedDate ? (
+                        format(new Date(appointmentData.requestedDate), "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={
+                        appointmentData.requestedDate
+                          ? new Date(appointmentData.requestedDate)
+                          : undefined
+                      }
+                      onSelect={(date) => {
+                        if (date) {
+                          const currentTime =
+                            appointmentData.requestedDate.slice(11, 16) || "09:00";
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, "0");
+                          const day = String(date.getDate()).padStart(2, "0");
+                          handleAppointmentChange(
+                            "requestedDate",
+                            `${year}-${month}-${day}T${currentTime}`
+                          );
+                        }
+                      }}
+                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Time <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="time"
+                  value={appointmentData.requestedDate.slice(11, 16) || "09:00"}
+                  onChange={(e) => {
+                    const currentDate =
+                      appointmentData.requestedDate.slice(0, 10) ||
+                      new Date().toISOString().slice(0, 10);
+                    handleAppointmentChange("requestedDate", `${currentDate}T${e.target.value}`);
+                  }}
+                  min="08:00"
+                  max="20:00"
+                  step="900"
+                  disabled={loading}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                />
+                {errors.requestedDate && (
+                  <p className="mt-1 text-sm text-red-600">{errors.requestedDate}</p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -402,32 +495,154 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
                 {errors.maxSlots && <p className="mt-1 text-sm text-red-600">{errors.maxSlots}</p>}
               </div>
 
-              <div>
-                <DateTimePicker
-                  id="startTime"
-                  label="Start Time"
-                  value={scheduleData.startTime}
-                  onChange={(value) => handleScheduleChange("startTime", value)}
-                  disabled={loading}
-                  required
-                  minDate={new Date().toISOString().slice(0, 16)}
-                  error={errors.startTime}
-                  placeholder="Select start date and time"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={loading}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !scheduleData.startTime && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {scheduleData.startTime ? (
+                          format(new Date(scheduleData.startTime), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          scheduleData.startTime ? new Date(scheduleData.startTime) : undefined
+                        }
+                        onSelect={(date) => {
+                          if (date) {
+                            const currentTime = scheduleData.startTime.slice(11, 16) || "09:00";
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const day = String(date.getDate()).padStart(2, "0");
+                            handleScheduleChange(
+                              "startTime",
+                              `${year}-${month}-${day}T${currentTime}`
+                            );
+                          }
+                        }}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={scheduleData.startTime.slice(11, 16) || "09:00"}
+                    onChange={(e) => {
+                      const currentDate =
+                        scheduleData.startTime.slice(0, 10) ||
+                        new Date().toISOString().slice(0, 10);
+                      handleScheduleChange("startTime", `${currentDate}T${e.target.value}`);
+                    }}
+                    min="08:00"
+                    max="20:00"
+                    step="900"
+                    disabled={loading}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                  />
+                  {errors.startTime && (
+                    <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <DateTimePicker
-                  id="endTime"
-                  label="End Time"
-                  value={scheduleData.endTime}
-                  onChange={(value) => handleScheduleChange("endTime", value)}
-                  disabled={loading}
-                  required
-                  minDate={scheduleData.startTime || new Date().toISOString().slice(0, 16)}
-                  error={errors.endTime}
-                  placeholder="Select end date and time"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={loading}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !scheduleData.endTime && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {scheduleData.endTime ? (
+                          format(new Date(scheduleData.endTime), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={scheduleData.endTime ? new Date(scheduleData.endTime) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            const currentTime = scheduleData.endTime.slice(11, 16) || "10:00";
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const day = String(date.getDate()).padStart(2, "0");
+                            handleScheduleChange(
+                              "endTime",
+                              `${year}-${month}-${day}T${currentTime}`
+                            );
+                          }
+                        }}
+                        disabled={(date) => {
+                          const minDate = scheduleData.startTime
+                            ? new Date(new Date(scheduleData.startTime).setHours(0, 0, 0, 0))
+                            : new Date(new Date().setHours(0, 0, 0, 0));
+                          return date < minDate;
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Time <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    value={scheduleData.endTime.slice(11, 16) || "10:00"}
+                    onChange={(e) => {
+                      const currentDate =
+                        scheduleData.endTime.slice(0, 10) || new Date().toISOString().slice(0, 10);
+                      handleScheduleChange("endTime", `${currentDate}T${e.target.value}`);
+                    }}
+                    min="08:00"
+                    max="20:00"
+                    step="900"
+                    disabled={loading}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                  />
+                  {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>}
+                </div>
               </div>
             </div>
 

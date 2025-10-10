@@ -1,14 +1,10 @@
-import { Avatar, Logo, NotificationIcon } from "@/components/atoms";
-import { useAuth } from "@/hooks";
+import { Logo, NotificationIcon } from "@/components/atoms";
+import { UserDropdown } from "@/components/molecules/UserDropdown";
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
 export const TopNavigation: React.FC = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-
-  // Get the first letter of user's firstName for avatar
-  const avatarLetter = user?.person?.firstName?.charAt(0).toUpperCase() || "U";
 
   const handleMessagesClick = () => {
     navigate("/messages");
@@ -33,8 +29,8 @@ export const TopNavigation: React.FC = () => {
             className="hidden sm:block"
           />
 
-          {/* Avatar - Always visible */}
-          <Avatar fallback={avatarLetter} className="h-8 w-8 md:h-10 md:w-10" />
+          {/* User Dropdown - Always visible */}
+          <UserDropdown />
         </div>
       </div>
     </header>

@@ -6,7 +6,6 @@ import {
   FileText,
   HelpCircle,
   Home,
-  LogOut,
   Menu,
   X,
   Clock,
@@ -22,7 +21,6 @@ import {
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ConfirmationModal } from "./ConfirmationModal";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -79,9 +77,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, user } = useAuth();
-  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { user } = useAuth();
   const [isMobile, setIsMobile] = useState(false);
 
   // Check screen size for mobile responsiveness
@@ -98,7 +94,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
 
   // Close sidebar on mobile when navigating
   const handleMobileNavigation = (path: string, label: string) => {
-    if (isMobile && onToggle && label !== "Log Out") {
+    if (isMobile && onToggle) {
       onToggle(); // Close sidebar on mobile after navigation
     }
     handleNavigation(path, label);
@@ -201,35 +197,10 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     return true;
   });
 
-  const bottomItems = [{ icon: <LogOut className="w-5 h-5" />, label: "Log Out", path: "/signin" }];
+  const bottomItems: any[] = [];
 
-  const handleNavigation = async (path: string, label: string) => {
-    if (label === "Log Out") {
-      // Show confirmation modal instead of logging out immediately
-      setShowLogoutConfirmation(true);
-    } else {
-      navigate(path);
-    }
-  };
-
-  const handleLogoutConfirm = async () => {
-    try {
-      setIsLoggingOut(true);
-      await signOut();
-      // signOut already handles navigation to signin
-      setShowLogoutConfirmation(false);
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Fallback navigation if logout fails
-      navigate("/signin");
-      setShowLogoutConfirmation(false);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutConfirmation(false);
+  const handleNavigation = (path: string, label: string) => {
+    navigate(path);
   };
 
   return (
@@ -304,19 +275,6 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           </div>
         </div>
       </div>
-
-      {/* Logout Confirmation Modal */}
-      <ConfirmationModal
-        isOpen={showLogoutConfirmation}
-        onClose={handleLogoutCancel}
-        onConfirm={handleLogoutConfirm}
-        title="Confirm Logout"
-        message="Are you sure you want to log out? You'll need to sign in again to access your account."
-        confirmText="Log Out"
-        cancelText="Stay Logged In"
-        isDestructive={true}
-        loading={isLoggingOut}
-      />
     </>
   );
 };

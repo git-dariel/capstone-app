@@ -150,6 +150,11 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   const handleTabClick = (tab: "appointments" | "schedules" | "pending-requests") => {
     onTabChange?.(tab);
 
+    // Switch to list view when switching to pending-requests tab
+    if (tab === "pending-requests") {
+      setViewMode("list");
+    }
+
     // Load pending requests when switching to that tab
     if (tab === "pending-requests" && isGuidance) {
       fetchPendingRequests();
@@ -713,17 +718,19 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               <List className="w-4 h-4 mr-2" />
               List
             </button>
-            <button
-              onClick={() => setViewMode("calendar")}
-              className={`flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-initial touch-manipulation ${
-                viewMode === "calendar"
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Calendar className="w-4 h-4 mr-2" />
-              Calendar
-            </button>
+            {activeTab !== "pending-requests" && (
+              <button
+                onClick={() => setViewMode("calendar")}
+                className={`flex items-center justify-center px-3 py-2 rounded-md text-sm font-medium transition-colors flex-1 sm:flex-initial touch-manipulation ${
+                  viewMode === "calendar"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                <Calendar className="w-4 h-4 mr-2" />
+                Calendar
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -866,16 +873,30 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
           )}
         </>
       ) : (
-        <CalendarView
-          appointments={appointments || []}
-          schedules={isStudent ? availableSchedules || [] : schedules || []}
-          onDateClick={handleDateClick}
-          onEventClick={handleCalendarEventClick}
-          loading={appointmentsLoading || schedulesLoading}
-          className="min-h-[600px]"
-          userType={user?.type}
-          hasActiveAppointmentForSchedule={isStudent ? hasActiveAppointmentForSchedule : undefined}
-        />
+        <>
+          {activeTab !== "pending-requests" && (
+            <CalendarView
+              appointments={appointments || []}
+              schedules={isStudent ? availableSchedules || [] : schedules || []}
+              onDateClick={handleDateClick}
+              onEventClick={handleCalendarEventClick}
+              loading={appointmentsLoading || schedulesLoading}
+              className="min-h-[600px]"
+              userType={user?.type}
+              hasActiveAppointmentForSchedule={
+                isStudent ? hasActiveAppointmentForSchedule : undefined
+              }
+            />
+          )}
+          {activeTab === "pending-requests" && (
+            <div className="text-center py-12 text-gray-500">
+              <p>Calendar view is not available for pending requests.</p>
+              <p className="text-sm mt-2">
+                Please use the list view to manage appointment requests.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modals */}

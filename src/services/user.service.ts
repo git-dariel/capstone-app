@@ -38,6 +38,8 @@ export interface UpdateUserRequest {
   age?: number;
   religion?: string;
   civilStatus?: string;
+  password?: string;
+  currentPassword?: string;
 }
 
 export interface ExportFilters {
@@ -54,8 +56,13 @@ export interface ExportFilters {
 export class UserService {
   static async getAllUsers(params?: QueryParams): Promise<User[]> {
     try {
-      const response = await HttpClient.get<User[]>("/user", params);
-      return response;
+      const response = await HttpClient.get<{
+        users: User[];
+        total: number;
+        page: number;
+        totalPages: number;
+      }>("/user", params);
+      return response.users;
     } catch (error) {
       throw error;
     }

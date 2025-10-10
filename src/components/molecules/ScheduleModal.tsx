@@ -184,6 +184,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
               minDate={new Date().toISOString().slice(0, 16)}
               error={errors.startTime}
               placeholder="Select start date and time"
+              restrictTimeRange={true}
+              minTime="08:00"
+              maxTime="20:00"
             />
           </div>
 
@@ -197,6 +200,9 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
               minDate={formData.startTime || new Date().toISOString().slice(0, 16)}
               error={errors.endTime}
               placeholder="Select end date and time"
+              restrictTimeRange={true}
+              minTime="08:00"
+              maxTime="20:00"
             />
           </div>
         </div>

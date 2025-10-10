@@ -4,6 +4,7 @@ import React from "react";
 export interface FormSelectOption {
   value: string;
   label: string;
+  key?: string; // Optional key for React rendering
 }
 
 export interface FormSelectProps {
@@ -48,7 +49,7 @@ export const FormSelect: React.FC<FormSelectProps> = ({
           </option>
         )}
         {options.map((option) => (
-          <option key={option.value} value={option.value}>
+          <option key={option.key || option.value} value={option.value}>
             {option.label}
           </option>
         ))}

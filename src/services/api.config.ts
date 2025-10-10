@@ -199,7 +199,11 @@ export class HttpClient {
       // Handle other error responses
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `API request failed with status ${response.status}`);
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            `API request failed with status ${response.status}`
+        );
       }
 
       // Return the response data directly

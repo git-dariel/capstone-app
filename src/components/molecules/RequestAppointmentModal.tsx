@@ -1,8 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Modal, DateTimePicker } from "@/components/atoms";
+import { Modal } from "@/components/atoms";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useSchedules } from "@/hooks";
 import { HttpClient } from "@/services/api.config";
 import type { Schedule } from "@/services";
@@ -203,16 +208,6 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
     onClose();
   };
 
-  const formatDateTimeForInput = (date: Date): string => {
-    return date.toISOString().slice(0, 16);
-  };
-
-  const getMinDateTime = (): string => {
-    const now = new Date();
-    now.setHours(now.getHours() + 1); // Minimum 1 hour from now
-    return formatDateTimeForInput(now);
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title="Request Appointment">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -307,16 +302,70 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
         </div>
 
         {/* Requested Date & Time */}
-        <div className="space-y-1">
-          <DateTimePicker
-            id="requestedDate"
-            label="Preferred Date & Time"
-            value={formData.requestedDate}
-            onChange={(value) => handleInputChange("requestedDate", value)}
-            minDate={getMinDateTime()}
-            required
-            placeholder="Select your preferred appointment date and time"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Preferred Date <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.requestedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.requestedDate ? (
+                    format(new Date(formData.requestedDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.requestedDate ? new Date(formData.requestedDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const currentTime = formData.requestedDate.slice(11, 16) || "09:00";
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("requestedDate", `${year}-${month}-${day}T${currentTime}`);
+                    }
+                  }}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Preferred Time <span className="text-red-500">*</span>
+            </Label>
+            <input
+              type="time"
+              value={formData.requestedDate.slice(11, 16) || "09:00"}
+              onChange={(e) => {
+                const currentDate =
+                  formData.requestedDate.slice(0, 10) || new Date().toISOString().slice(0, 10);
+                handleInputChange("requestedDate", `${currentDate}T${e.target.value}`);
+              }}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
