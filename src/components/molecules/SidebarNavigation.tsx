@@ -93,11 +93,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   }, []);
 
   // Close sidebar on mobile when navigating
-  const handleMobileNavigation = (path: string, label: string) => {
+  const handleMobileNavigation = (path: string) => {
     if (isMobile && onToggle) {
       onToggle(); // Close sidebar on mobile after navigation
     }
-    handleNavigation(path, label);
+    handleNavigation(path);
   };
 
   // Check if user is guidance counselor
@@ -199,7 +199,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
 
   const bottomItems: any[] = [];
 
-  const handleNavigation = (path: string, label: string) => {
+  const handleNavigation = (path: string) => {
     navigate(path);
   };
 
@@ -253,7 +253,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 icon={item.icon}
                 label={item.label}
                 isActive={location.pathname === item.path}
-                onClick={() => handleMobileNavigation(item.path, item.label)}
+                onClick={() => handleMobileNavigation(item.path)}
                 isMinimized={!isMobile && isMinimized}
               />
             ))}
@@ -268,7 +268,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 icon={item.icon}
                 label={item.label}
                 isActive={location.pathname === item.path}
-                onClick={() => handleMobileNavigation(item.path, item.label)}
+                onClick={() => handleMobileNavigation(item.path)}
                 isMinimized={!isMobile && isMinimized}
               />
             ))}
