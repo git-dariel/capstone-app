@@ -214,6 +214,50 @@ export class HttpClient {
     }
   }
 
+  static async requestFormData<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    const url = `${API_CONFIG.baseURL}${endpoint}`;
+    const token = TokenManager.getToken();
+
+    // Prepare headers with authentication (don't set Content-Type for FormData)
+    const headers = new Headers({
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    });
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        credentials: "include", // Include cookies in requests
+      });
+
+      // Handle 401 Unauthorized - clear auth data but don't redirect
+      if (response.status === 401) {
+        // Clear user data and token
+        TokenManager.removeUser();
+
+        // Don't redirect automatically - let the component handle the error
+        throw new Error("Unauthorized - Please log in again");
+      }
+
+      // Handle other error responses
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.error ||
+            errorData.message ||
+            `API request failed with status ${response.status}`
+        );
+      }
+
+      // Return the response data directly
+      return response.json();
+    } catch (error: any) {
+      console.error("API Request Error:", error);
+      throw error;
+    }
+  }
+
   static async get<T>(endpoint: string, params?: QueryParams): Promise<T> {
     const queryString = params ? new URLSearchParams(params as any).toString() : "";
     const url = queryString ? `${endpoint}?${queryString}` : endpoint;
@@ -230,10 +274,24 @@ export class HttpClient {
     });
   }
 
+  static async postFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    return this.requestFormData<T>(endpoint, {
+      method: "POST",
+      body: formData,
+    });
+  }
+
   static async patch<T>(endpoint: string, data?: any): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
+    });
+  }
+
+  static async patchFormData<T>(endpoint: string, formData: FormData): Promise<T> {
+    return this.requestFormData<T>(endpoint, {
+      method: "PATCH",
+      body: formData,
     });
   }
 
@@ -247,6 +305,12 @@ export class HttpClient {
   static async delete<T>(endpoint: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",
+    });
+  }
+
+  static async deletePermanent<T>(endpoint: string): Promise<T> {
+    return this.request<T>(endpoint, {
+      method: "DELETE",
     });
   }
 }

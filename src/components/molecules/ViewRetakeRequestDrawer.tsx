@@ -1,5 +1,5 @@
 import React from "react";
-import { Drawer } from "@/components/atoms";
+import { Drawer, Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import type { RetakeRequest } from "@/services/retakeRequest.service";
 import { RetakeRequestService } from "@/services/retakeRequest.service";
@@ -61,6 +61,12 @@ export const ViewRetakeRequestDrawer: React.FC<ViewRetakeRequestDrawerProps> = (
   };
 
   const statusInfo = getStatusInfo(request.status);
+  
+  const studentName = request.user?.person 
+    ? `${request.user.person.firstName} ${request.user.person.lastName}`
+    : "Unknown Student";
+    
+  const studentAvatar = request.user?.avatar;
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Retake Request Details" size="lg">
@@ -93,21 +99,21 @@ export const ViewRetakeRequestDrawer: React.FC<ViewRetakeRequestDrawerProps> = (
             <h4 className="font-medium text-gray-900">Student Information</h4>
           </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="text-sm text-gray-600 w-20">Name:</div>
-              <div className="text-sm font-medium text-gray-900">
-                {request.user?.person?.firstName} {request.user?.person?.lastName}
-              </div>
+          <div className="flex items-center space-x-4 mb-4">
+            <Avatar 
+              src={studentAvatar} 
+              fallback={studentName.charAt(0)} 
+              className="w-12 h-12" 
+            />
+            <div>
+              <div className="text-sm font-medium text-gray-900">{studentName}</div>
+              {request.user?.person?.email && (
+                <div className="text-sm text-gray-500">{request.user.person.email}</div>
+              )}
             </div>
+          </div>
 
-            {request.user?.person?.email && (
-              <div className="flex items-center space-x-3">
-                <Mail className="w-4 h-4 text-gray-400" />
-                <div className="text-sm text-gray-600 w-16">Email:</div>
-                <div className="text-sm text-gray-900">{request.user.person.email}</div>
-              </div>
-            )}
+          <div className="space-y-3">
           </div>
         </div>
 

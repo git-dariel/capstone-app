@@ -163,7 +163,7 @@ export class MessageService {
       const response = await this.getAll({
         limit: 500, // Get more messages to group by conversation
         fields:
-          "id,title,content,createdAt,read,senderId,receiverId,sender.id,sender.userName,sender.person.firstName,sender.person.lastName,receiver.id,receiver.userName,receiver.person.firstName,receiver.person.lastName",
+          "id,title,content,createdAt,read,senderId,receiverId,sender.id,sender.userName,sender.avatar,sender.person.firstName,sender.person.lastName,receiver.id,receiver.userName,receiver.avatar,receiver.person.firstName,receiver.person.lastName",
       });
 
       const messages = (response as MessagePaginatedResponse).messages;
@@ -181,7 +181,7 @@ export class MessageService {
       messages.forEach((message) => {
         // Determine the conversation partner (the other user, not the current user)
         let partner:
-          | { id: string; userName: string; person: { firstName: string; lastName: string } }
+          | { id: string; userName: string; avatar?: string; person: { firstName: string; lastName: string } }
           | undefined;
         let partnerId: string | undefined;
 
@@ -212,6 +212,7 @@ export class MessageService {
             conversationMap.set(partnerId, {
               id: partner.id,
               userName: partner.userName,
+              avatar: partner.avatar,
               person: partner.person,
               lastMessage: message,
               unreadCount,

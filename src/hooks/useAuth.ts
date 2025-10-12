@@ -268,6 +268,36 @@ export const useAuth = () => {
 
   const refreshAuth = async () => {
     try {
+      // Get current user from localStorage to get the ID
+      const currentUser = AuthService.getCurrentUser();
+      const currentStudent = AuthService.getCurrentStudent();
+      
+      if (currentUser?.id) {
+        // Fetch fresh user data from server
+        const { UserService } = await import("@/services");
+        const freshUser = await UserService.getUserById(currentUser.id);
+        
+        // Update localStorage with fresh data
+        const { TokenManager } = await import("@/services");
+        TokenManager.setUser(freshUser);
+        
+        // Update state with fresh data
+        setAuthState((prev) => ({
+          ...prev,
+          user: freshUser,
+          student: currentStudent, // Keep existing student data for now
+        }));
+      } else {
+        // Fallback to localStorage data if no ID available
+        setAuthState((prev) => ({
+          ...prev,
+          user: currentUser,
+          student: currentStudent,
+        }));
+      }
+    } catch (error) {
+      console.error("Error refreshing auth:", error);
+      // Fallback to localStorage data on error
       const user = AuthService.getCurrentUser();
       const student = AuthService.getCurrentStudent();
       setAuthState((prev) => ({
@@ -275,8 +305,6 @@ export const useAuth = () => {
         user,
         student,
       }));
-    } catch (error) {
-      console.error("Error refreshing auth:", error);
     }
   };
 

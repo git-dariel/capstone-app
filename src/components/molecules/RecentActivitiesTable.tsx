@@ -53,19 +53,19 @@ export const RecentActivitiesTable: React.FC = () => {
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchDepression({
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchStress({
             limit: 10,
             order: "desc",
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
         ];
 
@@ -91,6 +91,7 @@ export const RecentActivitiesTable: React.FC = () => {
         allActivities.push({
           id: `anxiety-${assessment.id}`,
           studentName: `${person.firstName} ${person.lastName}`,
+          avatar: assessment.user?.avatar, // Get avatar from user account
           assessmentType: "Anxiety Assessment",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
@@ -119,6 +120,7 @@ export const RecentActivitiesTable: React.FC = () => {
         allActivities.push({
           id: `depression-${assessment.id}`,
           studentName: `${person.firstName} ${person.lastName}`,
+          avatar: assessment.user?.avatar, // Get avatar from user account
           assessmentType: "Depression Screening",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
@@ -147,6 +149,7 @@ export const RecentActivitiesTable: React.FC = () => {
         allActivities.push({
           id: `stress-${assessment.id}`,
           studentName: `${person.firstName} ${person.lastName}`,
+          avatar: assessment.user?.avatar, // Get avatar from user account
           assessmentType: "Stress Evaluation",
           score: assessment.totalScore,
           severityLevel: assessment.severityLevel as SeverityLevel,
@@ -248,7 +251,7 @@ export const RecentActivitiesTable: React.FC = () => {
                     <Avatar
                       src={activity.avatar}
                       fallback={activity.studentName.charAt(0)}
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 w-10 h-10"
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
@@ -328,7 +331,7 @@ export const RecentActivitiesTable: React.FC = () => {
                         <Avatar
                           src={activity.avatar}
                           fallback={activity.studentName.charAt(0)}
-                          className="mr-3"
+                          className="w-8 h-8 mr-3"
                         />
                         <div>
                           <div className="text-sm font-medium text-gray-900">

@@ -24,17 +24,17 @@ export const ReportsContent: React.FC = () => {
           fetchAnxiety({
             limit: 100,
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchDepression({
             limit: 100,
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
           fetchStress({
             limit: 100,
             fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
         ];
 

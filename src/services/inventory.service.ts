@@ -279,6 +279,10 @@ export interface InventoryResponse {
         email: string;
         gender: string;
         age: number;
+        users?: Array<{
+          id: string;
+          avatar?: string;
+        }>;
       };
     };
   };
@@ -327,6 +331,10 @@ export interface GetInventoryResponse {
       email: string;
       gender: string;
       age: number;
+      users?: Array<{
+        id: string;
+        avatar?: string;
+      }>;
     };
   };
 }

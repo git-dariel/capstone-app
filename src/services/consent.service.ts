@@ -188,6 +188,7 @@ export interface ConsentResponse {
   };
 }
 
+// Updated interface to include avatar data
 export interface GetConsentResponse {
   id: string;
   studentId: string;
@@ -214,6 +215,9 @@ export interface GetConsentResponse {
       email: string;
       gender: string;
       age: number;
+      users?: Array<{
+        avatar?: string;
+      }>;
     };
   };
 }

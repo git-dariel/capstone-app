@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, LogOut, ChevronDown } from "lucide-react";
 import { useAuth } from "@/hooks";
+import { UserService } from "@/services";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,25 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ className }) => {
   const navigate = useNavigate();
   const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string | undefined>(user?.avatar);
+
+  // Fetch fresh user data to get the latest avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (user?.id) {
+        try {
+          const freshUser = await UserService.getUserById(user.id);
+          setUserAvatar(freshUser.avatar);
+        } catch (error) {
+          console.error("Error fetching user avatar:", error);
+          // Fallback to auth user avatar
+          setUserAvatar(user.avatar);
+        }
+      }
+    };
+
+    fetchUserAvatar();
+  }, [user?.id, user?.avatar]);
 
   // Get the first letter of user's firstName for avatar
   const avatarLetter = user?.person?.firstName?.charAt(0).toUpperCase() || "U";
@@ -70,7 +90,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ className }) => {
               className
             )}
           >
-            <Avatar fallback={avatarLetter} className="h-8 w-8 md:h-10 md:w-10" />
+            <Avatar src={userAvatar} fallback={avatarLetter} className="h-8 w-8 md:h-10 md:w-10" />
             <div className="hidden md:block text-left">
               <div className="text-sm font-medium text-gray-900 truncate max-w-32">{userName}</div>
               <div className="text-xs text-gray-500 capitalize">{user?.type || "user"}</div>
@@ -80,7 +100,7 @@ export const UserDropdown: React.FC<UserDropdownProps> = ({ className }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <div className="flex items-center space-x-2 px-2 py-1.5">
-            <Avatar fallback={avatarLetter} className="h-8 w-8" />
+            <Avatar src={userAvatar} fallback={avatarLetter} className="h-8 w-8" />
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-gray-900 truncate">{userName}</div>
               <div className="text-xs text-gray-500 truncate">

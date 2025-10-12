@@ -1,4 +1,4 @@
-import { MessageBubble, MessageInput } from "@/components/atoms";
+import { MessageBubble, MessageInput, Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const partnerName = conversationPartner
     ? `${conversationPartner.person.firstName} ${conversationPartner.person.lastName}`
     : currentUserName || "Unknown User";
+    
+  const partnerAvatar = conversationPartner?.avatar;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -89,9 +91,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           )}
 
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base flex-shrink-0">
-              {partnerName.charAt(0)}
-            </div>
+            <Avatar 
+              src={partnerAvatar} 
+              fallback={partnerName.charAt(0)} 
+              className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" 
+            />
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                 {partnerName}
@@ -161,6 +165,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                     message.senderId === currentUser
                       ? user?.person?.firstName || "You"
                       : `${message.sender?.person.firstName} ${message.sender?.person.lastName}`
+                  }
+                  senderAvatar={
+                    message.senderId === currentUser
+                      ? user?.avatar
+                      : message.sender?.avatar
                   }
                   read={message.read}
                 />

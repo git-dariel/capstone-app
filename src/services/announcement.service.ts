@@ -1,12 +1,17 @@
 import type { QueryParams } from "./api.config";
 import { HttpClient } from "./api.config";
 
+export interface AnnouncementFile {
+  name: string;
+  url: string;
+}
+
 export interface Announcement {
   id: string;
   title: string;
   description: string;
   status: "academic" | "career" | "wellness";
-  attachement?: string;
+  attachement?: AnnouncementFile[];
   createdAt: string;
   updatedAt: string;
   isDeleted: boolean;
@@ -16,14 +21,14 @@ export interface CreateAnnouncementRequest {
   title: string;
   description: string;
   status?: "academic" | "career" | "wellness";
-  attachement?: string;
+  attachement?: File[];
 }
 
 export interface UpdateAnnouncementRequest {
   title?: string;
   description?: string;
   status?: "academic" | "career" | "wellness";
-  attachement?: string;
+  attachement?: File[];
 }
 
 export interface AnnouncementPaginatedResponse {
@@ -54,7 +59,24 @@ export class AnnouncementService {
 
   static async createAnnouncement(data: CreateAnnouncementRequest): Promise<Announcement> {
     try {
-      const response = await HttpClient.post<Announcement>("/announcement", data);
+      // Create FormData for multipart/form-data
+      const formData = new FormData();
+      
+      // Add text fields
+      formData.append('title', data.title);
+      formData.append('description', data.description);
+      if (data.status) {
+        formData.append('status', data.status);
+      }
+      
+      // Add files if any
+      if (data.attachement && data.attachement.length > 0) {
+        data.attachement.forEach((file) => {
+          formData.append('files', file);
+        });
+      }
+
+      const response = await HttpClient.postFormData<Announcement>("/announcement", formData);
       return response as unknown as Announcement;
     } catch (error) {
       throw error;
@@ -66,7 +88,22 @@ export class AnnouncementService {
     data: UpdateAnnouncementRequest
   ): Promise<Announcement> {
     try {
-      const response = await HttpClient.patch<Announcement>(`/announcement/${id}`, data);
+      // Create FormData for multipart/form-data
+      const formData = new FormData();
+      
+      // Add text fields
+      if (data.title) formData.append('title', data.title);
+      if (data.description) formData.append('description', data.description);
+      if (data.status) formData.append('status', data.status);
+      
+      // Add files if any
+      if (data.attachement && data.attachement.length > 0) {
+        data.attachement.forEach((file) => {
+          formData.append('files', file);
+        });
+      }
+
+      const response = await HttpClient.patchFormData<Announcement>(`/announcement/${id}`, formData);
       return response as unknown as Announcement;
     } catch (error) {
       throw error;

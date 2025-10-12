@@ -45,6 +45,7 @@ export interface AnxietyAssessment {
   user?: {
     id: string;
     email: string;
+    avatar?: string;
     person: {
       firstName: string;
       lastName: string;

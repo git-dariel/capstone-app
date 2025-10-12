@@ -83,7 +83,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
       fetchStudents({
         limit: 100,
         fields:
-          "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.anxietyAssessments,person.users.depressionAssessments,person.users.stressAssessments,person.users.suicideAssessments",
+          "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.avatar,person.users.anxietyAssessments,person.users.depressionAssessments,person.users.stressAssessments,person.users.suicideAssessments",
       }).catch(console.error);
     }
   }, [propStudents]);
@@ -154,6 +154,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
         email: person?.email || "N/A",
         contactNumber: person?.contactNumber || "N/A",
         gender: person?.gender || "N/A",
+        avatar: person?.users?.[0]?.avatar, // Get avatar from user account
         notes: student.notes || [],
         createdAt: student.createdAt,
         latestAssessment: getLatestAssessment(person),
@@ -423,7 +424,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                         <Avatar
                           src={student.avatar}
                           fallback={student.studentName.charAt(0)}
-                          className="flex-shrink-0"
+                          className="flex-shrink-0 w-10 h-10"
                         />
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-medium text-gray-900 truncate">
@@ -563,7 +564,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                             <Avatar
                               src={student.avatar}
                               fallback={student.studentName.charAt(0)}
-                              className="mr-3"
+                              className="w-8 h-8 mr-3"
                             />
                             <div>
                               <div className="text-sm font-medium text-gray-900">

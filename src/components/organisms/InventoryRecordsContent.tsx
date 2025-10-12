@@ -5,7 +5,7 @@ import type { GetInventoryResponse } from "@/services/inventory.service";
 
 // Constants for consistent data fetching
 const INVENTORY_FIELDS =
-  "id,studentId,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender";
+  "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar";
 
 export const InventoryRecordsContent: React.FC = () => {
   const [viewingInventory, setViewingInventory] = useState<GetInventoryResponse | null>(null);

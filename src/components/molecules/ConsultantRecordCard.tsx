@@ -26,6 +26,8 @@ export const ConsultantRecordCard: React.FC<ConsultantRecordCardProps> = ({
   const studentName = record.student?.person
     ? `${record.student.person.firstName} ${record.student.person.lastName}`
     : "Unknown Student";
+    
+  const studentAvatar = record.student?.person?.users?.[0]?.avatar;
 
   const getStickyNoteColor = (index: number) => {
     const colors = [
@@ -66,6 +68,7 @@ export const ConsultantRecordCard: React.FC<ConsultantRecordCardProps> = ({
       <div className="flex items-start justify-between mb-2 sm:mb-3">
         <div className="flex items-center space-x-2 flex-1 min-w-0">
           <Avatar
+            src={studentAvatar}
             fallback={studentName
               .split(" ")
               .map((n) => n[0])

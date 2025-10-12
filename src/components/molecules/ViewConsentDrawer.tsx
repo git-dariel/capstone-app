@@ -44,6 +44,8 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
   const studentName = consent.student
     ? `${consent.student.person.firstName} ${consent.student.person.lastName}`
     : "Unknown Student";
+    
+  const studentAvatar = consent.student?.person?.users?.[0]?.avatar;
 
   const renderConcerns = (concerns: any) => {
     if (!concerns || typeof concerns !== "object") {
@@ -116,6 +118,7 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
           <div className="bg-primary-100 border border-primary-200 rounded-lg p-6">
             <div className="flex items-center space-x-4">
               <Avatar
+                src={studentAvatar}
                 fallback={`${consent.student.person.firstName.charAt(
                   0
                 )}${consent.student.person.lastName.charAt(0)}`}

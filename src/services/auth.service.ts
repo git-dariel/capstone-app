@@ -71,6 +71,7 @@ export interface User {
   userName: string;
   role: string;
   type: string;
+  avatar?: string;
   person: {
     id: string;
     firstName: string;

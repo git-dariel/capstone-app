@@ -40,7 +40,7 @@ export const ConsultantRecordsContent: React.FC = () => {
         await fetchStudents({
           limit: 100,
           fields:
-            "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender",
+            "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.avatar",
         });
       } catch (error) {
         console.error("Error loading students:", error);
