@@ -1,10 +1,11 @@
 import { MessageBubble, MessageInput, Avatar } from "@/components/atoms";
+import { VideoCallButton } from "@/components/molecules";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/message";
-import { ArrowLeft, MessageCircle, MoreVertical } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -32,6 +33,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
 
   const currentUser = user?.id || currentUserId;
   const conversationPartner =
@@ -73,6 +75,12 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  const handleCallInitiated = async (meetLink: string) => {
+    // Send the meet link as a message
+    const callMessage = `📹 Video call started: ${meetLink}\n\nClick the link to join the call!`;
+    await handleSendMessage(callMessage);
+  };
+
   return (
     <div className={cn("flex flex-col h-full bg-white", className)}>
       {/* Header */}
@@ -109,9 +117,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <Button variant="ghost" size="sm" className="p-2 touch-manipulation" title="More options">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
+          <VideoCallButton
+            recipientName={partnerName}
+            onCallInitiated={handleCallInitiated}
+            className="touch-manipulation"
+          />
         </div>
       </div>
 
@@ -180,8 +190,32 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       {/* Message input */}
-      <div className="border-t border-gray-200 p-2 sm:p-4 bg-white">
-        <MessageInput onSend={handleSendMessage} placeholder={`Message ${partnerName}...`} />
+      <div className="border-t border-gray-200 p-2 sm:p-4 bg-white space-y-3">
+        {/* Video call section */}
+        {showVideoCall && (
+          <VideoCallButton
+            recipientName={partnerName}
+            onCallInitiated={handleCallInitiated}
+            className="w-full"
+          />
+        )}
+        
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <MessageInput onSend={handleSendMessage} placeholder={`Message ${partnerName}...`} />
+          </div>
+          {!showVideoCall && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowVideoCall(true)}
+              className="px-3 py-2 flex-shrink-0"
+              title="Start video call"
+            >
+              📹
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
