@@ -1,22 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { animate } from "animejs";
-import {
-  Brain,
-  Calendar,
-  MessageCircle,
-  Activity,
-  Shield,
-  ChevronRight,
-  Heart,
-  TrendingUp,
-  Clock,
-  Menu,
-  X,
-  Bell,
-  FileText,
-  Download,
-} from "lucide-react";
+import { Brain, Calendar, MessageCircle, Activity, Shield, ChevronRight, Heart, TrendingUp, Clock, Menu, X, Bell, FileText, Download } from "lucide-react";
 import pupLogo from "@/assets/PUPLogo.png";
 import iskoImage from "@/assets/isko.png";
 import { InstallAppButton, Avatar } from "@/components/atoms";
@@ -74,54 +59,44 @@ export const LandingPage: React.FC = () => {
     if (!filename) return false;
     const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
     const lowerFilename = filename.toLowerCase();
-    return (
-      imageExtensions.some((ext) => lowerFilename.endsWith(ext)) ||
-      lowerFilename.startsWith("data:image/") ||
-      lowerFilename.includes("image")
-    );
+    return imageExtensions.some((ext) => lowerFilename.endsWith(ext)) || lowerFilename.startsWith("data:image/") || lowerFilename.includes("image");
   };
 
   const features = [
     {
       icon: Brain,
       title: "Mental Health Assessments",
-      description:
-        "Scientific-based screening tools including GAD-7, PHQ-9, PSS, and CSSRS with immediate results and severity categorization.",
+      description: "Scientific-based screening tools including GAD-7, PHQ-9, PSS, and CSSRS with immediate results and severity categorization.",
       color: "from-primary-100 to-primary-50",
     },
     {
       icon: Calendar,
       title: "Appointment Management",
-      description:
-        "Seamless booking system for counseling sessions with real-time availability and status tracking.",
+      description: "Seamless booking system for counseling sessions with real-time availability and status tracking.",
       color: "from-gray-100 to-gray-50",
     },
     {
       icon: MessageCircle,
       title: "Secure Messaging",
-      description:
-        "HIPAA-compliant communication between students and counselors with encrypted real-time messaging.",
+      description: "HIPAA-compliant communication between students and counselors with encrypted real-time messaging.",
       color: "from-primary-100 to-primary-50",
     },
     {
       icon: Activity,
       title: "Wellness Activities",
-      description:
-        "Guided therapeutic exercises, mindfulness sessions, and interactive wellness content with progress tracking.",
+      description: "Guided therapeutic exercises, mindfulness sessions, and interactive wellness content with progress tracking.",
       color: "from-gray-100 to-gray-50",
     },
     {
       icon: TrendingUp,
       title: "Analytics & Insights",
-      description:
-        "Comprehensive dashboard with predictive analytics and historical tracking for mental health trends.",
+      description: "Comprehensive dashboard with predictive analytics and historical tracking for mental health trends.",
       color: "from-primary-100 to-primary-50",
     },
     {
       icon: Shield,
       title: "Privacy & Security",
-      description:
-        "FERPA-compliant data protection with role-based access and comprehensive consent management.",
+      description: "FERPA-compliant data protection with role-based access and comprehensive consent management.",
       color: "from-gray-100 to-gray-50",
     },
   ];
@@ -318,9 +293,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center space-x-3">
               <img src={pupLogo} alt="PUP Logo" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div>
-                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">
-                  Office of Guidance and Counseling Services
-                </h1>
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">Office of Guidance and Counseling Services</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Mental Health Platform</p>
               </div>
             </div>
@@ -331,20 +304,14 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setActiveTab("home")}
-                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                    activeTab === "home"
-                      ? "bg-white text-primary-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
                 >
                   Home
                 </button>
                 <button
                   onClick={() => setActiveTab("announcements")}
                   className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
-                    activeTab === "announcements"
-                      ? "bg-white text-primary-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                    activeTab === "announcements" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   <Bell className="w-4 h-4" />
@@ -354,10 +321,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Auth Buttons */}
               <div className="flex space-x-3">
-                <button
-                  onClick={() => navigate("/signin")}
-                  className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
-                >
+                <button onClick={() => navigate("/signin")} className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer">
                   Sign In
                 </button>
                 <button
@@ -371,11 +335,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200"
-                aria-label="Toggle menu"
-              >
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200" aria-label="Toggle menu">
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
@@ -392,9 +352,7 @@ export const LandingPage: React.FC = () => {
                       setActiveTab("home");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
-                      activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
-                    }`}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"}`}
                   >
                     Home
                   </button>
@@ -404,9 +362,7 @@ export const LandingPage: React.FC = () => {
                       setIsMenuOpen(false);
                     }}
                     className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
-                      activeTab === "announcements"
-                        ? "bg-white text-primary-700 shadow-sm"
-                        : "text-gray-600"
+                      activeTab === "announcements" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
                     }`}
                   >
                     <Bell className="w-3 h-3" />
@@ -447,10 +403,7 @@ export const LandingPage: React.FC = () => {
               <Bell className="w-6 h-6 text-primary-700" />
             </div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Latest Announcements</h1>
-            <p className="text-base text-gray-600 max-w-2xl mx-auto">
-              Stay updated with the latest news, events, and important information from the Office
-              of Guidance and Counseling Services.
-            </p>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">Stay updated with the latest news, events, and important information from the Office of Guidance and Counseling Services.</p>
           </div>
         </div>
       </section>
@@ -490,9 +443,7 @@ export const LandingPage: React.FC = () => {
                 <Bell className="w-8 h-8 text-gray-400" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">No announcements yet</h3>
-              <p className="text-gray-600">
-                Check back later for updates from the guidance office.
-              </p>
+              <p className="text-gray-600">Check back later for updates from the guidance office.</p>
             </div>
           ) : (
             <div className="space-y-6">
@@ -510,21 +461,12 @@ export const LandingPage: React.FC = () => {
                   {/* Post Header */}
                   <div className="p-6 pb-4">
                     <div className="flex items-center space-x-3">
-                      <Avatar
-                        fallback="GC"
-                        className="w-12 h-12 bg-primary-100 text-primary-700 font-semibold"
-                      />
+                      <Avatar src={undefined} fallback="GC" className="w-12 h-12 bg-primary-100 text-primary-700 font-semibold" />
                       <div className="flex-1">
                         <h4 className="text-sm font-semibold text-gray-900">Guidance Counselor</h4>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(announcement.createdAt)}
-                        </p>
+                        <p className="text-xs text-gray-500">{formatDate(announcement.createdAt)}</p>
                       </div>
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(
-                          announcement.status
-                        )}`}
-                      >
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(announcement.status)}`}>
                         {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
                       </span>
                     </div>
@@ -533,52 +475,56 @@ export const LandingPage: React.FC = () => {
                   {/* Post Content */}
                   <div className="px-6 pb-4">
                     <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900 leading-tight">
-                        {announcement.title}
-                      </h3>
-                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {announcement.description}
-                      </p>
+                      <h3 className="text-lg font-semibold text-gray-900 leading-tight">{announcement.title}</h3>
+                      <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{announcement.description}</p>
                     </div>
 
                     {/* Attachment Display */}
-                    {announcement.attachement && (
-                      <div className="mt-4">
-                        {isImageFile(announcement.attachement) ? (
-                          <div className="rounded-xl overflow-hidden border border-gray-200">
-                            <img
-                              src={announcement.attachement}
-                              alt="Announcement attachment"
-                              className="w-full h-auto max-h-96 object-cover"
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                              }}
-                            />
-                            <div className="hidden bg-gray-100 p-4">
-                              <div className="flex items-center space-x-3">
+                    {announcement.attachement && announcement.attachement.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        {announcement.attachement.map((attachment, index) => (
+                          <div key={index}>
+                            {isImageFile(attachment.name) ? (
+                              <div className="rounded-xl overflow-hidden border border-gray-200">
+                                <img
+                                  src={attachment.url}
+                                  alt={attachment.name}
+                                  className="w-full h-auto max-h-96 object-contain bg-gray-50 cursor-pointer"
+                                  onClick={() => window.open(attachment.url, "_blank")}
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = "none";
+                                    e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                                  }}
+                                />
+                                <div className="hidden bg-gray-100 p-4">
+                                  <div className="flex items-center space-x-3">
+                                    <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
+                                      <FileText className="w-5 h-5 text-gray-600" />
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-900">{attachment.name}</p>
+                                      <p className="text-xs text-gray-500">Click to view full size</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div
+                                className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center space-x-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                                onClick={() => window.open(attachment.url, "_blank")}
+                              >
                                 <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
                                   <FileText className="w-5 h-5 text-gray-600" />
                                 </div>
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">Attachment</p>
-                                  <p className="text-xs text-gray-500">Click to view full size</p>
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">{attachment.name}</p>
+                                  <p className="text-xs text-gray-500">Click to download or view</p>
                                 </div>
+                                <Download className="w-4 h-4 text-gray-400" />
                               </div>
-                            </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center space-x-3 hover:bg-gray-100 transition-colors cursor-pointer">
-                            <div className="w-10 h-10 bg-gray-300 rounded flex items-center justify-center">
-                              <FileText className="w-5 h-5 text-gray-600" />
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">Attachment</p>
-                              <p className="text-xs text-gray-500">Click to download or view</p>
-                            </div>
-                            <Download className="w-4 h-4 text-gray-400" />
-                          </div>
-                        )}
+                        ))}
                       </div>
                     )}
                   </div>
@@ -590,9 +536,7 @@ export const LandingPage: React.FC = () => {
                         <span>📢</span>
                         <span>Official Announcement</span>
                       </span>
-                      <span className="text-primary-600 font-medium">
-                        Office of Guidance & Counseling
-                      </span>
+                      <span className="text-primary-600 font-medium">Office of Guidance & Counseling</span>
                     </div>
                   </div>
                 </div>
@@ -607,10 +551,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="space-y-6">
             <h2 className="text-2xl font-bold text-gray-900">Stay Connected with Our Services</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Sign in to access personalized mental health assessments, counseling appointments, and
-              exclusive resources.
-            </p>
+            <p className="text-gray-600 max-w-2xl mx-auto">Sign in to access personalized mental health assessments, counseling appointments, and exclusive resources.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
                 onClick={() => navigate("/signin")}
@@ -643,9 +584,7 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center space-x-3">
               <img src={pupLogo} alt="PUP Logo" className="h-8 w-8 sm:h-10 sm:w-10" />
               <div>
-                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">
-                  Office of Guidance and Counseling Services
-                </h1>
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">Office of Guidance and Counseling Services</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Mental Health Platform</p>
               </div>
             </div>
@@ -656,20 +595,14 @@ export const LandingPage: React.FC = () => {
               <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => setActiveTab("home")}
-                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
-                    activeTab === "home"
-                      ? "bg-white text-primary-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600 hover:text-gray-900"}`}
                 >
                   Home
                 </button>
                 <button
                   onClick={() => setActiveTab("announcements")}
                   className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
-                    activeTab === "announcements"
-                      ? "bg-white text-primary-700 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
+                    activeTab === "announcements" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
                   <Bell className="w-4 h-4" />
@@ -679,10 +612,7 @@ export const LandingPage: React.FC = () => {
 
               {/* Auth Buttons */}
               <div className="flex space-x-3">
-                <button
-                  onClick={() => navigate("/signin")}
-                  className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
-                >
+                <button onClick={() => navigate("/signin")} className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer">
                   Sign In
                 </button>
                 <button
@@ -696,11 +626,7 @@ export const LandingPage: React.FC = () => {
 
             {/* Mobile Menu Button */}
             <div className="md:hidden">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200"
-                aria-label="Toggle menu"
-              >
+              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200" aria-label="Toggle menu">
                 {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
@@ -717,9 +643,7 @@ export const LandingPage: React.FC = () => {
                       setActiveTab("home");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
-                      activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
-                    }`}
+                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"}`}
                   >
                     Home
                   </button>
@@ -729,9 +653,7 @@ export const LandingPage: React.FC = () => {
                       setIsMenuOpen(false);
                     }}
                     className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
-                      activeTab === "announcements"
-                        ? "bg-white text-primary-700 shadow-sm"
-                        : "text-gray-600"
+                      activeTab === "announcements" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
                     }`}
                   >
                     <Bell className="w-3 h-3" />
@@ -775,8 +697,7 @@ export const LandingPage: React.FC = () => {
                   <span className="block text-primary-700">Matters</span>
                 </h1>
                 <p className="hero-description text-xl text-gray-600 leading-relaxed opacity-0">
-                  A comprehensive digital platform for mental health screening, counseling support,
-                  and wellness resources designed specifically for university students.
+                  A comprehensive digital platform for mental health screening, counseling support, and wellness resources designed specifically for university students.
                 </p>
               </div>
 
@@ -822,12 +743,8 @@ export const LandingPage: React.FC = () => {
                     }}
                   >
                     <stat.icon className="h-6 w-6 lg:h-8 lg:w-8 text-primary-700 mb-2 flex-shrink-0" />
-                    <div className="text-xl lg:text-lg font-bold text-gray-900 leading-tight">
-                      {stat.number}
-                    </div>
-                    <div className="text-xs lg:text-sm text-gray-600 leading-tight">
-                      {stat.label}
-                    </div>
+                    <div className="text-xl lg:text-lg font-bold text-gray-900 leading-tight">{stat.number}</div>
+                    <div className="text-xs lg:text-sm text-gray-600 leading-tight">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -846,18 +763,13 @@ export const LandingPage: React.FC = () => {
               >
                 <div className="text-center space-y-8">
                   <div className="relative">
-                    <img
-                      src={iskoImage}
-                      alt="Welcome sa PUP, Iskoolmates! - Happy PUP students"
-                      className="w-full h-auto max-w-sm mx-auto rounded-2xl shadow-lg"
-                    />
+                    <img src={iskoImage} alt="Welcome sa PUP, Iskoolmates! - Happy PUP students" className="w-full h-auto max-w-sm mx-auto rounded-2xl shadow-lg" />
                   </div>
                   <div className="space-y-4">
                     <h3 className="text-2xl font-bold text-gray-900">For PUP Students</h3>
                     <p className="text-gray-600">
-                      A mental health platform designed specifically for the PUP community,
-                      supporting our iskoolmates' wellness journey with culturally-aware and
-                      scientifically-validated assessment tools.
+                      A mental health platform designed specifically for the PUP community, supporting our iskoolmates' wellness journey with culturally-aware and scientifically-validated assessment
+                      tools.
                     </p>
                   </div>
                 </div>
@@ -871,13 +783,8 @@ export const LandingPage: React.FC = () => {
       <section className="features-section py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-              Comprehensive Mental Health Support
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need for mental health screening, counseling, and wellness - all in one
-              secure, user-friendly platform.
-            </p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Comprehensive Mental Health Support</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Everything you need for mental health screening, counseling, and wellness - all in one secure, user-friendly platform.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -913,13 +820,8 @@ export const LandingPage: React.FC = () => {
       <section className="assessments-section py-20 bg-gradient-to-br from-primary-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-              Evidence-Based Assessment Tools
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Clinically validated screening instruments used by mental health professionals
-              worldwide.
-            </p>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Evidence-Based Assessment Tools</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">Clinically validated screening instruments used by mental health professionals worldwide.</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -995,12 +897,9 @@ export const LandingPage: React.FC = () => {
           >
             <div className="space-y-8">
               <div className="space-y-4">
-                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">
-                  Take the First Step Towards Better Mental Health
-                </h2>
+                <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Take the First Step Towards Better Mental Health</h2>
                 <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                  Join thousands of students who are taking control of their mental wellness with
-                  our comprehensive assessment and support platform.
+                  Join thousands of students who are taking control of their mental wellness with our comprehensive assessment and support platform.
                 </p>
               </div>
 
@@ -1034,17 +933,11 @@ export const LandingPage: React.FC = () => {
 
               {/* Install App Button */}
               <div className="flex justify-center mt-6">
-                <InstallAppButton
-                  variant="outline"
-                  size="lg"
-                  className="bg-white/80 backdrop-blur-sm border-primary-300 text-primary-700 hover:bg-primary-50"
-                />
+                <InstallAppButton variant="outline" size="lg" className="bg-white/80 backdrop-blur-sm border-primary-300 text-primary-700 hover:bg-primary-50" />
               </div>
 
               <div className="pt-8 border-t border-primary-200">
-                <p className="text-sm text-gray-500">
-                  Secure • HIPAA Compliant • FERPA Compliant • Available 24/7
-                </p>
+                <p className="text-sm text-gray-500">Secure • HIPAA Compliant • FERPA Compliant • Available 24/7</p>
               </div>
             </div>
           </div>
@@ -1058,21 +951,15 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-col items-center space-y-3">
               <img src={pupLogo} alt="PUP Logo" className="h-12 w-12" />
               <div>
-                <h3 className="text-lg font-bold text-primary-700">
-                  Office of Guidance and Counseling Services
-                </h3>
+                <h3 className="text-lg font-bold text-primary-700">Office of Guidance and Counseling Services</h3>
                 <p className="text-xs text-gray-500">Polytechnic University of the Philippines</p>
               </div>
             </div>
             <p className="text-gray-600 text-sm max-w-2xl mx-auto">
-              Student Mental Health Assessment Platform - A comprehensive digital solution for
-              mental health screening, counseling, and wellness support.
+              Student Mental Health Assessment Platform - A comprehensive digital solution for mental health screening, counseling, and wellness support.
             </p>
             <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
-              <p>
-                © 2024 Office of Guidance and Counseling Services. Academic use only. All rights
-                reserved.
-              </p>
+              <p>© 2024 Office of Guidance and Counseling Services. Academic use only. All rights reserved.</p>
               <p className="mt-1">HIPAA Compliant • FERPA Compliant • Secure & Confidential</p>
             </div>
           </div>

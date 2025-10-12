@@ -1,29 +1,17 @@
-import React, { useState, useEffect } from "react";
-import { useAuth } from "@/hooks";
+import { Avatar, ToastContainer } from "@/components/atoms";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, ToastContainer } from "@/components/atoms";
-import {
-  Edit,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  User,
-  GraduationCap,
-  Shield,
-  Lock,
-  Eye,
-  EyeOff,
-} from "lucide-react";
-import { UserService, StudentService, TokenManager } from "@/services";
-import { useToast } from "@/hooks";
+import { DiceBearAvatarSelector } from "@/components/molecules/DiceBearAvatarSelector";
 import { programOptions, yearOptions } from "@/config/constants";
+import { useAuth, useToast } from "@/hooks";
+import { StudentService, TokenManager, UserService } from "@/services";
+import { Calendar, Edit, Eye, EyeOff, GraduationCap, Lock, Mail, MapPin, Phone, Shield, Upload, User, X, Image, Sparkles } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 export const ProfileContent: React.FC = () => {
-  const { user: authUser, student: authStudent } = useAuth();
+  const { user: authUser, student: authStudent, refreshAuth } = useAuth();
   const { success, error, toasts, removeToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
@@ -40,6 +28,13 @@ export const ProfileContent: React.FC = () => {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Avatar-related states
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarModalTab, setAvatarModalTab] = useState<'upload' | 'generate'>('upload');
+  const [selectedDiceBearAvatar, setSelectedDiceBearAvatar] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Direct data fetching states
   const [user, setUser] = useState<any>(null);
@@ -78,8 +73,7 @@ export const ProfileContent: React.FC = () => {
   const userData = user?.type === "student" ? student : user;
 
   // For students, try to get person data from user first (which has complete data), then fall back to student
-  const person =
-    user?.type === "student" ? user?.person || (student as any)?.person : userData?.person;
+  const person = user?.type === "student" ? user?.person || (student as any)?.person : userData?.person;
 
   // Helper function to format address
   const formatAddress = (address: any): string => {
@@ -91,15 +85,9 @@ export const ProfileContent: React.FC = () => {
       return "Not provided";
     }
 
-    const parts = [
-      address.houseNo,
-      address.street,
-      address.barangay,
-      address.city,
-      address.province,
-      address.zipCode,
-      address.country,
-    ].filter((part) => part && typeof part === "string" && part.trim());
+    const parts = [address.houseNo, address.street, address.barangay, address.city, address.province, address.zipCode, address.country].filter(
+      (part) => part && typeof part === "string" && part.trim()
+    );
 
     return parts.length > 0 ? parts.join(", ") : "Not provided";
   };
@@ -145,9 +133,7 @@ export const ProfileContent: React.FC = () => {
       const lastNameInput = document.querySelector('input[name="lastName"]') as HTMLInputElement;
       const emailInput = document.querySelector('input[name="email"]') as HTMLInputElement;
       const phoneInput = document.querySelector('input[name="contactNumber"]') as HTMLInputElement;
-      const studentNumberInput = document.querySelector(
-        'input[name="studentNumber"]'
-      ) as HTMLInputElement;
+      const studentNumberInput = document.querySelector('input[name="studentNumber"]') as HTMLInputElement;
       const programSelect = document.querySelector('select[name="program"]') as HTMLSelectElement;
       const yearSelect = document.querySelector('select[name="year"]') as HTMLSelectElement;
 
@@ -369,6 +355,167 @@ export const ProfileContent: React.FC = () => {
     }
   };
 
+  // Avatar upload handler
+  const handleAvatarUpload = async (file: File) => {
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      error("Invalid file type", "Please select a valid image file (JPEG, PNG, GIF, or WebP)");
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      error("File too large", "Please select an image smaller than 5MB");
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      const response = await UserService.uploadAvatar(file);
+
+      // Update the user state with new avatar
+      setUser((prev: any) => ({
+        ...prev,
+        avatar: response.updatedUser.avatar,
+      }));
+
+      // Refresh auth state to update avatar across all components
+      await refreshAuth();
+
+      success("Avatar updated", "Your profile picture has been updated successfully");
+      setShowAvatarModal(false);
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
+      error("Upload failed", "Failed to update your profile picture. Please try again.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  // Avatar delete handler
+  const handleAvatarDelete = async () => {
+    try {
+      await UserService.deleteAvatar();
+
+      // Update the user state to remove avatar
+      setUser((prev: any) => ({
+        ...prev,
+        avatar: null,
+      }));
+
+      // Refresh auth state to update avatar across all components
+      await refreshAuth();
+
+      success("Avatar removed", "Your profile picture has been removed");
+      setShowAvatarModal(false);
+    } catch (err) {
+      console.error("Error deleting avatar:", err);
+      error("Delete failed", "Failed to remove your profile picture. Please try again.");
+    }
+  };
+
+  // Handle file input change
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleAvatarUpload(file);
+    }
+    // Reset input value
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Handle DiceBear avatar selection
+  const handleDiceBearAvatarSelect = (avatarSvg: string) => {
+    setSelectedDiceBearAvatar(avatarSvg);
+  };
+
+  // Convert SVG to PNG
+  const svgToPng = (svgString: string, size: number = 512): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new (window as any).Image();
+      
+      canvas.width = size;
+      canvas.height = size;
+      
+      img.onload = () => {
+        if (ctx) {
+          // Fill with white background
+          ctx.fillStyle = 'white';
+          ctx.fillRect(0, 0, size, size);
+          
+          // Draw the SVG
+          ctx.drawImage(img, 0, 0, size, size);
+          
+          canvas.toBlob((blob) => {
+            if (blob) {
+              resolve(blob);
+            } else {
+              reject(new Error('Failed to convert SVG to PNG'));
+            }
+          }, 'image/png', 0.9);
+        } else {
+          reject(new Error('Failed to get canvas context'));
+        }
+      };
+      
+      img.onerror = () => reject(new Error('Failed to load SVG'));
+      
+      // Create a data URL from the SVG
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(svgBlob);
+      img.src = url;
+    });
+  };
+
+  // Handle DiceBear avatar save
+  const handleSaveDiceBearAvatar = async () => {
+    if (!selectedDiceBearAvatar) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      
+      // Convert SVG to PNG
+      const pngBlob = await svgToPng(selectedDiceBearAvatar, 512);
+      const file = new File([pngBlob], 'dicebear-avatar.png', { type: 'image/png' });
+      
+      const response = await UserService.uploadAvatar(file);
+
+      // Update the user state with new avatar
+      setUser((prev: any) => ({
+        ...prev,
+        avatar: response.updatedUser.avatar,
+      }));
+
+      // Refresh auth state to update avatar across all components
+      await refreshAuth();
+
+      success("Avatar updated", "Your profile picture has been updated successfully");
+      setShowAvatarModal(false);
+      setSelectedDiceBearAvatar('');
+    } catch (err) {
+      console.error("Error uploading DiceBear avatar:", err);
+      error("Upload failed", "Failed to update your profile picture. Please try again.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
+  // Get user initials for fallback avatar
+  const getUserInitials = () => {
+    if (person?.firstName && person?.lastName) {
+      return `${person.firstName.charAt(0)}${person.lastName.charAt(0)}`.toUpperCase();
+    }
+    return "U";
+  };
+
   // Show loading state while fetching data
   if (loading) {
     return (
@@ -387,16 +534,12 @@ export const ProfileContent: React.FC = () => {
     <main className="flex-1 p-4 md:p-6 bg-gray-50 overflow-auto">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Profile</h1>
-            <p className="text-gray-600 mt-1">Manage your account information and preferences</p>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">Manage your account information and preferences</p>
           </div>
-          <Button
-            onClick={handleEdit}
-            variant={isEditing ? "destructive" : "outline"}
-            className="flex items-center space-x-2"
-          >
+          <Button onClick={handleEdit} variant={isEditing ? "destructive" : "outline"} className="flex items-center justify-center space-x-2 w-full sm:w-auto">
             <Edit className="h-4 w-4" />
             <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
           </Button>
@@ -405,40 +548,34 @@ export const ProfileContent: React.FC = () => {
         {/* Profile Overview Card */}
         <Card>
           <CardHeader>
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <Avatar
-                  fallback={person?.firstName?.charAt(0)?.toUpperCase() || "U"}
-                  className="h-20 w-20 text-xl"
-                />
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-6">
+              <div className="relative flex justify-center sm:justify-start">
+                <Avatar src={user?.avatar} fallback={getUserInitials()} className="h-20 w-20 text-xl" />
                 {isEditing && (
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer">
+                  <div
+                    className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-primary-700 transition-colors"
+                    onClick={() => setShowAvatarModal(true)}
+                  >
                     <Edit className="h-3 w-3 text-white" />
                   </div>
                 )}
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              <div className="flex-1 text-center sm:text-left">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     {person?.firstName} {person?.lastName}
                   </h2>
                   <Badge className={getRoleBadgeColor(user?.type || "")}>
-                    {user?.type === "guidance"
-                      ? "Guidance Counselor"
-                      : user?.type === "student"
-                      ? "Student"
-                      : user?.type === "admin"
-                      ? "Administrator"
-                      : "User"}
+                    {user?.type === "guidance" ? "Guidance Counselor" : user?.type === "student" ? "Student" : user?.type === "admin" ? "Administrator" : "User"}
                   </Badge>
                 </div>
-                <p className="text-gray-600 mb-3">{person?.email}</p>
-                <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  <div className="flex items-center space-x-1">
+                <p className="text-gray-600 mb-3 text-sm sm:text-base">{person?.email}</p>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm text-gray-500">
+                  <div className="flex items-center justify-center sm:justify-start space-x-1">
                     <Calendar className="h-4 w-4" />
                     <span>Joined {formatDate(user?.createdAt)}</span>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center justify-center sm:justify-start space-x-1">
                     <Shield className="h-4 w-4" />
                     <Badge variant="outline" className={getStatusBadgeColor(user?.status)}>
                       {user?.status || "Active"}
@@ -561,15 +698,9 @@ export const ProfileContent: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <GraduationCap className="h-5 w-5" />
-                <span>
-                  {user?.type === "student" ? "Academic Information" : "Professional Information"}
-                </span>
+                <span>{user?.type === "student" ? "Academic Information" : "Professional Information"}</span>
               </CardTitle>
-              <CardDescription>
-                {user?.type === "student"
-                  ? "Your academic details and program information"
-                  : "Your professional details and role information"}
-              </CardDescription>
+              <CardDescription>{user?.type === "student" ? "Your academic details and program information" : "Your professional details and role information"}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {user?.type === "student" ? (
@@ -585,9 +716,7 @@ export const ProfileContent: React.FC = () => {
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1"
                         />
                       ) : (
-                        <p className="text-gray-900 mt-1">
-                          {student?.studentNumber || "Not provided"}
-                        </p>
+                        <p className="text-gray-900 mt-1">{student?.studentNumber || "Not provided"}</p>
                       )}
                     </div>
                     <div>
@@ -613,11 +742,7 @@ export const ProfileContent: React.FC = () => {
                   <div>
                     <label className="text-sm font-medium text-gray-500">Year Level</label>
                     {isEditing ? (
-                      <select
-                        name="year"
-                        defaultValue={student?.year || ""}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1"
-                      >
+                      <select name="year" defaultValue={student?.year || ""} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 mt-1">
                         <option value="">Select Year Level</option>
                         {yearOptions.map((year) => (
                           <option key={year.value} value={year.value}>
@@ -632,10 +757,7 @@ export const ProfileContent: React.FC = () => {
                   <div>
                     <label className="text-sm font-medium text-gray-500">Status</label>
                     <div className="mt-1">
-                      <Badge
-                        variant="outline"
-                        className="bg-green-100 text-green-800 border-green-200"
-                      >
+                      <Badge variant="outline" className="bg-green-100 text-green-800 border-green-200">
                         Active
                       </Badge>
                     </div>
@@ -649,9 +771,7 @@ export const ProfileContent: React.FC = () => {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Position</label>
-                    <p className="text-gray-900 mt-1">
-                      {user?.type === "guidance" ? "Guidance Counselor" : "Administrator"}
-                    </p>
+                    <p className="text-gray-900 mt-1">{user?.type === "guidance" ? "Guidance Counselor" : "Administrator"}</p>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Employee ID</label>
@@ -690,15 +810,9 @@ export const ProfileContent: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-medium text-gray-900">Password</h3>
-                <p className="text-sm text-gray-500">
-                  Update your password to keep your account secure
-                </p>
+                <p className="text-sm text-gray-500">Update your password to keep your account secure</p>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowChangePassword(!showChangePassword)}
-                className="flex items-center space-x-2"
-              >
+              <Button variant="outline" onClick={() => setShowChangePassword(!showChangePassword)} className="flex items-center space-x-2">
                 <Lock className="h-4 w-4" />
                 <span>{showChangePassword ? "Cancel" : "Change Password"}</span>
               </Button>
@@ -721,21 +835,11 @@ export const ProfileContent: React.FC = () => {
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Enter your current password"
                       />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("current")}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showPasswords.current ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
+                      <button type="button" onClick={() => togglePasswordVisibility("current")} className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        {showPasswords.current ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                       </button>
                     </div>
-                    {passwordErrors.currentPassword && (
-                      <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>
-                    )}
+                    {passwordErrors.currentPassword && <p className="mt-1 text-sm text-red-600">{passwordErrors.currentPassword}</p>}
                   </div>
 
                   {/* New Password */}
@@ -751,21 +855,11 @@ export const ProfileContent: React.FC = () => {
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Enter your new password"
                       />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("new")}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showPasswords.new ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
+                      <button type="button" onClick={() => togglePasswordVisibility("new")} className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        {showPasswords.new ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                       </button>
                     </div>
-                    {passwordErrors.newPassword && (
-                      <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>
-                    )}
+                    {passwordErrors.newPassword && <p className="mt-1 text-sm text-red-600">{passwordErrors.newPassword}</p>}
                   </div>
 
                   {/* Confirm Password */}
@@ -781,21 +875,11 @@ export const ProfileContent: React.FC = () => {
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                         placeholder="Confirm your new password"
                       />
-                      <button
-                        type="button"
-                        onClick={() => togglePasswordVisibility("confirm")}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {showPasswords.confirm ? (
-                          <EyeOff className="h-4 w-4 text-gray-400" />
-                        ) : (
-                          <Eye className="h-4 w-4 text-gray-400" />
-                        )}
+                      <button type="button" onClick={() => togglePasswordVisibility("confirm")} className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        {showPasswords.confirm ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                       </button>
                     </div>
-                    {passwordErrors.confirmPassword && (
-                      <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>
-                    )}
+                    {passwordErrors.confirmPassword && <p className="mt-1 text-sm text-red-600">{passwordErrors.confirmPassword}</p>}
                   </div>
 
                   {/* Password Requirements */}
@@ -809,22 +893,10 @@ export const ProfileContent: React.FC = () => {
 
                   {/* Action Buttons */}
                   <div className="flex justify-end space-x-3 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleCancelPasswordChange}
-                      disabled={isChangingPassword}
-                    >
+                    <Button variant="outline" onClick={handleCancelPasswordChange} disabled={isChangingPassword}>
                       Cancel
                     </Button>
-                    <Button
-                      onClick={handleChangePassword}
-                      disabled={
-                        isChangingPassword ||
-                        !passwordData.currentPassword ||
-                        !passwordData.newPassword ||
-                        !passwordData.confirmPassword
-                      }
-                    >
+                    <Button onClick={handleChangePassword} disabled={isChangingPassword || !passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword}>
                       {isChangingPassword ? "Changing..." : "Change Password"}
                     </Button>
                   </div>
@@ -836,16 +908,124 @@ export const ProfileContent: React.FC = () => {
 
         {/* Save Changes Button (when editing) */}
         {isEditing && (
-          <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving}>
+          <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
+            <Button variant="outline" onClick={() => setIsEditing(false)} disabled={isSaving} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button onClick={handleSaveChanges} disabled={isSaving}>
+            <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full sm:w-auto">
               {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         )}
       </div>
+
+      {/* Avatar Upload Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
+            <div className="fixed inset-0 bg-transparent backdrop-blur-sm" onClick={() => setShowAvatarModal(false)} />
+            <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full mx-2 sm:mx-0 p-4 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Update Profile Picture</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowAvatarModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Tab Navigation */}
+              <div className="flex space-x-1 mb-6 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setAvatarModalTab('upload')}
+                  className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                    avatarModalTab === 'upload'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Image className="h-4 w-4" />
+                  <span className="hidden sm:inline">Upload Photo</span>
+                  <span className="sm:hidden">Upload</span>
+                </button>
+                <button
+                  onClick={() => setAvatarModalTab('generate')}
+                  className={`flex-1 flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                    avatarModalTab === 'generate'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <span className="hidden sm:inline">Generate Avatar</span>
+                  <span className="sm:hidden">Generate</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Current Avatar Preview */}
+                <div className="text-center">
+                  <Avatar src={user?.avatar} fallback={getUserInitials()} className="h-20 w-20 mx-auto text-lg" />
+                  <p className="text-sm text-gray-500 mt-2">Current avatar</p>
+                </div>
+
+                {/* Upload Tab Content */}
+                {avatarModalTab === 'upload' && (
+                  <div className="space-y-3">
+                    <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="avatar-upload" />
+                    <label
+                      htmlFor="avatar-upload"
+                      className={`w-full flex items-center justify-center px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-primary-400 transition-colors ${
+                        isUploadingAvatar ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      <div className="flex flex-col items-center">
+                        <Upload className="h-6 w-6 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-600">{isUploadingAvatar ? "Uploading..." : "Choose new photo"}</span>
+                        <span className="text-xs text-gray-500">JPG, PNG, GIF up to 5MB</span>
+                      </div>
+                    </label>
+
+                    {user?.avatar && (
+                      <Button variant="outline" onClick={handleAvatarDelete} disabled={isUploadingAvatar} className="w-full text-red-600 hover:text-red-700 hover:bg-red-50">
+                        Remove current photo
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {/* Generate Tab Content */}
+                {avatarModalTab === 'generate' && (
+                  <div className="space-y-4">
+                    <DiceBearAvatarSelector
+                      onSelect={handleDiceBearAvatarSelect}
+                      userName={`${person?.firstName || 'User'} ${person?.lastName || ''}`}
+                    />
+                    
+                    {selectedDiceBearAvatar && (
+                      <div className="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4 border-t">
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedDiceBearAvatar('')}
+                          disabled={isUploadingAvatar}
+                          className="w-full sm:w-auto"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleSaveDiceBearAvatar}
+                          disabled={isUploadingAvatar || !selectedDiceBearAvatar}
+                          className="w-full sm:w-auto"
+                        >
+                          {isUploadingAvatar ? "Saving..." : "Save Avatar"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} onDismiss={removeToast} />

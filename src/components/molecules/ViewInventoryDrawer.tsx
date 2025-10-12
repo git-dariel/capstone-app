@@ -70,14 +70,16 @@ export const ViewInventoryDrawer: React.FC<ViewInventoryDrawerProps> = ({
         inventory.student.person.lastName || ""
       }`.trim()
     : "Unknown Student";
+  
+  const studentAvatar = inventory.student?.person?.users?.[0]?.avatar; // Get avatar from user account
 
   return (
     <Drawer isOpen={isOpen} onClose={onClose} title="Inventory Details" size="xl">
-      <div className="space-y-6">
+      <div className="space-y-6 antialiased">
         {/* Student Header */}
         <div className="bg-primary-100 border border-primary-200 rounded-lg p-6">
           <div className="flex items-center space-x-4">
-            <Avatar fallback={studentName.charAt(0)} className="w-16 h-16 text-lg" />
+            <Avatar src={studentAvatar} fallback={studentName.charAt(0)} className="w-16 h-16 text-lg" />
             <div>
               <h2 className="text-2xl font-bold text-primary-900">{studentName}</h2>
               <div className="flex items-center space-x-4 mt-2 text-primary-700">

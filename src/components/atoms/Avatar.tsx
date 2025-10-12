@@ -1,26 +1,25 @@
-import React from "react";
-import { cn } from "@/lib/utils";
+import React, { useState } from "react";
 
 interface AvatarProps {
   src?: string;
-  alt?: string;
-  fallback?: string;
+  fallback: string;
   className?: string;
 }
 
-export const Avatar: React.FC<AvatarProps> = ({
-  src,
-  alt = "User",
-  fallback = "U",
-  className = "",
-}) => {
+export const Avatar: React.FC<AvatarProps> = ({ src, fallback, className = "" }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
-    <div className={cn("relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full", className)}>
-      {src ? (
-        <img src={src} alt={alt} className="aspect-square h-full w-full object-cover" />
+    <div className={`relative inline-flex items-center justify-center rounded-full overflow-hidden border-2 border-gray-200 ${className}`}>
+      {src && !imageError ? (
+        <img src={src} alt="Avatar" className="w-full h-full rounded-full object-cover" onError={handleImageError} />
       ) : (
-        <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-medium text-slate-600">
-          {fallback}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center">
+          <span className="text-primary-700 font-bold text-inherit">{fallback}</span>
         </div>
       )}
     </div>

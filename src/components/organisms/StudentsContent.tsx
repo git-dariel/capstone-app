@@ -9,7 +9,7 @@ import type {
 
 // Constants for consistent data fetching
 const STUDENT_FIELDS =
-  "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.anxietyAssessments,person.users.depressionAssessments,person.users.stressAssessments,person.users.suicideAssessments";
+  "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.avatar,person.users.anxietyAssessments,person.users.depressionAssessments,person.users.stressAssessments,person.users.suicideAssessments";
 
 export const StudentsContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

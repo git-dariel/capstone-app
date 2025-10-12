@@ -238,6 +238,7 @@ export const useMessages = (options: UseMessagesOptions = {}) => {
       try {
         const response = await MessageService.getConversationWith(userId, {
           limit: initialLimit,
+          fields: "id,title,content,read,senderId,receiverId,createdAt,sender.id,sender.userName,sender.avatar,sender.person.firstName,sender.person.lastName,receiver.id,receiver.userName,receiver.avatar,receiver.person.firstName,receiver.person.lastName",
           ...params,
         });
 
@@ -293,6 +294,7 @@ export const useMessages = (options: UseMessagesOptions = {}) => {
       const response = await MessageService.getConversationWith(messagesState.currentConversation, {
         page: messagesState.pagination.page + 1,
         limit: initialLimit,
+        fields: "id,title,content,read,senderId,receiverId,createdAt,sender.id,sender.userName,sender.avatar,sender.person.firstName,sender.person.lastName,receiver.id,receiver.userName,receiver.avatar,receiver.person.firstName,receiver.person.lastName",
       });
 
       setMessagesState((prev) => ({

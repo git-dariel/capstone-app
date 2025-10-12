@@ -7,7 +7,7 @@ import { Button } from "@/components/ui";
 
 // Constants for consistent data fetching
 const CONSENT_FIELDS =
-  "id,studentId,referred,with_whom_do_you_live,financial_status,what_brings_you_to_guidance,physical_problem,physical_symptoms,concerns,services,createdAt,updatedAt,isDeleted,student.id,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.age";
+  "id,referred,with_whom_do_you_live,financial_status,what_brings_you_to_guidance,physical_problem,physical_symptoms,concerns,services,createdAt,updatedAt,isDeleted,student.id,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.age,student.person.users.avatar";
 
 export const ConsentRecordsContent: React.FC = () => {
   const { user, student } = useAuth();

@@ -32,26 +32,20 @@ const formatLabel = (value: string) => {
     .join(" ");
 };
 
-export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
-  consents = [],
-  loading = false,
-  error = null,
-  onView,
-}) => {
+export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consents = [], loading = false, error = null, onView }) => {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
 
   // Transform consent data for table display
   const tableData: ConsentTableData[] = useMemo(() => {
     return consents.map((consent) => ({
       id: consent.id,
-      studentName: consent.student
-        ? `${consent.student.person.firstName} ${consent.student.person.lastName}`
-        : "N/A",
+      studentName: consent.student ? `${consent.student.person.firstName} ${consent.student.person.lastName}` : "N/A",
       studentNumber: consent.student?.studentNumber || "N/A",
       program: consent.student?.program || "N/A",
       year: consent.student?.year || "N/A",
       email: consent.student?.person.email || "N/A",
       gender: consent.student?.person.gender || "N/A",
+      avatar: consent.student?.person?.users?.[0]?.avatar,
       referred: formatLabel(consent.referred),
       createdAt: consent.createdAt,
       what_brings_you_to_guidance: consent.what_brings_you_to_guidance,
@@ -111,9 +105,7 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Failed to load consent records
-              </h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load consent records</h3>
               <p className="text-gray-500">{error}</p>
             </div>
           </div>
@@ -129,11 +121,7 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <div>
             <h2 className="text-lg font-medium text-gray-900">Consent Records</h2>
-            <p className="text-sm text-gray-500">
-              {loading
-                ? "Loading consent records..."
-                : `Showing ${filteredData.length} of ${filteredData.length} records`}
-            </p>
+            <p className="text-sm text-gray-500">{loading ? "Loading consent records..." : `Showing ${filteredData.length} of ${filteredData.length} records`}</p>
           </div>
         </div>
 
@@ -182,26 +170,21 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
               {filteredData.map((consent) => {
                 const originalConsent = consents.find((c) => c.id === consent.id)!;
                 return (
-                  <div
-                    key={consent.id}
-                    className="p-4 hover:bg-gray-50 transition-colors touch-manipulation"
-                    onClick={() => onView?.(originalConsent)}
-                  >
+                  <div key={consent.id} className="p-4 hover:bg-gray-50 transition-colors touch-manipulation" onClick={() => onView?.(originalConsent)}>
                     {/* Card Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start space-x-3 flex-1 min-w-0">
                         <Avatar
+                          src={consent.avatar}
                           fallback={consent.studentName
                             .split(" ")
                             .map((n) => n[0])
                             .join("")
                             .slice(0, 2)}
-                          className="flex-shrink-0"
+                          className="w-10 h-10 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">
-                            {consent.studentName}
-                          </h3>
+                          <h3 className="text-sm font-medium text-gray-900 truncate">{consent.studentName}</h3>
                           <p className="text-sm text-gray-500">{consent.studentNumber}</p>
                           <p className="text-xs text-gray-400">
                             {consent.program} • Year {consent.year}
@@ -236,21 +219,15 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
                       {/* What brings to guidance */}
                       {consent.what_brings_you_to_guidance && (
                         <div className="space-y-1">
-                          <div className="text-xs font-medium text-gray-600">
-                            What brings to guidance:
-                          </div>
+                          <div className="text-xs font-medium text-gray-600">What brings to guidance:</div>
                           <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
-                            <div className="text-xs text-primary-700 line-clamp-2">
-                              {consent.what_brings_you_to_guidance}
-                            </div>
+                            <div className="text-xs text-primary-700 line-clamp-2">{consent.what_brings_you_to_guidance}</div>
                           </div>
                         </div>
                       )}
 
                       {/* Date */}
-                      <div className="text-xs text-gray-400">
-                        Submitted: {formatDate(consent.createdAt)}
-                      </div>
+                      <div className="text-xs text-gray-400">Submitted: {formatDate(consent.createdAt)}</div>
                     </div>
                   </div>
                 );
@@ -262,48 +239,31 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Student
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Program & Year
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Referred By
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date Submitted
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program & Year</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred By</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Submitted</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredData.map((consent) => {
                     const originalConsent = consents.find((c) => c.id === consent.id)!;
                     return (
-                      <tr
-                        key={consent.id}
-                        className="hover:bg-gray-50 cursor-pointer transition-colors group relative"
-                        onClick={() => onView?.(originalConsent)}
-                        title="Click to view consent details"
-                      >
+                      <tr key={consent.id} className="hover:bg-gray-50 cursor-pointer transition-colors group relative" onClick={() => onView?.(originalConsent)} title="Click to view consent details">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <Avatar
+                              src={consent.avatar}
                               fallback={consent.studentName
                                 .split(" ")
                                 .map((n) => n[0])
                                 .join("")
                                 .slice(0, 2)}
-                              className="mr-3"
+                              className="w-8 h-8 mr-3"
                             />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {consent.studentName}
-                              </div>
-                              <div className="text-sm text-gray-500">{consent.studentNumber}</div>
+                              <div className="text-sm font-medium text-gray-900">{consent.studentName}</div>
                             </div>
                           </div>
                         </td>
@@ -314,9 +274,7 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{consent.referred}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(consent.createdAt)}
-                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(consent.createdAt)}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {onView && (
                             <Button

@@ -1,10 +1,11 @@
-import { MessageBubble, MessageInput } from "@/components/atoms";
+import { MessageBubble, MessageInput, Avatar } from "@/components/atoms";
+import { VideoCallButton } from "@/components/molecules";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/message";
-import { ArrowLeft, MessageCircle, MoreVertical } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -32,6 +33,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
 
   const currentUser = user?.id || currentUserId;
   const conversationPartner =
@@ -43,6 +45,8 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const partnerName = conversationPartner
     ? `${conversationPartner.person.firstName} ${conversationPartner.person.lastName}`
     : currentUserName || "Unknown User";
+    
+  const partnerAvatar = conversationPartner?.avatar;
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -71,6 +75,12 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
     }
   };
 
+  const handleCallInitiated = async (meetLink: string) => {
+    // Send the meet link as a message
+    const callMessage = `📹 Video call started: ${meetLink}\n\nClick the link to join the call!`;
+    await handleSendMessage(callMessage);
+  };
+
   return (
     <div className={cn("flex flex-col h-full bg-white", className)}>
       {/* Header */}
@@ -89,9 +99,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           )}
 
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base flex-shrink-0">
-              {partnerName.charAt(0)}
-            </div>
+            <Avatar 
+              src={partnerAvatar} 
+              fallback={partnerName.charAt(0)} 
+              className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" 
+            />
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                 {partnerName}
@@ -105,9 +117,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
 
         {/* Action buttons */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-          <Button variant="ghost" size="sm" className="p-2 touch-manipulation" title="More options">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
+          <VideoCallButton
+            recipientName={partnerName}
+            onCallInitiated={handleCallInitiated}
+            className="touch-manipulation"
+          />
         </div>
       </div>
 
@@ -162,6 +176,11 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
                       ? user?.person?.firstName || "You"
                       : `${message.sender?.person.firstName} ${message.sender?.person.lastName}`
                   }
+                  senderAvatar={
+                    message.senderId === currentUser
+                      ? user?.avatar
+                      : message.sender?.avatar
+                  }
                   read={message.read}
                 />
               ))}
@@ -171,8 +190,32 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       </div>
 
       {/* Message input */}
-      <div className="border-t border-gray-200 p-2 sm:p-4 bg-white">
-        <MessageInput onSend={handleSendMessage} placeholder={`Message ${partnerName}...`} />
+      <div className="border-t border-gray-200 p-2 sm:p-4 bg-white space-y-3">
+        {/* Video call section */}
+        {showVideoCall && (
+          <VideoCallButton
+            recipientName={partnerName}
+            onCallInitiated={handleCallInitiated}
+            className="w-full"
+          />
+        )}
+        
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <MessageInput onSend={handleSendMessage} placeholder={`Message ${partnerName}...`} />
+          </div>
+          {!showVideoCall && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowVideoCall(true)}
+              className="px-3 py-2 flex-shrink-0"
+              title="Start video call"
+            >
+              📹
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

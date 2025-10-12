@@ -65,3 +65,5 @@ export { WarningCard } from "./WarningCard";
 export { AssessmentOverviewCard } from "./AssessmentOverviewCard";
 export { RecommendationsPanel } from "./RecommendationsPanel";
 export { StudentProgressTable } from "./StudentProgressTable";
+export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";
+export { VideoCallButton } from "./VideoCallButton";

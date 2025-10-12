@@ -8,10 +8,10 @@ export interface Message {
   senderId: string;
   receiverId: string;
   createdAt: string;
-  updatedAt: string;
   sender?: {
     id: string;
     userName: string;
+    avatar?: string;
     person: {
       firstName: string;
       lastName: string;
@@ -20,6 +20,7 @@ export interface Message {
   receiver?: {
     id: string;
     userName: string;
+    avatar?: string;
     person: {
       firstName: string;
       lastName: string;
@@ -93,6 +94,7 @@ export interface MessageSentEvent {
 export interface ConversationUser {
   id: string;
   userName: string;
+  avatar?: string;
   person: {
     firstName: string;
     lastName: string;

@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { AnnouncementCard, AnnouncementModal } from "@/components/molecules";
 import { Button } from "@/components/ui";
 import { useAuth, useAnnouncement } from "@/hooks";
+import { UserService } from "@/services";
 import type {
   CreateAnnouncementRequest,
   UpdateAnnouncementRequest,
@@ -25,6 +26,7 @@ export const MainContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null);
   const [showAllAnnouncements, setShowAllAnnouncements] = useState(false);
+  const [userAvatar, setUserAvatar] = useState<string | undefined>(user?.avatar);
 
   // Get the user's first name for personalized greeting
   const firstName = user?.person?.firstName || "User";
@@ -39,6 +41,24 @@ export const MainContent: React.FC = () => {
     if (hour < 17) return "Good Afternoon";
     return "Good Evening";
   };
+
+  // Fetch fresh user data to get the latest avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (user?.id) {
+        try {
+          const freshUser = await UserService.getUserById(user.id);
+          setUserAvatar(freshUser.avatar);
+        } catch (error) {
+          console.error("Error fetching user avatar:", error);
+          // Fallback to auth user avatar
+          setUserAvatar(user.avatar);
+        }
+      }
+    };
+
+    fetchUserAvatar();
+  }, [user?.id, user?.avatar]);
 
   // Load announcements on component mount
   useEffect(() => {
@@ -138,10 +158,15 @@ export const MainContent: React.FC = () => {
       }),
       category: announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1),
       categoryColor: statusColorMap[announcement.status as keyof typeof statusColorMap],
-      authorName: "Guidance Counselor",
-      authorInitials: "GC",
+      authorName: user?.person?.firstName && user?.person?.lastName 
+        ? `${user.person.firstName} ${user.person.lastName}` 
+        : "Guidance Counselor",
+      authorInitials: user?.person?.firstName && user?.person?.lastName 
+        ? `${user.person.firstName.charAt(0)}${user.person.lastName.charAt(0)}`.toUpperCase()
+        : "GC",
+      authorAvatar: userAvatar,
       showEditOption: isGuidance,
-      attachement: announcement.attachement,
+      attachement: announcement.attachement || [],
     };
   };
 

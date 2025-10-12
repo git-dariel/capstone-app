@@ -31,6 +31,7 @@ export interface Student {
     civilStatus?: string;
     users?: Array<{
       id: string;
+      avatar?: string;
       anxietyAssessments?: Array<{
         id: string;
         severityLevel: "minimal" | "mild" | "moderate" | "severe";

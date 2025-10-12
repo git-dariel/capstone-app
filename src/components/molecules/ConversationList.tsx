@@ -125,6 +125,7 @@ export const ConversationList: React.FC<ConversationListProps> = ({
                 lastMessage={conversation.lastMessage?.content}
                 timestamp={conversation.lastMessage?.createdAt}
                 unreadCount={conversation.unreadCount}
+                avatar={conversation.avatar}
                 isActive={activeConversationId === conversation.id}
                 onClick={() => onConversationSelect(conversation.id)}
                 className="mb-1 sm:mb-2"

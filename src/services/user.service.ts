@@ -8,6 +8,7 @@ export interface User {
   role: string;
   type: string;
   status?: string;
+  avatar?: string; // Add this line
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +52,18 @@ export interface ExportFilters {
   studentId?: string;
   firstName?: string;
   lastName?: string;
+}
+
+// Add these interfaces for avatar management
+export interface AvatarUploadResponse {
+  avatar: {
+    name: string;
+    url: string;
+  };
+  updatedUser: {
+    id: string;
+    avatar: string;
+  };
 }
 
 export class UserService {
@@ -148,6 +161,27 @@ export class UserService {
       // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async uploadAvatar(file: File): Promise<AvatarUploadResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await HttpClient.postFormData<AvatarUploadResponse>('/user/avatar', formData);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async deleteAvatar(): Promise<{ message: string }> {
+    try {
+      const response = await HttpClient.deletePermanent<{ message: string }>('/user/avatar');
+      return response;
     } catch (error) {
       throw error;
     }

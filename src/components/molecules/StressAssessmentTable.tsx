@@ -32,7 +32,7 @@ export const StressAssessmentTable: React.FC = () => {
     fetchAssessments({
       limit: 100,
       fields:
-        "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+        "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
     }).catch(console.error);
   }, []);
 
@@ -46,6 +46,7 @@ export const StressAssessmentTable: React.FC = () => {
       return {
         id: assessment.id,
         studentName: assessment.user ? `${person.firstName} ${person.lastName}` : "Unknown Student",
+        avatar: assessment.user?.avatar, // Get avatar from user account
         score: assessment.totalScore,
         severityLevel: assessment.severityLevel,
         date: new Date(assessment.assessmentDate).toLocaleString("en-US", {
@@ -187,7 +188,7 @@ export const StressAssessmentTable: React.FC = () => {
                       <Avatar
                         src={assessment.avatar}
                         fallback={assessment.studentName.charAt(0)}
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 w-10 h-10"
                       />
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
@@ -266,7 +267,7 @@ export const StressAssessmentTable: React.FC = () => {
                           <Avatar
                             src={assessment.avatar}
                             fallback={assessment.studentName.charAt(0)}
-                            className="mr-3"
+                            className="w-8 h-8 mr-3"
                           />
                           <div>
                             <div className="text-sm font-medium text-gray-900">

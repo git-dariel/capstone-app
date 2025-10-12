@@ -1,22 +1,20 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Modal, FullScreenLoading } from "@/components/atoms";
-import { FormField, FormSelect } from "@/components/atoms";
-import { Avatar } from "@/components/atoms";
+import { Avatar, FormField, FormSelect, FullScreenLoading, Modal } from "@/components/atoms";
 import { Button } from "@/components/ui";
-import { Trash2, FileText, Download, X } from "lucide-react";
-import { ConfirmationModal } from "./ConfirmationModal";
 import { useAuth } from "@/hooks";
 import type {
+  Announcement,
   CreateAnnouncementRequest,
   UpdateAnnouncementRequest,
-  Announcement,
 } from "@/services";
+import { Download, FileText, Trash2, Upload, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 interface AnnouncementFormData {
   title: string;
   description: string;
   status: "academic" | "career" | "wellness";
-  attachement?: File | null;
+  attachments: File[];
 }
 
 interface AnnouncementModalProps {
@@ -45,7 +43,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
     title: "",
     description: "",
     status: "academic",
-    attachement: null,
+    attachments: [],
   });
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
@@ -79,14 +77,14 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
         title: announcement.title,
         description: announcement.description,
         status: announcement.status,
-        attachement: announcement.attachement ? new File([], announcement.attachement) : null,
+        attachments: [], // For edit mode, we'll handle existing attachments separately
       });
     } else {
       setFormData({
         title: "",
         description: "",
         status: "academic",
-        attachement: null,
+        attachments: [],
       });
     }
   }, [announcement]);
@@ -100,7 +98,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
         title: formData.title,
         description: formData.description,
         status: formData.status,
-        attachement: formData.attachement ? formData.attachement.name : undefined,
+        attachement: formData.attachments,
       };
       onUpdate?.(announcement.id, updateData);
     } else {
@@ -109,19 +107,34 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
         title: formData.title,
         description: formData.description,
         status: formData.status,
-        attachement: formData.attachement ? formData.attachement.name : undefined,
+        attachement: formData.attachments,
       };
       onSubmit(createData);
     }
   };
 
-  const handleChange = (name: keyof AnnouncementFormData, value: string) => {
+  const handleChange = (name: keyof Omit<AnnouncementFormData, 'attachments'>, value: string) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    setFormData((prev) => ({ ...prev, attachement: file }));
+    const files = Array.from(e.target.files || []);
+    setFormData((prev) => ({ 
+      ...prev, 
+      attachments: [...prev.attachments, ...files]
+    }));
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
+    }));
   };
 
   const handleDelete = () => {
@@ -145,7 +158,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
       title: "",
       description: "",
       status: "academic",
-      attachement: null,
+      attachments: [],
     });
     // Reset file input
     if (fileInputRef.current) {
@@ -187,6 +200,14 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   // Render Facebook-style post modal for students
@@ -259,43 +280,51 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                 </div>
 
                 {/* Attachment Display */}
-                {announcement.attachement && (
-                  <div className="mt-6">
-                    {isImageFile(announcement.attachement) ? (
-                      <div className="rounded-lg overflow-hidden border border-gray-200">
-                        <img
-                          src={announcement.attachement}
-                          alt="Announcement attachment"
-                          className="w-full h-auto max-h-96 object-cover"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                            e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                          }}
-                        />
-                        <div className="hidden bg-gray-100 p-4">
-                          <div className="flex items-center space-x-3">
+                {announcement.attachement && announcement.attachement.length > 0 && (
+                  <div className="mt-6 space-y-3">
+                    {announcement.attachement.map((attachment, index) => (
+                      <div key={index}>
+                        {isImageFile(attachment.name) ? (
+                          <div className="rounded-lg overflow-hidden border border-gray-200">
+                            <img
+                              src={attachment.url}
+                              alt={attachment.name}
+                              className="w-full h-auto max-h-96 object-cover cursor-pointer"
+                              onClick={() => window.open(attachment.url, '_blank')}
+                              onError={(e) => {
+                                e.currentTarget.style.display = "none";
+                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+                              }}
+                            />
+                            <div className="hidden bg-gray-100 p-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
+                                  <FileText className="w-6 h-6 text-gray-600" />
+                                </div>
+                                <div>
+                                  <p className="text-base font-medium text-gray-900">{attachment.name}</p>
+                                  <p className="text-sm text-gray-500">Click to view full size</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ) : (
+                          <div 
+                            className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                            onClick={() => window.open(attachment.url, '_blank')}
+                          >
                             <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
                               <FileText className="w-6 h-6 text-gray-600" />
                             </div>
-                            <div>
-                              <p className="text-base font-medium text-gray-900">Attachment</p>
-                              <p className="text-sm text-gray-500">Click to view full size</p>
+                            <div className="flex-1">
+                              <p className="text-base font-medium text-gray-900">{attachment.name}</p>
+                              <p className="text-sm text-gray-500">Click to download or view</p>
                             </div>
+                            <Download className="w-5 h-5 text-gray-400" />
                           </div>
-                        </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors cursor-pointer">
-                        <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
-                          <FileText className="w-6 h-6 text-gray-600" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-base font-medium text-gray-900">Attachment</p>
-                          <p className="text-sm text-gray-500">Click to download or view</p>
-                        </div>
-                        <Download className="w-5 h-5 text-gray-400" />
-                      </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>
@@ -330,7 +359,6 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
   }
 
   // Default form modal for guidance counselors and non-student users
-
   return (
     <>
       <FullScreenLoading
@@ -381,23 +409,121 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
             disabled={loading || isReadOnly}
           />
 
-          <div className="space-y-2">
-            <label htmlFor="attachement" className="block text-sm font-medium text-gray-700">
-              Attachment (Optional)
+          {/* File Upload Section */}
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-700">
+              Attachments (Optional)
             </label>
-            <input
-              ref={fileInputRef}
-              id="attachement"
-              type="file"
-              onChange={handleFileChange}
-              disabled={loading || isReadOnly}
-              accept="image/*,.pdf,.doc,.docx,.txt"
-              className="w-full px-2 sm:px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed file:mr-2 sm:file:mr-4 file:py-1 sm:file:py-2 file:px-2 sm:file:px-4 file:rounded-full file:border-0 file:text-xs sm:file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
-            />
-            {formData.attachement && (
-              <p className="text-xs sm:text-sm text-gray-500">
-                Selected: {formData.attachement.name}
-              </p>
+            
+            {/* File Input */}
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 transition-colors">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                disabled={loading || isReadOnly}
+                accept="image/*,.pdf,.doc,.docx,.txt,.xls,.xlsx,.ppt,.pptx"
+                className="hidden"
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
+                className={`cursor-pointer flex flex-col items-center justify-center py-4 ${
+                  loading || isReadOnly ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Upload className="w-8 h-8 text-gray-400 mb-2" />
+                <span className="text-sm text-gray-600">
+                  Click to upload files or drag and drop
+                </span>
+                <span className="text-xs text-gray-500 mt-1">
+                  Images, PDF, Word, Excel, PowerPoint files (max 10MB each)
+                </span>
+              </label>
+            </div>
+
+            {/* Existing Attachments (Edit Mode) */}
+            {isViewMode && announcement?.attachement && announcement.attachement.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700">Current Attachments:</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {announcement.attachement.map((attachment, index) => (
+                    <div
+                      key={`existing-${index}`}
+                      className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-blue-500" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{attachment.name}</p>
+                          <p className="text-xs text-blue-600">Current attachment</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(attachment.url, '_blank')}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-1 h-8 w-8"
+                          title="View/Download"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
+                        {!isReadOnly && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {/* Handle remove existing attachment */}}
+                            disabled={loading}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                            title="Remove attachment"
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Selected Files List */}
+            {formData.attachments.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-gray-700">New Files to Upload:</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {formData.attachments.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <FileText className="w-5 h-5 text-gray-500" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                          <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                        </div>
+                      </div>
+                      {!isReadOnly && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          disabled={loading}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
