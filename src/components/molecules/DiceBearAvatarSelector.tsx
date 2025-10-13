@@ -192,14 +192,14 @@ export const DiceBearAvatarSelector: React.FC<DiceBearAvatarSelectorProps> = ({
               <button
                 key={index}
                 onClick={() => handleAvatarSelect(avatar)}
-                className={`relative p-1 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 ${
+                className={`relative p-1 sm:p-2 rounded-lg border-2 transition-all hover:scale-105 flex items-center justify-center ${
                   selectedAvatar === avatar
                     ? 'border-primary-500 bg-primary-50'
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
                 <div
-                  className="w-12 h-12 sm:w-16 sm:h-16 mx-auto"
+                  className="w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center"
                   dangerouslySetInnerHTML={{ __html: avatar }}
                 />
                 {selectedAvatar === avatar && (
