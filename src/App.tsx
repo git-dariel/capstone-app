@@ -20,6 +20,7 @@ import {
   MentalHealthResultsPage,
   MessagesPage,
   NotFoundPage,
+  NotificationsPage,
   ProfilePage,
   ReportsPage,
   ResourcesPage,
@@ -184,6 +185,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

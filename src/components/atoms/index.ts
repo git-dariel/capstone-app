@@ -11,6 +11,7 @@ export { Logo } from "./Logo";
 export { Modal } from "./Modal";
 export { NotificationBell } from "./NotificationBell";
 export { NotificationIcon } from "./NotificationIcon";
+export { NotificationBadge } from "./NotificationBadge";
 export { SearchBar } from "./SearchBar";
 export { StatCard } from "./StatCard";
 export { AssessmentCard } from "./AssessmentCard";

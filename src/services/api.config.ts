@@ -6,7 +6,7 @@ const getBaseURL = (): string => {
 
     // If running on localhost, use local API
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
-      return "http://localhost:5000/api";
+      return "http://localhost:5001/api";
     }
   }
 
@@ -187,12 +187,19 @@ export class HttpClient {
         credentials: "include", // Include cookies in requests
       });
 
-      // Handle 401 Unauthorized - clear auth data but don't redirect
+      // Handle 401 Unauthorized - clear auth data and redirect to signin
       if (response.status === 401) {
-        // Clear user data and token
+        // Clear user, student, and token from storage
         TokenManager.removeUser();
 
-        // Don't redirect automatically - let the component handle the error
+        // Avoid redirect loops on public auth pages
+        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+        const isOnAuthPage = currentPath === "/signin" || currentPath === "/signup";
+        if (!isOnAuthPage && typeof window !== "undefined") {
+          // Replace history so back won't go to a protected page
+          window.location.replace("/signin");
+        }
+
         throw new Error("Unauthorized - Please log in again");
       }
 
@@ -231,12 +238,19 @@ export class HttpClient {
         credentials: "include", // Include cookies in requests
       });
 
-      // Handle 401 Unauthorized - clear auth data but don't redirect
+      // Handle 401 Unauthorized - clear auth data and redirect to signin
       if (response.status === 401) {
-        // Clear user data and token
+        // Clear user, student, and token from storage
         TokenManager.removeUser();
 
-        // Don't redirect automatically - let the component handle the error
+        // Avoid redirect loops on public auth pages
+        const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+        const isOnAuthPage = currentPath === "/signin" || currentPath === "/signup";
+        if (!isOnAuthPage && typeof window !== "undefined") {
+          // Replace history so back won't go to a protected page
+          window.location.replace("/signin");
+        }
+
         throw new Error("Unauthorized - Please log in again");
       }
 

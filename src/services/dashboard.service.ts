@@ -36,7 +36,7 @@ export interface DashboardChartsData {
 
 export class DashboardService {
   // Get chart data from the metrics API
-  static async getChartData(): Promise<DashboardChartsData> {
+  static async getChartData(days: number = 7): Promise<DashboardChartsData> {
     try {
       const response = await HttpClient.get<{
         success: boolean;
@@ -54,7 +54,7 @@ export class DashboardService {
             total: number;
           };
         };
-      }>("/metrics/chart-data");
+      }>(`/metrics/chart-data?days=${days}`);
 
       if (response.success) {
         return {
@@ -125,9 +125,9 @@ export class DashboardService {
   }
 
   // Get assessment trends over a specific period
-  static async getAssessmentTrends(_days: number = 30): Promise<ChartDataPoint[]> {
+  static async getAssessmentTrends(days: number = 30): Promise<ChartDataPoint[]> {
     try {
-      const data = await this.getChartData();
+      const data = await this.getChartData(days);
       return data.trendsData;
     } catch (error) {
       console.error("Error fetching assessment trends:", error);
@@ -146,10 +146,10 @@ export class DashboardService {
     }
   }
 
-  // Get program distribution
+  // Get program distribution (no date filtering)
   static async getProgramDistribution(): Promise<ProgramDistribution[]> {
     try {
-      const data = await this.getChartData();
+      const data = await this.getChartData(); // Use default 7 days but program data ignores date filtering
       return data.programData;
     } catch (error) {
       console.error("Error fetching program distribution:", error);

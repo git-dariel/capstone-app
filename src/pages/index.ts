@@ -24,3 +24,4 @@ export { default as AppointmentsPage } from "./AppointmentsPage";
 export { ConsultantRecordsPage } from "./ConsultantRecordsPage";
 export { StudentDashboardPage } from "./StudentDashboardPage";
 export { ProfilePage } from "./ProfilePage";
+export { NotificationsPage } from "./NotificationsPage";
