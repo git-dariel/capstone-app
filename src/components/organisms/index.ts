@@ -19,3 +19,4 @@ export { MessagesContent } from "./MessagesContent";
 export { AppointmentsContent } from "./AppointmentsContent";
 export { StudentDashboardContent } from "./StudentDashboardContent";
 export { ProfileContent } from "./ProfileContent";
+export { NotificationsContent } from "./NotificationsContent";

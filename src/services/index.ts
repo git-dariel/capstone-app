@@ -104,6 +104,15 @@ export type {
 // Socket Service
 export { socketService, SocketService } from "./socket.service";
 
+// Notification Service
+export { NotificationService } from "./notification.service";
+export type {
+  Notification,
+  NotificationQueryParams,
+  NotificationPaginatedResponse,
+  UpdateNotificationRequest,
+} from "./notification.service";
+
 // Appointment Service
 export { AppointmentService } from "./appointment.service";
 export type {

@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks";
+import { useAuth, useNotifications } from "@/hooks";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ClipboardList,
   Heart,
+  Bell,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -28,6 +29,7 @@ interface NavItemProps {
   isActive?: boolean;
   onClick?: () => void;
   isMinimized?: boolean;
+  badgeCount?: number;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -36,6 +38,7 @@ const NavItem: React.FC<NavItemProps> = ({
   isActive = false,
   onClick,
   isMinimized = false,
+  badgeCount = 0,
 }) => {
   return (
     <button
@@ -49,8 +52,24 @@ const NavItem: React.FC<NavItemProps> = ({
       )}
       title={isMinimized ? label : undefined}
     >
-      <span className="w-5 h-5 flex-shrink-0">{icon}</span>
-      {!isMinimized && <span className="truncate">{label}</span>}
+      <div className="relative">
+        <span className="w-5 h-5 flex-shrink-0">{icon}</span>
+        {badgeCount > 0 && (
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+            {badgeCount > 99 ? "99+" : badgeCount}
+          </span>
+        )}
+      </div>
+      {!isMinimized && (
+        <div className="flex items-center justify-between flex-1 min-w-0">
+          <span className="truncate">{label}</span>
+          {badgeCount > 0 && (
+            <span className="ml-2 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-xs font-medium rounded-full flex items-center justify-center">
+              {badgeCount > 99 ? "99+" : badgeCount}
+            </span>
+          )}
+        </div>
+      )}
       {isMinimized && (
         <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 whitespace-nowrap z-50 pointer-events-none">
           {label}
@@ -78,6 +97,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { unreadCount, requestNotificationPermission } = useNotifications({ autoFetch: true });
+  // Ensure permission to show native notifications and establish socket sync early
+  useEffect(() => {
+    requestNotificationPermission?.();
+  }, [requestNotificationPermission]);
   const [isMobile, setIsMobile] = useState(false);
 
   // Check screen size for mobile responsiveness
@@ -140,6 +164,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       icon: <MessageSquare className="w-5 h-5" />,
       label: "Messages",
       path: "/messages",
+    },
+    {
+      icon: <Bell className="w-5 h-5" />,
+      label: "Notifications",
+      path: "/notifications",
+      hasNotifications: true,
     },
     {
       icon: <School className="w-5 h-5" />,
@@ -255,6 +285,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
                 isActive={location.pathname === item.path}
                 onClick={() => handleMobileNavigation(item.path)}
                 isMinimized={!isMobile && isMinimized}
+                badgeCount={item.hasNotifications ? unreadCount : undefined}
               />
             ))}
           </div>
