@@ -47,12 +47,16 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
     orange: "bg-orange-100 text-orange-800",
   };
 
-  // Helper function to check if attachment is an image
-  const isImageFile = (filename: string): boolean => {
+  // Helper function to check if attachment is an image (robust to non-string inputs)
+  const isImageFile = (filename: unknown): boolean => {
     if (!filename) return false;
     const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
-    const lowerFilename = filename.toLowerCase();
-    return imageExtensions.some((ext) => lowerFilename.endsWith(ext)) || lowerFilename.startsWith("data:image/") || lowerFilename.includes("image");
+    const lowerFilename = String(filename).toLowerCase();
+    return (
+      imageExtensions.some((ext) => lowerFilename.endsWith(ext)) ||
+      lowerFilename.startsWith("data:image/") ||
+      lowerFilename.includes("image")
+    );
   };
 
   const handleEditClick = (e: React.MouseEvent) => {
@@ -65,19 +69,28 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
   };
 
   const handleAttachmentClick = (attachement: AnnouncementFile) => {
+    if (!attachement || typeof attachement.url !== "string") return;
     window.open(attachement.url, "_blank");
   };
 
   return (
     <div
-      className={cn("bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200", onClick && "cursor-pointer hover:border-gray-300", className)}
+      className={cn(
+        "bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-all duration-200",
+        onClick && "cursor-pointer hover:border-gray-300",
+        className
+      )}
       onClick={handleCardClick}
     >
       {/* Post Header */}
       <div className="p-4 pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <Avatar src={authorAvatar} fallback={authorInitials} className="h-10 w-10 bg-primary-100 text-primary-700 font-semibold" />
+            <Avatar
+              src={authorAvatar}
+              fallback={authorInitials}
+              className="h-10 w-10 bg-primary-100 text-primary-700 font-semibold"
+            />
             <div>
               <h4 className="text-sm font-semibold text-gray-900">{authorName}</h4>
               <p className="text-xs text-gray-500">{date}</p>
@@ -103,7 +116,14 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
       <div className="px-4 pb-4">
         {/* Category Badge */}
         <div className="mb-3">
-          <span className={cn("inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold", categoryColors[categoryColor])}>{category}</span>
+          <span
+            className={cn(
+              "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold",
+              categoryColors[categoryColor]
+            )}
+          >
+            {category}
+          </span>
         </div>
 
         {/* Title and Description */}
@@ -113,14 +133,14 @@ export const AnnouncementCard: React.FC<AnnouncementCardProps> = ({
         </div>
 
         {/* Attachment/Image Display */}
-        {attachement && attachement.length > 0 && (
+        {Array.isArray(attachement) && attachement.length > 0 && (
           <div className="mt-4 space-y-2">
             {attachement.map((attachment, index) => (
               <div key={index}>
-                {isImageFile(attachment.name) ? (
+                {isImageFile(attachment?.name ?? attachment?.url) ? (
                   <div className="rounded-lg overflow-hidden border border-gray-200">
                     <img
-                      src={attachment.url}
+                      src={typeof attachment?.url === "string" ? attachment.url : ""}
                       alt="Announcement attachment"
                       className="w-full h-auto max-h-80 object-cover"
                       onClick={(e) => {
