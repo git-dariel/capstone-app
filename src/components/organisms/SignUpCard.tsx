@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/atoms/Logo";
+import { ToastContainer } from "@/components/atoms";
 import { SignUpForm } from "@/components/molecules/SignUpForm";
 import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
-import { useAuth } from "@/hooks";
+import { useAuth, useToast } from "@/hooks";
 import { AuthService } from "@/services/auth.service";
 
 interface SignUpFormData {
@@ -30,6 +31,7 @@ interface SignUpFormData {
 
 export const SignUpCard: React.FC = () => {
   const { signUp, loading, error, clearError } = useAuth();
+  const { success: showSuccessToast, toasts, removeToast } = useToast();
   const navigate = useNavigate();
 
   // OTP Modal state
@@ -76,16 +78,32 @@ export const SignUpCard: React.FC = () => {
 
       if (response.verified) {
         console.log("Email verification successful!");
-
-        // Keep loading state to show success, modal will handle navigation
-        // Don't close modal here, let the modal component handle the auto-navigation
+        
+        // Show success toast
+        showSuccessToast(
+          "Account Verified!", 
+          "Your account has been successfully verified. You can now sign in.",
+          5000 // Show for 5 seconds
+        );
+        
+        // Add 2-second delay before closing modal and navigating
+        setTimeout(() => {
+          // Close modal
+          setIsOTPModalOpen(false);
+          setOtpLoading(false);
+          
+          // Navigate to sign-in page
+          // navigate("/signin", { 
+          //   replace: true,
+          //   state: { message: "Account verified successfully! Please sign in." }
+          // });
+        }, 2000); // 2-second delay
       }
     } catch (error: any) {
       console.error("OTP verification failed:", error.message);
       setOtpError(error.message || "Verification failed. Please try again.");
       setOtpLoading(false);
     }
-    // Don't set loading to false here if successful - let modal component handle it
   };
 
   const handleOTPResend = async () => {
@@ -116,7 +134,7 @@ export const SignUpCard: React.FC = () => {
   };
 
   const handleSuccessNavigation = () => {
-    // This will be called by the modal after showing success for 3 seconds
+    // This function is now just a fallback - the main success handling is done in handleOTPVerify
     setIsOTPModalOpen(false);
     setOtpLoading(false);
     navigate("/signin", {
@@ -149,6 +167,9 @@ export const SignUpCard: React.FC = () => {
         resendLoading={resendLoading}
         error={otpError}
       />
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 };

@@ -4,6 +4,8 @@ export interface MetricFilter {
   userFilter?: Record<string, any>;
   startDate?: string | Date;
   endDate?: string | Date;
+  page?: number;
+  limit?: number;
 }
 
 export interface MetricRequest {
@@ -81,11 +83,12 @@ export class MetricsService {
   }
 
   // Method to fetch guidance dashboard metrics
-  static async fetchGuidanceDashboardMetrics(data: string[]): Promise<MetricResponse> {
+  static async fetchGuidanceDashboardMetrics(data: string[], filter?: MetricFilter): Promise<MetricResponse> {
     try {
-      console.log("📤 Sending guidance dashboard metrics request:", JSON.stringify(data, null, 2));
+      console.log("📤 Sending guidance dashboard metrics request:", JSON.stringify({ data, filter }, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics/guidance/dashboard", {
         data,
+        filter,
       });
       console.log("📥 Received guidance dashboard metrics response:", response);
       return response as any;

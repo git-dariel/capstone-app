@@ -9,11 +9,14 @@ import {
   TrendingDown,
   Minus,
   Search,
+  ChevronLeft,
 } from "lucide-react";
 import {
   GuidanceDashboardService,
   type StudentProgressInsight,
+  type StudentProgressOverview,
 } from "@/services/guidance-dashboard.service";
+import { Button } from "@/components/ui";
 
 interface StudentProgressTableProps {
   className?: string;
@@ -26,25 +29,43 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalStudents, setTotalStudents] = useState(0);
+  const [summary, setSummary] = useState<StudentProgressOverview['summary'] | null>(null);
+  
+  const STUDENTS_PER_PAGE = 10;
+
+  const loadStudentProgress = async (page: number = 1) => {
+    try {
+      setLoading(true);
+      const overview = await GuidanceDashboardService.getStudentProgressOverview(page, STUDENTS_PER_PAGE);
+      setStudents(overview.students);
+      setFilteredStudents(overview.students);
+      setSummary(overview.summary);
+      setCurrentPage(overview.pagination.page);
+      setTotalPages(overview.pagination.totalPages);
+      setTotalStudents(overview.pagination.total);
+    } catch (error: any) {
+      setError(error.message || "Failed to load student progress data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadStudentProgress = async () => {
-      try {
-        setLoading(true);
-        const overview = await GuidanceDashboardService.getStudentProgressOverview();
-        setStudents(overview.students);
-        setFilteredStudents(overview.students);
-      } catch (error: any) {
-        setError(error.message || "Failed to load student progress data");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStudentProgress();
+    loadStudentProgress(1);
   }, []);
 
-  // Filter students based on search term
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages && !loading) {
+      loadStudentProgress(page);
+      setExpandedRows(new Set()); // Clear expanded rows when changing pages
+    }
+  };
+
+  // Filter students based on search term (client-side within current page)
   useEffect(() => {
     if (!searchTerm.trim()) {
       setFilteredStudents(students);
@@ -156,13 +177,20 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
     <div className={`bg-white rounded-lg shadow-sm border border-gray-200 ${className}`}>
       <div className="p-4 md:p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 space-y-4 md:space-y-0">
-          <h2 className="text-lg font-semibold text-gray-900">Student Progress Overview</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Student Progress Overview</h2>
+            {summary && (
+              <p className="text-sm text-gray-500 mt-1">
+                {totalStudents} total students • Page {currentPage} of {totalPages}
+              </p>
+            )}
+          </div>
           <div className="flex items-center space-x-2">
             <div className="relative w-full md:w-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search students, program, year..."
+                placeholder="Search students on current page..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-[500px]"
@@ -381,9 +409,49 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
           <div className="text-center py-8">
             <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500">No students found matching your search</p>
+            <p className="text-xs text-gray-400 mt-1">Search is limited to the current page</p>
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="px-4 md:px-6 py-4 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+            <div className="text-sm text-gray-700 text-center sm:text-left">
+              Showing {Math.min((currentPage - 1) * STUDENTS_PER_PAGE + 1, totalStudents)} to{" "}
+              {Math.min(currentPage * STUDENTS_PER_PAGE, totalStudents)} of {totalStudents} students
+            </div>
+            <div className="flex items-center justify-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1 || loading}
+                className="flex items-center touch-manipulation"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Previous</span>
+                <span className="sm:hidden">Prev</span>
+              </Button>
+              <span className="text-sm text-gray-700 px-2">
+                {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages || loading}
+                className="flex items-center touch-manipulation"
+              >
+                <span className="hidden sm:inline">Next</span>
+                <span className="sm:hidden">Next</span>
+                <ChevronLeft className="w-4 h-4 ml-1 rotate-180" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

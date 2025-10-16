@@ -71,9 +71,14 @@ export const OTPVerificationModal: React.FC<OTPVerificationModalProps> = ({
 
   const handleVerify = async () => {
     if (otp.length === 6) {
-      await onVerify(otp);
-      // Success/error handling is now entirely managed by parent component
-      // The modal will be closed by parent on success
+      try {
+        await onVerify(otp);
+        // Success handling is now entirely managed by parent component
+        // The parent will close the modal and show toast
+      } catch (error) {
+        // Error handling is also managed by parent component
+        console.error("OTP verification error:", error);
+      }
     }
   };
 
