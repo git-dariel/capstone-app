@@ -100,11 +100,12 @@ export interface Student {
 
 export interface AuthResponse {
   message: string;
-  user: User;
+  user?: User; // Made optional since it won't be present during initial registration
   student?: Student;
   token?: string;
   emailVerificationRequired?: boolean;
   otpSent?: boolean;
+  isPendingRegistration?: boolean; // Flag to indicate this is a pending registration
 }
 
 export interface VerifyEmailRequest {
@@ -171,9 +172,17 @@ export class AuthService {
       // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
 
-      // Validate that we have a user object at minimum
+      // For new pending registration flow, we don't expect user data in the response
+      // The response will only have emailVerificationRequired and otpSent flags
+      if (authData.emailVerificationRequired) {
+        // This is the new flow - pending registration created, OTP sent
+        console.log("Registration initiated successfully. OTP verification required.");
+        return authData;
+      }
+
+      // Fallback validation for old flow (if emailVerificationRequired is not set)
       if (!authData.user || !authData.user.id) {
-        throw new Error("Invalid user data in response");
+        throw new Error("Invalid registration response");
       }
 
       // DON'T store any auth data during registration

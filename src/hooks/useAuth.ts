@@ -169,7 +169,7 @@ export const useAuth = () => {
       // Small delay to ensure state is set before navigation
       setTimeout(async () => {
         // Check if user is a student and needs to complete consent
-        if (response.user.type === "student" && response.student?.id) {
+        if (response.user?.type === "student" && response.student?.id) {
           try {
             const hasConsent = await ConsentService.hasConsent(response.student.id);
             if (!hasConsent) {
@@ -183,7 +183,7 @@ export const useAuth = () => {
         }
 
         // Set default route based on user type
-        const defaultRoute = response.user.type === "student" ? "/student-dashboard" : "/home";
+        const defaultRoute = response.user?.type === "student" ? "/student-dashboard" : "/home";
         const from = (location.state as any)?.from?.pathname || defaultRoute;
         navigate(from, { replace: true });
       }, 100);
@@ -213,7 +213,7 @@ export const useAuth = () => {
     // Small delay to ensure state is set before navigation
     setTimeout(async () => {
       // Check if user is a student and needs to complete consent
-      if (userData.user.type === "student" && userData.student?.id) {
+      if (userData.user?.type === "student" && userData.student?.id) {
         try {
           const hasConsent = await ConsentService.hasConsent(userData.student.id);
           if (!hasConsent) {
@@ -227,7 +227,7 @@ export const useAuth = () => {
       }
 
       // Set default route based on user type
-      const defaultRoute = userData.user.type === "student" ? "/student-dashboard" : "/home";
+      const defaultRoute = userData.user?.type === "student" ? "/student-dashboard" : "/home";
       const from = (location.state as any)?.from?.pathname || defaultRoute;
       navigate(from, { replace: true });
     }, 100);

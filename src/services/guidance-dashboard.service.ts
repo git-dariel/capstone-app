@@ -39,15 +39,23 @@ export interface StudentProgressOverview {
     moderateRiskStudents: number;
     lowRiskStudents: number;
   };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
 }
 
 export class GuidanceDashboardService {
   // Get overall student progress insights for guidance dashboard
-  static async getStudentProgressOverview(): Promise<StudentProgressOverview> {
+  static async getStudentProgressOverview(page: number = 1, limit: number = 10): Promise<StudentProgressOverview> {
     try {
       const response = await MetricsService.fetchGuidanceDashboardMetrics([
         "studentProgressOverview",
-      ]);
+      ], { page, limit });
 
       console.log("📥 Full API response:", response);
 
@@ -55,7 +63,7 @@ export class GuidanceDashboardService {
         const overviewData = response.data[0];
         console.log("📊 Overview data:", overviewData);
 
-        // The backend returns [{ studentProgressOverview: { students, summary } }]
+        // The backend returns [{ studentProgressOverview: { students, summary, pagination } }]
         if (overviewData && overviewData.studentProgressOverview) {
           console.log("📋 Student progress overview:", overviewData.studentProgressOverview);
           return overviewData.studentProgressOverview as StudentProgressOverview;
@@ -80,7 +88,9 @@ export class GuidanceDashboardService {
     studentId: string
   ): Promise<StudentProgressInsight | null> {
     try {
-      const overview = await this.getStudentProgressOverview();
+      // For now, we'll get the first page and search through it
+      // In a real implementation, you might want to add a separate API endpoint for this
+      const overview = await this.getStudentProgressOverview(1, 100); // Get more results to increase chance of finding the student
       return overview.students.find((student) => student.studentId === studentId) || null;
     } catch (error) {
       console.error("Error fetching student progress insights:", error);

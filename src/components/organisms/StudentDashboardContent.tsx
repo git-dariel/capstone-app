@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks";
 import { StudentDashboardService } from "@/services/student-dashboard.service";
+import { UserService } from "@/services";
 import type {
   PersonalSummary,
   AssessmentHistoryItem,
@@ -14,16 +15,18 @@ import {
   WarningCard,
   RecommendationsPanel,
 } from "@/components/molecules";
+import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { RefreshCw, Calendar, TrendingUp, AlertTriangle } from "lucide-react";
 
 export const StudentDashboardContent: React.FC = () => {
-  const {} = useAuth();
+  const { user } = useAuth();
   const [personalSummary, setPersonalSummary] = useState<PersonalSummary | null>(null);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
   const [assessmentTrends, setAssessmentTrends] = useState<AssessmentTrends | null>(null);
   const [assessmentStats, setAssessmentStats] = useState<AssessmentStats | null>(null);
   const [progressInsights, setProgressInsights] = useState<ProgressInsight[]>([]);
+  const [userAvatar, setUserAvatar] = useState<string | undefined>(user?.avatar);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,6 +69,24 @@ export const StudentDashboardContent: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, []);
+
+  // Fetch fresh user data to get the latest avatar
+  useEffect(() => {
+    const fetchUserAvatar = async () => {
+      if (user?.id) {
+        try {
+          const freshUser = await UserService.getUserById(user.id);
+          setUserAvatar(freshUser.avatar);
+        } catch (error) {
+          console.error("Error fetching user avatar:", error);
+          // Fallback to auth user avatar
+          setUserAvatar(user.avatar);
+        }
+      }
+    };
+
+    fetchUserAvatar();
+  }, [user?.id, user?.avatar]);
 
   const handleRefresh = () => {
     loadDashboardData(true);
@@ -198,11 +219,11 @@ export const StudentDashboardContent: React.FC = () => {
         {personalSummary && (
           <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-6 border border-primary-200">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                <span className="text-primary-700 font-semibold text-lg">
-                  {personalSummary.userProfile.person?.firstName?.charAt(0) || "S"}
-                </span>
-              </div>
+              <Avatar 
+                src={userAvatar} 
+                fallback={personalSummary.userProfile.person?.firstName?.charAt(0) || "S"}
+                className="w-12 h-12"
+              />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
                   Welcome back, {personalSummary.userProfile.person?.firstName || "Student"}!

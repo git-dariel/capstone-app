@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import { Logo } from "@/components/atoms";
+import { Logo, ToastContainer } from "@/components/atoms";
 import { SignInForm } from "@/components/molecules";
 import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
 import { Button } from "@/components/ui";
 import { HeartHandshake, GraduationCap } from "lucide-react";
-import { useAuth } from "@/hooks";
+import { useAuth, useToast } from "@/hooks";
 import { AuthService } from "@/services/auth.service";
 import type { AuthResponse } from "@/services/auth.service";
 
@@ -15,6 +15,7 @@ interface SignInFormData {
 
 export const SignInCard: React.FC = () => {
   const { signIn, loading, error, clearError, completeSignInAfterVerification } = useAuth();
+  const { info: showInfoToast, toasts, removeToast } = useToast();
   const [userType, setUserType] = useState<"guidance" | "student">("student");
 
   // OTP Modal state
@@ -45,7 +46,22 @@ export const SignInCard: React.FC = () => {
 
       // Check if email verification is required
       if (response?.emailVerificationRequired && response?.otpSent) {
-        console.log("Login requires email verification. OTP sent to email.");
+        const isPending = response?.isPendingRegistration;
+        const message = isPending 
+          ? "Account registration is pending. OTP sent to complete verification."
+          : "Login requires email verification. OTP sent to email.";
+        
+        console.log(message);
+        
+        // Show toast notification for pending registrations
+        if (isPending) {
+          showInfoToast(
+            "Registration Pending",
+            "Complete your account verification to continue.",
+            5000
+          );
+        }
+        
         setUserEmail(data.email);
         setPendingAuthData(response);
         setPendingCredentials({ email: data.email, password: data.password, type: userType });
@@ -178,6 +194,9 @@ export const SignInCard: React.FC = () => {
         resendLoading={resendLoading}
         error={otpError}
       />
+
+      {/* Toast Container */}
+      <ToastContainer toasts={toasts} onDismiss={removeToast} />
     </div>
   );
 };
