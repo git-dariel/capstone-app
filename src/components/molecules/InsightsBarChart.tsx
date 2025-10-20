@@ -93,7 +93,7 @@ export const InsightsBarChart: React.FC<InsightsBarChartProps> = ({
               top: 20,
               right: 10,
               left: 10,
-              bottom: 80,
+              bottom: 20,
             }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -103,7 +103,7 @@ export const InsightsBarChart: React.FC<InsightsBarChartProps> = ({
               fontSize={10}
               angle={-45}
               textAnchor="end"
-              height={80}
+              height={60}
               interval={0}
             />
             <YAxis

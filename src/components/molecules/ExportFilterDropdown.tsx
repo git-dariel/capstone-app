@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button, Input, Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui";
 import type { ExportFilters } from "@/services/user.service";
 import { ChevronDown, Filter, X, Download, Loader2 } from "lucide-react";
+import { programOptions } from "@/config/constants";
 
 interface ExportFilterDropdownProps {
   onExport: (filters: ExportFilters) => Promise<void>;
@@ -102,6 +103,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
                   <SelectItem value="depression">Depression Only</SelectItem>
                   <SelectItem value="stress">Stress Only</SelectItem>
                   <SelectItem value="suicide">Suicide Risk Only</SelectItem>
+                  <SelectItem value="checklist">Personal Checklist Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -132,33 +134,48 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
             {/* Program Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Program</label>
-              <Input
-                type="text"
-                placeholder="e.g., Computer Science, Engineering"
-                value={filters.program || ""}
-                onChange={(e) => handleFilterChange("program", e.target.value)}
-                className="w-full"
-              />
-            </div>
-
-            {/* Academic Status Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Academic Status
-              </label>
               <Select
-                value={filters.status || "all"}
-                onValueChange={(value: string) => handleFilterChange("status", value)}
+                value={filters.program || "all"}
+                onValueChange={(value: string) => handleFilterChange("program", value)}
               >
                 <SelectTrigger className="w-full">
-                  <span>{filters.status || "All Statuses"}</span>
+                  <span>
+                    {filters.program 
+                      ? programOptions.find(p => p.value === filters.program)?.label || filters.program
+                      : "All Programs"
+                    }
+                  </span>
+                </SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="all">All Programs</SelectItem>
+                  {programOptions.map((program) => (
+                    <SelectItem key={program.value} value={program.value}>
+                      {program.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Year Level Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Year Level
+              </label>
+              <Select
+                value={filters.year || "all"}
+                onValueChange={(value: string) => handleFilterChange("year", value)}
+              >
+                <SelectTrigger className="w-full">
+                  <span>{filters.year || "All Years"}</span>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="freshman">Freshman</SelectItem>
-                  <SelectItem value="sophomore">Sophomore</SelectItem>
-                  <SelectItem value="junior">Junior</SelectItem>
-                  <SelectItem value="senior">Senior</SelectItem>
+                  <SelectItem value="all">All Years</SelectItem>
+                  <SelectItem value="1st">1st Year</SelectItem>
+                  <SelectItem value="2nd">2nd Year</SelectItem>
+                  <SelectItem value="3rd">3rd Year</SelectItem>
+                  <SelectItem value="4th">4th Year</SelectItem>
+                  <SelectItem value="5th">5th Year</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -207,17 +224,6 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
               </div>
             </div>
 
-            {/* Student ID Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-              <Input
-                type="text"
-                placeholder="Specific student ID"
-                value={filters.studentId || ""}
-                onChange={(e) => handleFilterChange("studentId", e.target.value)}
-                className="w-full"
-              />
-            </div>
           </div>
 
           {/* Action Buttons */}

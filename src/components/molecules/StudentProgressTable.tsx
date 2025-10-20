@@ -261,9 +261,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                         </div>
                         <div className="text-xs text-gray-500">
                           A:{student.totalAssessments.anxiety} S:{student.totalAssessments.stress}{" "}
-                          D:
-                          {student.totalAssessments.depression} SU:
-                          {student.totalAssessments.suicide}
+                          D:{student.totalAssessments.depression} SU:{student.totalAssessments.suicide} PC:{student.totalAssessments.checklist || 0}
                         </div>
                       </td>
                       <td className="px-3 md:px-6 py-4 whitespace-nowrap">
@@ -302,7 +300,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                               <h4 className="text-sm font-medium text-gray-900 mb-2">
                                 Assessment Overview
                               </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                 <div className="bg-white p-3 rounded border">
                                   <div className="text-xs text-gray-500">Anxiety</div>
                                   <div className="text-sm font-medium">
@@ -332,6 +330,14 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                                   <div className="text-sm font-medium">
                                     {student.latestAssessments.suicide
                                       ? `${student.latestAssessments.suicide.riskLevel.toUpperCase()}`
+                                      : "No assessment"}
+                                  </div>
+                                </div>
+                                <div className="bg-white p-3 rounded border">
+                                  <div className="text-xs text-gray-500">Personal Checklist</div>
+                                  <div className="text-sm font-medium">
+                                    {student.latestAssessments.checklist
+                                      ? `${student.latestAssessments.checklist.riskLevel?.toUpperCase() || 'Unknown'}`
                                       : "No assessment"}
                                   </div>
                                 </div>

@@ -5,12 +5,14 @@ interface SeverityIndicatorProps {
   level: string;
   score?: number | null;
   showScore?: boolean;
+  scoreLabel?: string;
 }
 
 export const SeverityIndicator: React.FC<SeverityIndicatorProps> = ({
   level,
   score,
   showScore = true,
+  scoreLabel,
 }) => {
   const getSeverityConfig = (level: string) => {
     switch (level.toLowerCase()) {
@@ -70,6 +72,14 @@ export const SeverityIndicator: React.FC<SeverityIndicatorProps> = ({
           icon: XCircle,
           label: "High Risk",
         };
+      case "critical":
+        return {
+          color: "text-red-800",
+          bgColor: "bg-red-100",
+          borderColor: "border-red-300",
+          icon: XCircle,
+          label: "Critical Risk",
+        };
       default:
         return {
           color: "text-gray-600",
@@ -85,16 +95,18 @@ export const SeverityIndicator: React.FC<SeverityIndicatorProps> = ({
   const Icon = config.icon;
 
   return (
-    <div
-      className={`inline-flex items-center px-3 py-2 rounded-lg border ${config.bgColor} ${config.borderColor}`}
-    >
-      <Icon className={`w-4 h-4 ${config.color} mr-2`} />
-      <div className="flex flex-col">
-        <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
-        {showScore && score !== null && score !== undefined && (
-          <span className="text-xs text-gray-500">Score: {score}</span>
-        )}
+    <div className="flex items-center space-x-2">
+      <div
+        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${config.bgColor} ${config.color} border ${config.borderColor}`}
+      >
+        <Icon className={`w-3 h-3 mr-1`} />
+        {config.label}
       </div>
+      {showScore && score !== null && score !== undefined && (
+        <span className="text-xs text-gray-500">
+          {scoreLabel ? `${score} ${scoreLabel}` : `${score}`}
+        </span>
+      )}
     </div>
   );
 };

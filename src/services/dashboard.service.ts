@@ -5,6 +5,8 @@ export interface ChartDataPoint {
   anxiety: number;
   depression: number;
   stress: number;
+  checklist: number;
+  suicide: number;
 }
 
 export interface ProgramDistribution {
@@ -12,6 +14,8 @@ export interface ProgramDistribution {
   anxiety?: number;
   depression?: number;
   stress?: number;
+  checklist?: number;
+  suicide?: number;
 }
 
 export interface SeverityDistribution {
@@ -19,6 +23,8 @@ export interface SeverityDistribution {
   anxiety?: number;
   depression?: number;
   stress?: number;
+  checklist?: number;
+  suicide?: number;
 }
 export interface AssessmentBreakdown {
   name: string;
@@ -51,6 +57,8 @@ export class DashboardService {
             anxiety: number;
             depression: number;
             stress: number;
+            checklist: number;
+            suicide: number;
             total: number;
           };
         };
@@ -83,27 +91,31 @@ export class DashboardService {
       anxiety: Math.floor(Math.random() * 15) + 5,
       depression: Math.floor(Math.random() * 12) + 3,
       stress: Math.floor(Math.random() * 18) + 7,
+      checklist: Math.floor(Math.random() * 8) + 2,
+      suicide: Math.floor(Math.random() * 3) + 1,
     }));
 
     const severityData: SeverityDistribution[] = [
-      { severity: "Minimal", anxiety: 45, depression: 38, stress: 52 },
-      { severity: "Mild", anxiety: 32, depression: 28, stress: 35 },
-      { severity: "Moderate", anxiety: 18, depression: 22, stress: 25 },
-      { severity: "Severe", anxiety: 12, depression: 15, stress: 8 },
+      { severity: "Minimal", anxiety: 45, depression: 38, stress: 52, checklist: 28, suicide: 5 },
+      { severity: "Mild", anxiety: 32, depression: 28, stress: 35, checklist: 18, suicide: 3 },
+      { severity: "Moderate", anxiety: 18, depression: 22, stress: 25, checklist: 12, suicide: 2 },
+      { severity: "Severe", anxiety: 12, depression: 15, stress: 8, checklist: 8, suicide: 1 },
     ];
 
     const programData: ProgramDistribution[] = [
-      { program: "Computer Science", anxiety: 25, depression: 18, stress: 32 },
-      { program: "Engineering", anxiety: 22, depression: 15, stress: 28 },
-      { program: "Business", anxiety: 18, depression: 12, stress: 22 },
-      { program: "Arts & Sciences", anxiety: 15, depression: 10, stress: 18 },
-      { program: "Education", anxiety: 12, depression: 8, stress: 15 },
+      { program: "Computer Science", anxiety: 25, depression: 18, stress: 32, checklist: 12, suicide: 2 },
+      { program: "Engineering", anxiety: 22, depression: 15, stress: 28, checklist: 10, suicide: 1 },
+      { program: "Business", anxiety: 18, depression: 12, stress: 22, checklist: 8, suicide: 1 },
+      { program: "Arts & Sciences", anxiety: 15, depression: 10, stress: 18, checklist: 6, suicide: 1 },
+      { program: "Education", anxiety: 12, depression: 8, stress: 15, checklist: 5, suicide: 0 },
     ];
 
     const assessmentBreakdown: AssessmentBreakdown[] = [
       { name: "Anxiety", value: 107, color: "#f59e0b", percentage: 38 },
       { name: "Depression", value: 103, color: "#8b5cf6", percentage: 37 },
       { name: "Stress", value: 70, color: "#ef4444", percentage: 25 },
+      { name: "Personal Problems", value: 45, color: "#10b981", percentage: 16 },
+      { name: "Suicide Risk", value: 12, color: "#dc2626", percentage: 4 },
     ];
 
     return {

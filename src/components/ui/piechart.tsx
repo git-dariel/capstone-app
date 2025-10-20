@@ -33,6 +33,8 @@ const defaultData = [
   { name: "Anxiety", value: 107, color: "#f59e0b", fill: "var(--color-anxiety)" },
   { name: "Depression", value: 103, color: "#8b5cf6", fill: "var(--color-depression)" },
   { name: "Stress", value: 70, color: "#ef4444", fill: "var(--color-stress)" },
+  { name: "Personal Problems", value: 45, color: "#10b981", fill: "var(--color-checklist)" },
+  { name: "Suicide Risk", value: 12, color: "#dc2626", fill: "var(--color-suicide)" },
 ];
 
 const chartConfig = {
@@ -57,6 +59,14 @@ const chartConfig = {
     label: "Stress",
     color: "var(--chart-3)",
   },
+  "personal-problems": {
+    label: "Personal Problems",
+    color: "var(--chart-4)",
+  },
+  "suicide-risk": {
+    label: "Suicide Risk",
+    color: "var(--chart-5)",
+  },
 } satisfies ChartConfig;
 
 export function ChartPieInteractive({
@@ -71,8 +81,8 @@ export function ChartPieInteractive({
   const chartData = React.useMemo(() => {
     return data.map((item) => ({
       ...item,
-      fill: `var(--color-${item.name.toLowerCase()})`,
-      key: item.name.toLowerCase(),
+      fill: `var(--color-${item.name.toLowerCase().replace(/\s+/g, '-')})`,
+      key: item.name.toLowerCase().replace(/\s+/g, '-'),
     }));
   }, [data]);
 

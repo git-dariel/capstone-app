@@ -255,7 +255,7 @@ export const StudentDashboardContent: React.FC = () => {
         {/* Assessment Overview Cards */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-gray-900">Assessment Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <AssessmentOverviewCard
               type="anxiety"
               totalCount={personalSummary?.totalAssessments.anxiety || 0}
@@ -284,6 +284,13 @@ export const StudentDashboardContent: React.FC = () => {
               trend={getAssessmentTrend("suicide")}
               trendPercentage={getTrendPercentage("suicide")}
             />
+            <AssessmentOverviewCard
+              type="checklist"
+              totalCount={personalSummary?.totalAssessments.checklist || 0}
+              latestAssessment={personalSummary?.latestAssessments.checklist}
+              trend={getAssessmentTrend("checklist")}
+              trendPercentage={getTrendPercentage("checklist")}
+            />
           </div>
         </div>
 
@@ -310,6 +317,11 @@ export const StudentDashboardContent: React.FC = () => {
               title="Suicide Risk Assessment (Last 30 Days)"
               color="#ef4444"
             />
+            <ProgressTrendChart
+              data={assessmentTrends.checklist}
+              title="Personal Problems (Last 30 Days)"
+              color="#10b981"
+            />
           </div>
         )}
 
@@ -334,7 +346,7 @@ export const StudentDashboardContent: React.FC = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 capitalize">
-                        {assessment.type} Assessment
+                        {assessment.type === "checklist" ? "Personal Problems Checklist" : `${assessment.type} Assessment`}
                       </p>
                       <p className="text-sm text-gray-600">
                         {formatDate(assessment.assessmentDate)}
@@ -344,7 +356,11 @@ export const StudentDashboardContent: React.FC = () => {
                   <div className="text-right">
                     <p className="font-medium text-gray-900">{assessment.severityLevel}</p>
                     {assessment.totalScore !== null && (
-                      <p className="text-sm text-gray-600">Score: {assessment.totalScore}</p>
+                      <p className="text-sm text-gray-600">
+                        {assessment.type === "checklist" 
+                          ? `${assessment.totalScore} Problem${assessment.totalScore !== 1 ? 's' : ''}` 
+                          : `Score: ${assessment.totalScore}`}
+                      </p>
                     )}
                   </div>
                 </div>

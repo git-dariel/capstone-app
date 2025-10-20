@@ -2,18 +2,19 @@ import { Modal, LoadingSpinner } from "@/components/atoms";
 import {
   AnxietyQuestionnaire,
   AssessmentGrid,
+  ChecklistQuestionnaire,
   DepressionQuestionnaire,
   RetakeRequestForm,
   RetakeRequestsTable,
   StressQuestionnaire,
   SuicideQuestionnaire,
 } from "@/components/molecules";
-import { useAnxiety, useAuth, useDepression, useStress, useSuicide } from "@/hooks";
+import { useAnxiety, useAuth, useChecklist, useDepression, useStress, useSuicide } from "@/hooks";
 import type { CooldownInfo } from "@/services/stress.service";
 import { AlertCircle, CheckCircle, Clock, FileText } from "lucide-react";
 import React, { useState } from "react";
 
-type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | null;
+type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | "checklist" | null;
 type ResourceView = "assessments" | "retake-requests" | "my-requests";
 
 export const ResourcesContent: React.FC = () => {
@@ -37,6 +38,7 @@ export const ResourcesContent: React.FC = () => {
   const depressionHook = useDepression();
   const stressHook = useStress();
   const suicideHook = useSuicide();
+  const checklistHook = useChecklist();
 
   const isStudent = user?.type === "student";
 
@@ -125,20 +127,70 @@ export const ResourcesContent: React.FC = () => {
     }
   };
 
+  const handleSubmitChecklist = async (responses: Record<string, string>) => {
+    if (!user?.id) {
+      setSubmissionState({
+        loading: false,
+        error: "User not authenticated. Please log in to submit checklist.",
+        success: false,
+        results: null,
+      });
+      return;
+    }
+
+    setSubmissionState({ loading: true, error: null, success: false, results: null });
+
+    try {
+      const result = await checklistHook.createChecklistFromResponses(user.id, responses);
+
+      setSubmissionState({
+        loading: false,
+        error: null,
+        success: true,
+        results: result,
+      });
+    } catch (error: any) {
+      setSubmissionState({
+        loading: false,
+        error: error.message || "Failed to submit checklist. Please try again.",
+        success: false,
+        results: null,
+      });
+    }
+  };
+
   const renderResultsModal = () => {
     if (!submissionState.success || !submissionState.results) return null;
 
-    const { analysis, totalScore } = submissionState.results;
+    // Handle different response structures for different assessment types
+    const analysis = currentAssessment === "checklist" 
+      ? submissionState.results.checklist_analysis 
+      : submissionState.results.analysis;
+    
+    const { totalScore } = submissionState.results;
     const assessmentName = currentAssessment
       ? currentAssessment.charAt(0).toUpperCase() + currentAssessment.slice(1)
       : "Assessment";
 
-    // Handle different assessment types - suicide uses riskLevel, others use severityLevel
+    // For checklist, we show total problems checked instead of totalScore
+    const displayScore = currentAssessment === "checklist" ? analysis?.totalProblemsChecked : totalScore;
+
+    const scoreLabel = currentAssessment === "checklist" ? "Problems Identified" : "Total Score";
+
+    // Handle different assessment types
     const displayLevel =
-      currentAssessment === "suicide" ? analysis?.riskLevel : analysis?.severityLevel;
+      currentAssessment === "suicide"
+        ? analysis?.riskLevel
+        : currentAssessment === "checklist"
+        ? analysis?.riskLevel
+        : analysis?.severityLevel;
 
     const displayDescription =
-      currentAssessment === "suicide" ? analysis?.riskDescription : analysis?.severityDescription;
+      currentAssessment === "suicide"
+        ? analysis?.riskDescription
+        : currentAssessment === "checklist"
+        ? analysis?.disclaimer
+        : analysis?.severityDescription;
 
     // Determine severity level color and styling
     const getSeverityColor = (level: string) => {
@@ -186,12 +238,7 @@ export const ResourcesContent: React.FC = () => {
     const severityColors = getSeverityColor(displayLevel || "");
 
     return (
-      <Modal
-        isOpen={submissionState.success}
-        onClose={handleCloseModal}
-        title="Assessment Results"
-        size="xl"
-      >
+      <Modal isOpen={submissionState.success} onClose={handleCloseModal} title="Assessment Results" size="xl">
         <div className="max-w-3xl mx-auto px-3 sm:px-4 lg:px-6">
           {/* Hero Section - Prominent Result Display */}
           <div
@@ -220,10 +267,8 @@ export const ResourcesContent: React.FC = () => {
             {/* Score Display */}
             <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-8 mt-4 sm:mt-6">
               <div>
-                <p className="text-xs sm:text-sm text-gray-600">Total Score</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-                  {totalScore}
-                </p>
+                <p className="text-xs sm:text-sm text-gray-600">{scoreLabel}</p>
+                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{displayScore}</p>
               </div>
               <div className="hidden sm:block h-8 md:h-12 w-px bg-gray-300"></div>
               <div className="sm:hidden w-full h-px bg-gray-300"></div>
@@ -246,16 +291,14 @@ export const ResourcesContent: React.FC = () => {
                     🚨 Professional Support Recommended
                   </h3>
                   <p className="text-sm sm:text-base md:text-lg text-red-700 mb-3 sm:mb-4">
-                    Based on your results, we strongly recommend speaking with a mental health
-                    professional.
+                    Based on your results, we strongly recommend speaking with a mental health professional.
                   </p>
                   <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
                     <p className="text-red-800 font-medium text-sm sm:text-base">
                       📞 Student Counseling Center: Available during office hours
                     </p>
                     <p className="text-red-700 text-xs sm:text-sm mt-1">
-                      Please don't hesitate to reach out for support. You don't have to face this
-                      alone.
+                      Please don't hesitate to reach out for support. You don't have to face this alone.
                     </p>
                   </div>
                 </div>
@@ -304,9 +347,7 @@ export const ResourcesContent: React.FC = () => {
                       <span className="text-gray-700 font-medium capitalize text-xs sm:text-sm md:text-base mb-1 sm:mb-0">
                         {key.replace(/_/g, " ")}
                       </span>
-                      <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
-                        {value as number}
-                      </span>
+                      <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">{value as number}</span>
                     </div>
                   </div>
                 ))}
@@ -360,9 +401,7 @@ export const ResourcesContent: React.FC = () => {
             </h4>
             <p className="text-sm text-red-700 mb-2">{submissionState.error}</p>
             {submissionState.cooldownInfo && (
-              <p className="text-sm text-red-600 mb-3">
-                {formatCooldownMessage(submissionState.cooldownInfo)}
-              </p>
+              <p className="text-sm text-red-600 mb-3">{formatCooldownMessage(submissionState.cooldownInfo)}</p>
             )}
             <button
               onClick={() => setSubmissionState((prev) => ({ ...prev, error: null }))}
@@ -385,12 +424,8 @@ export const ResourcesContent: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4 w-full max-w-sm">
               <div className="flex flex-col items-center justify-center space-y-3">
                 <LoadingSpinner size="lg" variant="lottie" />
-                <p className="text-gray-700 text-sm sm:text-base text-center">
-                  Submitting your assessment...
-                </p>
-                <div className="text-xs text-gray-500 text-center">
-                  Please wait while we process your responses
-                </div>
+                <p className="text-gray-700 text-sm sm:text-base text-center">Submitting your assessment...</p>
+                <div className="text-xs text-gray-500 text-center">Please wait while we process your responses</div>
               </div>
             </div>
           </div>
@@ -407,9 +442,7 @@ export const ResourcesContent: React.FC = () => {
           <>
             {/* Page Header */}
             <div className="mb-6 sm:mb-8">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                Mental Health Resources
-              </h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Mental Health Resources</h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 Access mental health assessments and manage your assessment requests.
               </p>
@@ -472,9 +505,9 @@ export const ResourcesContent: React.FC = () => {
                     Important Notice
                   </h2>
                   <p className="text-blue-800 text-xs sm:text-sm leading-relaxed text-center sm:text-left">
-                    These assessments are screening tools and not diagnostic instruments. If you're
-                    experiencing significant distress or having thoughts of self-harm, please
-                    contact a mental health professional or call a crisis helpline immediately.
+                    These assessments are screening tools and not diagnostic instruments. If you're experiencing
+                    significant distress or having thoughts of self-harm, please contact a mental health professional or
+                    call a crisis helpline immediately.
                   </p>
                 </div>
               </>
@@ -490,19 +523,43 @@ export const ResourcesContent: React.FC = () => {
 
         {/* Questionnaires */}
         {currentAssessment === "anxiety" && (
-          <AnxietyQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
+          <AnxietyQuestionnaire
+            onBack={handleBackToGrid}
+            onSubmit={handleSubmitAssessment}
+            loading={submissionState.loading}
+          />
         )}
 
         {currentAssessment === "depression" && (
-          <DepressionQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
+          <DepressionQuestionnaire
+            onBack={handleBackToGrid}
+            onSubmit={handleSubmitAssessment}
+            loading={submissionState.loading}
+          />
         )}
 
         {currentAssessment === "stress" && (
-          <StressQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
+          <StressQuestionnaire
+            onBack={handleBackToGrid}
+            onSubmit={handleSubmitAssessment}
+            loading={submissionState.loading}
+          />
         )}
 
         {currentAssessment === "suicide" && (
-          <SuicideQuestionnaire onBack={handleBackToGrid} onSubmit={handleSubmitAssessment} loading={submissionState.loading} />
+          <SuicideQuestionnaire
+            onBack={handleBackToGrid}
+            onSubmit={handleSubmitAssessment}
+            loading={submissionState.loading}
+          />
+        )}
+
+        {currentAssessment === "checklist" && (
+          <ChecklistQuestionnaire
+            onBack={handleBackToGrid}
+            onSubmit={handleSubmitChecklist}
+            loading={submissionState.loading}
+          />
         )}
       </div>
     </main>

@@ -5,7 +5,8 @@ export interface PersonalSummary {
     anxiety: number;
     stress: number;
     depression: number;
-    suicide: number;    
+    suicide: number;
+    checklist: number;    
     overall: number;
   };
   latestAssessments: {
@@ -13,6 +14,7 @@ export interface PersonalSummary {
     stress: any | null;
     depression: any | null;
     suicide: any | null;
+    checklist: any | null;
   };
   userProfile: {
     id: string;
@@ -31,7 +33,7 @@ export interface AssessmentHistoryItem {
   severityLevel: string;
   assessmentDate: string;
   createdAt: string;
-  type: "anxiety" | "stress" | "depression" | "suicide";
+  type: "anxiety" | "stress" | "depression" | "suicide" | "checklist";
   requiresIntervention?: boolean;
 }
 
@@ -50,6 +52,7 @@ export interface AssessmentTrends {
   stress: AssessmentTrend[];
   depression: AssessmentTrend[];
   suicide: AssessmentTrend[];
+  checklist: AssessmentTrend[];
 }
 
 export interface AssessmentStats {
@@ -77,6 +80,12 @@ export interface AssessmentStats {
     minScore: number | null;
     maxScore: number | null;
   };
+  checklist: {
+    count: number;
+    averageScore: number | null;
+    minScore: number | null;
+    maxScore: number | null;
+  };
   overall: {
     totalAssessments: number;
     firstAssessmentDate: string | null;
@@ -86,7 +95,7 @@ export interface AssessmentStats {
 
 export interface ProgressInsight {
   type: "improvement" | "decline" | "stable" | "warning";
-  assessmentType: "anxiety" | "stress" | "depression" | "suicide" | "overall";
+  assessmentType: "anxiety" | "stress" | "depression" | "suicide" | "checklist" | "overall";
   message: string;
   severity: "low" | "medium" | "high";
   recommendation?: string;
@@ -134,13 +143,28 @@ export class StudentDashboardService {
       const response = await MetricsService.fetchDashboardMetrics(["assessmentTrends"]);
 
       if (response.data && response.data.length > 0) {
-        return response.data[0].assessmentTrends;
+        const trends = response.data[0].assessmentTrends;
+        // Ensure checklist data exists (fallback for backend compatibility)
+        if (!trends.checklist) {
+          trends.checklist = [];
+        }
+        return trends;
       }
 
       throw new Error("No assessment trends data available");
     } catch (error) {
       console.error("Error fetching assessment trends:", error);
-      throw error;
+      // Return empty trends as fallback
+      return {
+        period: "Last 30 days",
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        endDate: new Date().toISOString(),
+        anxiety: [],
+        stress: [],
+        depression: [],
+        suicide: [],
+        checklist: [],
+      };
     }
   }
 
@@ -156,7 +180,19 @@ export class StudentDashboardService {
       throw new Error("No assessment statistics data available");
     } catch (error) {
       console.error("Error fetching assessment statistics:", error);
-      throw error;
+      // Return empty stats as fallback
+      return {
+        anxiety: { count: 0, averageScore: null, minScore: null, maxScore: null },
+        stress: { count: 0, averageScore: null, minScore: null, maxScore: null },
+        depression: { count: 0, averageScore: null, minScore: null, maxScore: null },
+        suicide: { count: 0, averageScore: null, minScore: null, maxScore: null },
+        checklist: { count: 0, averageScore: null, minScore: null, maxScore: null },
+        overall: {
+          totalAssessments: 0,
+          firstAssessmentDate: null,
+          latestAssessmentDate: null,
+        },
+      };
     }
   }
 
@@ -171,7 +207,7 @@ export class StudentDashboardService {
       const insights: ProgressInsight[] = [];
 
       // Analyze each assessment type
-      const assessmentTypes = ["anxiety", "stress", "depression", "suicide"] as const;
+      const assessmentTypes = ["anxiety", "stress", "depression", "suicide", "checklist"] as const;
 
       for (const type of assessmentTypes) {
         const latestAssessment = summary.latestAssessments[type];
@@ -182,9 +218,10 @@ export class StudentDashboardService {
           const firstAssessment = trendData[0];
           const lastAssessment = trendData[trendData.length - 1];
 
-          // Calculate progress for scored assessments
+          // Calculate progress for scored assessments (exclude suicide and checklist)
           if (
             type !== "suicide" &&
+            type !== "checklist" &&
             firstAssessment.score !== null &&
             lastAssessment.score !== null
           ) {
@@ -230,7 +267,15 @@ export class StudentDashboardService {
 
           // Check for high severity levels based on latest assessment
           const severityLevel = latestAssessment.severityLevel || latestAssessment.riskLevel;
-          if (severityLevel === "severe" || severityLevel === "Severe") {
+          if (severityLevel === "critical" || severityLevel === "Critical") {
+            insights.push({
+              type: "warning",
+              assessmentType: type,
+              message: `Your latest ${type} assessment shows critical levels.`,
+              severity: "high",
+              recommendation: "Please contact your guidance counselor or emergency services immediately.",
+            });
+          } else if (severityLevel === "severe" || severityLevel === "Severe") {
             insights.push({
               type: "warning",
               assessmentType: type,
@@ -297,6 +342,61 @@ export class StudentDashboardService {
             }
           }
 
+          // Check for checklist risk level changes (checklist uses risk levels)
+          if (type === "checklist" && trendData.length > 1) {
+            const firstRiskLevel = firstAssessment.level;
+            const lastRiskLevel = lastAssessment.level;
+
+            // Risk level progression: low -> moderate -> high -> critical (worse)
+            const riskOrder = { low: 1, moderate: 2, high: 3, critical: 4 };
+            const firstRisk = riskOrder[firstRiskLevel as keyof typeof riskOrder] || 1;
+            const lastRisk = riskOrder[lastRiskLevel as keyof typeof riskOrder] || 1;
+
+            if (lastRisk > firstRisk) {
+              insights.push({
+                type: "decline",
+                assessmentType: "checklist",
+                message: `Your personal problems risk level has increased from ${firstRiskLevel} to ${lastRiskLevel} over the last 30 days.`,
+                severity: lastRiskLevel === "critical" ? "high" : "medium",
+                recommendation:
+                  lastRiskLevel === "critical"
+                    ? "Please contact your guidance counselor or emergency services immediately."
+                    : "Consider scheduling an appointment with your guidance counselor for support.",
+              });
+            } else if (lastRisk < firstRisk) {
+              insights.push({
+                type: "improvement",
+                assessmentType: "checklist",
+                message: `Your personal problems risk level has improved from ${firstRiskLevel} to ${lastRiskLevel} over the last 30 days.`,
+                severity: "low",
+                recommendation:
+                  "Keep up the great work! Continue with your current coping strategies.",
+              });
+            } else {
+              insights.push({
+                type: "stable",
+                assessmentType: "checklist",
+                message: `Your personal problems risk level has remained ${lastRiskLevel} over the last 30 days.`,
+                severity:
+                  lastRiskLevel === "critical"
+                    ? "high"
+                    : lastRiskLevel === "high"
+                    ? "high"
+                    : lastRiskLevel === "moderate"
+                    ? "medium"
+                    : "low",
+                recommendation:
+                  lastRiskLevel === "critical"
+                    ? "Please contact your guidance counselor immediately for support."
+                    : lastRiskLevel === "high"
+                    ? "Please contact your guidance counselor for support."
+                    : lastRiskLevel === "moderate"
+                    ? "Consider scheduling an appointment with your guidance counselor."
+                    : "Maintain your current routine and continue monitoring your personal challenges.",
+              });
+            }
+          }
+
           // Check for immediate intervention requirement
           if (type === "suicide" && latestAssessment.requires_immediate_intervention) {
             insights.push({
@@ -309,7 +409,7 @@ export class StudentDashboardService {
             });
           }
         } else if (latestAssessment) {
-          // Single assessment case - check severity for scored assessments, risk level for suicide
+          // Single assessment case - check severity for scored assessments, risk level for suicide and checklist
           if (type === "suicide") {
             const riskLevel = latestAssessment.riskLevel;
             if (riskLevel === "high") {
@@ -339,10 +439,55 @@ export class StudentDashboardService {
                   "Continue monitoring your mental health and maintain your current support strategies.",
               });
             }
+          } else if (type === "checklist") {
+            const riskLevel = latestAssessment.severityLevel || latestAssessment.riskLevel;
+            if (riskLevel === "critical" || riskLevel === "Critical") {
+              insights.push({
+                type: "warning",
+                assessmentType: "checklist",
+                message: "Your personal problems checklist shows critical risk level.",
+                severity: "high",
+                recommendation:
+                  "Please contact your guidance counselor or emergency services immediately.",
+              });
+            } else if (riskLevel === "high" || riskLevel === "High") {
+              insights.push({
+                type: "warning",
+                assessmentType: "checklist",
+                message: "Your personal problems checklist shows high risk level.",
+                severity: "high",
+                recommendation: "Please contact your guidance counselor immediately for support.",
+              });
+            } else if (riskLevel === "moderate" || riskLevel === "Moderate") {
+              insights.push({
+                type: "warning",
+                assessmentType: "checklist",
+                message: "Your personal problems checklist shows moderate risk level.",
+                severity: "medium",
+                recommendation: "Consider scheduling an appointment with your guidance counselor.",
+              });
+            } else if (riskLevel === "low" || riskLevel === "Low") {
+              insights.push({
+                type: "improvement",
+                assessmentType: "checklist",
+                message: "Your personal problems checklist shows low risk level.",
+                severity: "low",
+                recommendation:
+                  "Continue monitoring your personal challenges and maintain your current coping strategies.",
+              });
+            }
           } else {
             // For scored assessments (anxiety, stress, depression)
             const severityLevel = latestAssessment.severityLevel;
-            if (severityLevel === "severe" || severityLevel === "Severe") {
+            if (severityLevel === "critical" || severityLevel === "Critical") {
+              insights.push({
+                type: "warning",
+                assessmentType: type,
+                message: `Your ${type} assessment shows critical levels.`,
+                severity: "high",
+                recommendation: "Please contact your guidance counselor or emergency services immediately.",
+              });
+            } else if (severityLevel === "severe" || severityLevel === "Severe") {
               insights.push({
                 type: "warning",
                 assessmentType: type,
@@ -402,7 +547,8 @@ export class StudentDashboardService {
         stress: 4,
         depression: 3,
         suicide: 2,
-        overall: 14,
+        checklist: 3,
+        overall: 17,
       },
       latestAssessments: {
         anxiety: {
@@ -428,6 +574,12 @@ export class StudentDashboardService {
           riskLevel: "Low",
           requires_immediate_intervention: false,
           assessmentDate: new Date(Date.now() - 259200000).toISOString(),
+        },
+        checklist: {
+          id: "5",
+          totalProblemsChecked: 25,
+          riskLevel: "moderate",
+          assessmentDate: new Date(Date.now() - 345600000).toISOString(),
         },
       },
       userProfile: {
@@ -481,6 +633,14 @@ export class StudentDashboardService {
         createdAt: new Date(now.getTime() - 259200000).toISOString(),
         type: "suicide",
         requiresIntervention: false,
+      },
+      {
+        id: "5",
+        totalScore: 25,
+        severityLevel: "moderate",
+        assessmentDate: new Date(now.getTime() - 345600000).toISOString(),
+        createdAt: new Date(now.getTime() - 345600000).toISOString(),
+        type: "checklist",
       },
     ];
   }

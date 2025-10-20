@@ -20,6 +20,8 @@ interface ProgramData {
   anxiety: number;
   depression: number;
   stress: number;
+  checklist: number;
+  suicide: number;
 }
 
 interface ChartBarInteractiveProps {
@@ -30,10 +32,10 @@ interface ChartBarInteractiveProps {
 
 // Default data for fallback
 const defaultData = [
-  { program: "Computer Science", anxiety: 45, depression: 32, stress: 28 },
-  { program: "Engineering", anxiety: 38, depression: 29, stress: 35 },
-  { program: "Business", anxiety: 25, depression: 18, stress: 22 },
-  { program: "Psychology", anxiety: 52, depression: 41, stress: 38 },
+  { program: "Computer Science", anxiety: 45, depression: 32, stress: 28, checklist: 15, suicide: 3 },
+  { program: "Engineering", anxiety: 38, depression: 29, stress: 35, checklist: 12, suicide: 2 },
+  { program: "Business", anxiety: 25, depression: 18, stress: 22, checklist: 8, suicide: 1 },
+  { program: "Psychology", anxiety: 52, depression: 41, stress: 38, checklist: 18, suicide: 4 },
 ];
 
 const chartConfig = {
@@ -48,6 +50,14 @@ const chartConfig = {
   stress: {
     label: "Stress",
     color: "var(--chart-3)",
+  },
+  checklist: {
+    label: "Personal Problems",
+    color: "var(--chart-4)",
+  },
+  suicide: {
+    label: "Suicide Risk",
+    color: "var(--chart-5)",
   },
 } satisfies ChartConfig;
 
@@ -123,6 +133,8 @@ export function ChartBarInteractive({
             <Bar dataKey="anxiety" fill="var(--color-anxiety)" name="Anxiety" />
             <Bar dataKey="depression" fill="var(--color-depression)" name="Depression" />
             <Bar dataKey="stress" fill="var(--color-stress)" name="Stress" />
+            <Bar dataKey="checklist" fill="var(--color-checklist)" name="Personal Problems" />
+            <Bar dataKey="suicide" fill="var(--color-suicide)" name="Suicide Risk" />
             <ChartLegend content={<ChartLegendContent />} />
           </BarChart>
         </ChartContainer>

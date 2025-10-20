@@ -1,10 +1,10 @@
-import { useAnxiety, useAuth, useDepression, useStress, useSuicide } from "@/hooks";
+import { useAnxiety, useAuth, useChecklist, useDepression, useStress, useSuicide } from "@/hooks";
 import { AlertCircle, Calendar, Clock, Loader2, Search } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
 
 interface AssessmentHistoryItem {
   id: string;
-  type: "anxiety" | "depression" | "stress" | "suicide";
+  type: "anxiety" | "depression" | "stress" | "suicide" | "checklist";
   score: number;
   severityLevel: string;
   date: string;
@@ -43,6 +43,8 @@ const getTypeIcon = (type: string) => {
       return "⚡";
     case "suicide":
       return "🛡️";
+    case "checklist":
+      return "📝";
     default:
       return "📊";
   }
@@ -58,6 +60,8 @@ const getTypeColor = (type: string) => {
       return "text-orange-700 bg-orange-50 border-orange-200";
     case "suicide":
       return "text-red-700 bg-red-50 border-red-200";
+    case "checklist":
+      return "text-green-700 bg-green-50 border-green-200";
     default:
       return "text-gray-700 bg-gray-50 border-gray-200";
   }
@@ -75,6 +79,7 @@ export const HistoryContent: React.FC = () => {
   const { fetchAssessments: fetchDepressionAssessments } = useDepression();
   const { fetchAssessments: fetchStressAssessments } = useStress();
   const { fetchAssessments: fetchSuicideAssessments } = useSuicide();
+  const { fetchChecklists: fetchChecklistAssessments } = useChecklist();
 
   // Helper functions - moved before useMemo to avoid TDZ
   const formatDate = (dateString: string) => {
@@ -109,7 +114,7 @@ export const HistoryContent: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [anxietyData, depressionData, stressData, suicideData] = await Promise.all([
+      const [anxietyData, depressionData, stressData, suicideData, checklistData] = await Promise.all([
         fetchAnxietyAssessments({
           limit: 100,
           fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
@@ -125,6 +130,10 @@ export const HistoryContent: React.FC = () => {
         fetchSuicideAssessments({
           limit: 100,
           fields: "id,riskLevel,assessmentDate,createdAt",
+        }),
+        fetchChecklistAssessments({
+          limit: 100,
+          fields: "id,checklist_analysis,date_completed,createdAt",
         }),
       ]);
 
@@ -161,12 +170,19 @@ export const HistoryContent: React.FC = () => {
           date: item.assessmentDate,
           createdAt: item.createdAt,
         })),
+        ...(checklistData?.data || []).map((item: any) => ({
+          id: item.id,
+          type: "checklist" as const,
+          score: item.checklist_analysis?.totalProblemsChecked || 0,
+          severityLevel: item.checklist_analysis?.riskLevel || "unknown",
+          date: item.date_completed,
+          createdAt: item.createdAt,
+        })),
       ];
 
       // Sort by date (most recent first)
       combinedHistory.sort(
-        (a, b) =>
-          new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
+        (a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
       );
 
       setAssessmentHistory(combinedHistory);
@@ -251,16 +267,14 @@ export const HistoryContent: React.FC = () => {
 
         {/* Summary Stats - Moved to top */}
         {assessmentHistory.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {["anxiety", "depression", "stress", "suicide"].map((type) => {
+          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {["anxiety", "depression", "stress", "suicide", "checklist"].map((type) => {
               const typeAssessments = assessmentHistory.filter((a) => a.type === type);
               const latestScore = typeAssessments[0]?.score;
               const latestLevel = typeAssessments[0]?.severityLevel;
               const averageScore =
-                typeAssessments.length > 0 && type !== "suicide"
-                  ? Math.round(
-                      typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length
-                    )
+                typeAssessments.length > 0 && type !== "suicide" && type !== "checklist"
+                  ? Math.round(typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length)
                   : 0;
 
               return (
@@ -269,17 +283,17 @@ export const HistoryContent: React.FC = () => {
                   className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-medium text-gray-900 capitalize">{type}</h3>
+                    <h3 className="text-base font-medium text-gray-900 capitalize">
+                      {type === "checklist" ? "Personal Problems" : type}
+                    </h3>
                     <span className="text-2xl">{getTypeIcon(type)}</span>
                   </div>
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Total:</span>
-                      <span className="text-sm font-medium text-primary-700">
-                        {typeAssessments.length}
-                      </span>
+                      <span className="text-sm font-medium text-primary-700">{typeAssessments.length}</span>
                     </div>
-                    {type === "suicide" ? (
+                    {type === "suicide" || type === "checklist" ? (
                       latestLevel && (
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Latest:</span>
@@ -297,17 +311,13 @@ export const HistoryContent: React.FC = () => {
                         {latestScore !== undefined && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Latest:</span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              {latestScore}
-                            </span>
+                            <span className="text-sm font-semibold text-gray-900">{latestScore}</span>
                           </div>
                         )}
                         {typeAssessments.length > 0 && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Average:</span>
-                            <span className="text-sm font-medium text-gray-700">
-                              {averageScore}
-                            </span>
+                            <span className="text-sm font-medium text-gray-700">{averageScore}</span>
                           </div>
                         )}
                       </>
@@ -411,19 +421,23 @@ export const HistoryContent: React.FC = () => {
                             >
                               <span>{getTypeIcon(assessment.type)}</span>
                               <span className="capitalize">
-                                {assessment.type === "suicide" ? "Suicide Risk" : assessment.type}
+                                {assessment.type === "suicide"
+                                  ? "Suicide Risk"
+                                  : assessment.type === "checklist"
+                                  ? "Personal Problems"
+                                  : assessment.type}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {assessment.type === "suicide" ? (
+                              <span className="text-sm font-medium text-gray-900">Risk Assessment</span>
+                            ) : assessment.type === "checklist" ? (
                               <span className="text-sm font-medium text-gray-900">
-                                Risk Assessment
+                                {assessment.score} Problem{assessment.score !== 1 ? "s" : ""}
                               </span>
                             ) : (
-                              <span className="text-lg font-semibold text-gray-900">
-                                {assessment.score}
-                              </span>
+                              <span className="text-lg font-semibold text-gray-900">{assessment.score}</span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -469,15 +483,21 @@ export const HistoryContent: React.FC = () => {
                         >
                           <span>{getTypeIcon(assessment.type)}</span>
                           <span className="capitalize">
-                            {assessment.type === "suicide" ? "Suicide Risk" : assessment.type}
+                            {assessment.type === "suicide"
+                              ? "Suicide Risk"
+                              : assessment.type === "checklist"
+                              ? "Personal Problems"
+                              : assessment.type}
                           </span>
                         </div>
                         {assessment.type === "suicide" ? (
                           <span className="text-sm font-medium text-gray-600">Risk Assessment</span>
-                        ) : (
-                          <span className="text-xl font-bold text-gray-900">
-                            {assessment.score}
+                        ) : assessment.type === "checklist" ? (
+                          <span className="text-sm font-medium text-gray-600">
+                            {assessment.score} Problem{assessment.score !== 1 ? "s" : ""}
                           </span>
+                        ) : (
+                          <span className="text-xl font-bold text-gray-900">{assessment.score}</span>
                         )}
                       </div>
 

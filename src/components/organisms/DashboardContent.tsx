@@ -142,6 +142,8 @@ export const DashboardContent: React.FC = () => {
                 anxiety: item.anxiety || 0,
                 depression: item.depression || 0,
                 stress: item.stress || 0,
+                checklist: item.checklist || 0,
+                suicide: item.suicide || 0,
               }))}
               title="Assessment Distribution by Program"
               description="Breakdown of assessments across academic programs"
