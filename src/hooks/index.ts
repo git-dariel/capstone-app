@@ -4,6 +4,7 @@ export { useAnxiety } from "./useAnxiety";
 export { useDepression } from "./useDepression";
 export { useStress } from "./useStress";
 export { useSuicide } from "./useSuicide";
+export { useChecklist } from "./useChecklist";
 export { useStudents } from "./useStudents";
 export { useUsers } from "./useUsers";
 export { useConsent } from "./useConsent";

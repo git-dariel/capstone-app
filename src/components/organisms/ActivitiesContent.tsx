@@ -419,7 +419,7 @@ export const ActivitiesContent: React.FC = () => {
                 Mental Health Activities
               </h1>
               <p className="text-gray-600 text-sm sm:text-base mt-1">
-                Professional-recommended activities to support your mental wellness
+                Recommended activities to support your mental wellness
               </p>
             </div>
           </div>
@@ -468,7 +468,7 @@ export const ActivitiesContent: React.FC = () => {
                   💙 Your Wellness Journey
                 </h3>
                 <p className="text-blue-800 text-xs sm:text-sm leading-relaxed">
-                  These activities are designed by mental health professionals to complement your
+                  These activities are recommended by guidance counselors to complement your
                   overall wellness. They're most effective when practiced regularly. If you're
                   experiencing severe distress, please reach out to a counselor or mental health
                   professional.
@@ -590,11 +590,11 @@ export const ActivitiesContent: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="bg-white rounded-lg p-3 border border-red-200">
               <p className="font-semibold text-red-900">Campus Counseling Center</p>
-              <p className="text-red-700 text-sm">Available 24/7 for students</p>
+              <p className="text-red-700 text-sm">Available Mon-Fri (office hours) for students</p>
             </div>
             <div className="bg-white rounded-lg p-3 border border-red-200">
               <p className="font-semibold text-red-900">Crisis Helpline</p>
-              <p className="text-red-700 text-sm">1-800-273-8255 (24/7)</p>
+              <p className="text-red-700 text-sm">0928-832-7363/codotado@pup.edu.ph</p>
             </div>
           </div>
         </div>

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Brain, Heart, Zap, Shield } from "lucide-react";
+import { Brain, Heart, Zap, Shield, CheckSquare } from "lucide-react";
 import { AssessmentCard } from "@/components/atoms";
 import { useAuth, useAnxiety, useDepression, useStress } from "@/hooks";
 import type { CooldownInfo } from "@/services/stress.service";
 
-type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | null;
+type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | "checklist" | null;
 
 interface AssessmentGridProps {
   onSelectAssessment: (type: AssessmentType) => void;
@@ -73,8 +73,8 @@ export const AssessmentGrid: React.FC<AssessmentGridProps> = ({ onSelectAssessme
   };
 
   const handleAssessmentSelect = (type: AssessmentType) => {
-    if (type === "suicide") {
-      // Suicide assessment doesn't have cooldown
+    if (type === "suicide" || type === "checklist") {
+      // Suicide assessment and checklist don't have cooldown
       onSelectAssessment(type);
       return;
     }
@@ -99,9 +99,7 @@ export const AssessmentGrid: React.FC<AssessmentGridProps> = ({ onSelectAssessme
           color="anxiety"
           onClick={() => handleAssessmentSelect("anxiety")}
           disabled={cooldownState.anxiety?.isActive}
-          cooldownMessage={
-            cooldownState.anxiety ? formatCooldownMessage(cooldownState.anxiety) : undefined
-          }
+          cooldownMessage={cooldownState.anxiety ? formatCooldownMessage(cooldownState.anxiety) : undefined}
         />
 
         <AssessmentCard
@@ -111,9 +109,7 @@ export const AssessmentGrid: React.FC<AssessmentGridProps> = ({ onSelectAssessme
           color="depression"
           onClick={() => handleAssessmentSelect("depression")}
           disabled={cooldownState.depression?.isActive}
-          cooldownMessage={
-            cooldownState.depression ? formatCooldownMessage(cooldownState.depression) : undefined
-          }
+          cooldownMessage={cooldownState.depression ? formatCooldownMessage(cooldownState.depression) : undefined}
         />
 
         <AssessmentCard
@@ -123,13 +119,11 @@ export const AssessmentGrid: React.FC<AssessmentGridProps> = ({ onSelectAssessme
           color="stress"
           onClick={() => handleAssessmentSelect("stress")}
           disabled={cooldownState.stress?.isActive}
-          cooldownMessage={
-            cooldownState.stress ? formatCooldownMessage(cooldownState.stress) : undefined
-          }
+          cooldownMessage={cooldownState.stress ? formatCooldownMessage(cooldownState.stress) : undefined}
         />
       </div>
 
-      {/* Suicide assessment - separate row */}
+      {/* Suicide assessment and Personal Problems Checklist - separate row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AssessmentCard
           title="Suicide Assessment"
@@ -138,6 +132,16 @@ export const AssessmentGrid: React.FC<AssessmentGridProps> = ({ onSelectAssessme
           color="suicide"
           onClick={() => handleAssessmentSelect("suicide")}
           disabled={false} // Suicide assessment does not have a cooldown
+          cooldownMessage={undefined}
+        />
+
+        <AssessmentCard
+          title="Personal Problems Checklist"
+          description="Comprehensive assessment to identify personal problems across 10 areas. Takes about 10-15 minutes to complete."
+          icon={<CheckSquare className="w-6 h-6" />}
+          color="checklist"
+          onClick={() => handleAssessmentSelect("checklist")}
+          disabled={false} // Checklist does not have a cooldown
           cooldownMessage={undefined}
         />
       </div>

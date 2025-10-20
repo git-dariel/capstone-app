@@ -20,6 +20,8 @@ interface ChartAreaInteractiveProps {
     anxiety: number;
     depression: number;
     stress: number;
+    checklist: number;
+    suicide: number;
   }>;
   title?: string;
   description?: string;
@@ -43,15 +45,23 @@ const chartConfig = {
     label: "Stress",
     color: "var(--chart-3)",
   },
+  checklist: {
+    label: "Personal Problems",
+    color: "var(--chart-4)",
+  },
+  suicide: {
+    label: "Suicide Risk",
+    color: "var(--chart-5)",
+  },
 } satisfies ChartConfig;
 
 // Default data for fallback - converted to match API structure
 const defaultAssessmentData = [
-  { date: "2024-04-01", anxiety: 222, depression: 150, stress: 180 },
-  { date: "2024-04-02", anxiety: 97, depression: 180, stress: 120 },
-  { date: "2024-04-03", anxiety: 167, depression: 120, stress: 200 },
-  { date: "2024-04-04", anxiety: 242, depression: 260, stress: 190 },
-  { date: "2024-04-05", anxiety: 373, depression: 290, stress: 250 },
+  { date: "2024-04-01", anxiety: 222, depression: 150, stress: 180, checklist: 45, suicide: 12 },
+  { date: "2024-04-02", anxiety: 97, depression: 180, stress: 120, checklist: 38, suicide: 8 },
+  { date: "2024-04-03", anxiety: 167, depression: 120, stress: 200, checklist: 52, suicide: 15 },
+  { date: "2024-04-04", anxiety: 242, depression: 260, stress: 190, checklist: 41, suicide: 18 },
+  { date: "2024-04-05", anxiety: 373, depression: 290, stress: 250, checklist: 67, suicide: 22 },
 ];
 
 export function ChartAreaInteractive({
@@ -142,6 +152,14 @@ export function ChartAreaInteractive({
                 <stop offset="5%" stopColor="var(--color-stress)" stopOpacity={0.8} />
                 <stop offset="95%" stopColor="var(--color-stress)" stopOpacity={0.1} />
               </linearGradient>
+              <linearGradient id="fillChecklist" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-checklist)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-checklist)" stopOpacity={0.1} />
+              </linearGradient>
+              <linearGradient id="fillSuicide" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-suicide)" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="var(--color-suicide)" stopOpacity={0.1} />
+              </linearGradient>
             </defs>
             <CartesianGrid vertical={false} />
             <XAxis
@@ -192,6 +210,20 @@ export function ChartAreaInteractive({
               type="natural"
               fill="url(#fillStress)"
               stroke="var(--color-stress)"
+              stackId="a"
+            />
+            <Area
+              dataKey="checklist"
+              type="natural"
+              fill="url(#fillChecklist)"
+              stroke="var(--color-checklist)"
+              stackId="a"
+            />
+            <Area
+              dataKey="suicide"
+              type="natural"
+              fill="url(#fillSuicide)"
+              stroke="var(--color-suicide)"
               stackId="a"
             />
             <ChartLegend content={<ChartLegendContent />} />

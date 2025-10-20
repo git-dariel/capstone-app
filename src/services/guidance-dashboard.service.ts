@@ -11,6 +11,7 @@ export interface StudentProgressInsight {
     stress: number;
     depression: number;
     suicide: number;
+    checklist: number;
     overall: number;
   };
   latestAssessments: {
@@ -18,10 +19,11 @@ export interface StudentProgressInsight {
     stress: any | null;
     depression: any | null;
     suicide: any | null;
+    checklist: any | null;
   };
   progressInsights: Array<{
     type: "improvement" | "decline" | "stable" | "warning";
-    assessmentType: "anxiety" | "stress" | "depression" | "suicide" | "overall";
+    assessmentType: "anxiety" | "stress" | "depression" | "suicide" | "checklist" | "overall";
     message: string;
     severity: "low" | "medium" | "high";
     recommendation?: string;

@@ -1,14 +1,15 @@
 import React from "react";
-import { Brain, Heart, Zap, AlertTriangle, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Brain, Heart, Zap, AlertTriangle, TrendingUp, TrendingDown, Minus, ClipboardList } from "lucide-react";
 import { SeverityIndicator } from "./SeverityIndicator";
 
 interface AssessmentOverviewCardProps {
-  type: "anxiety" | "stress" | "depression" | "suicide";
+  type: "anxiety" | "stress" | "depression" | "suicide" | "checklist";
   totalCount: number;
   latestAssessment?: {
     totalScore?: number | null;
     severityLevel: string;
     riskLevel?: string;
+    totalProblemsChecked?: number;
     assessmentDate: string;
     requiresIntervention?: boolean;
   } | null;
@@ -57,6 +58,14 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
           borderColor: "border-red-200",
           label: "Suicide Risk",
         };
+      case "checklist":
+        return {
+          icon: ClipboardList,
+          color: "text-green-600",
+          bgColor: "bg-green-50",
+          borderColor: "border-green-200",
+          label: "Personal Problems",
+        };
       default:
         return {
           icon: Brain,
@@ -98,18 +107,29 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
   const Icon = config.icon;
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return "Invalid Date";
+      }
+      
+      const now = new Date();
+      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diffInDays === 0) return "Today";
-    if (diffInDays === 1) return "Yesterday";
-    if (diffInDays < 7) return `${diffInDays} days ago`;
+      if (diffInDays === 0) return "Today";
+      if (diffInDays === 1) return "Yesterday";
+      if (diffInDays < 7) return `${diffInDays} days ago`;
 
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    });
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date";
+    }
   };
 
   const getSeverityLevel = () => {
@@ -119,6 +139,9 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
 
   const getScore = () => {
     if (!latestAssessment) return null;
+    if (type === "checklist") {
+      return latestAssessment.totalProblemsChecked;
+    }
     return latestAssessment.totalScore;
   };
 
@@ -139,7 +162,7 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
         )}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {/* Total Assessments */}
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-600">Total Assessments</span>
@@ -156,17 +179,20 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Severity Level</span>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600">Severity Level</span>
+              </div>
               <SeverityIndicator
                 level={getSeverityLevel()}
                 score={getScore()}
                 showScore={type !== "suicide"}
+                scoreLabel={type === "checklist" ? "problems" : undefined}
               />
             </div>
 
             {latestAssessment.requiresIntervention && (
-              <div className="bg-red-100 border border-red-200 rounded p-2">
+              <div className="bg-red-100 border border-red-200 rounded p-2 mt-2">
                 <p className="text-xs text-red-800 font-medium">
                   ⚠️ Immediate intervention required
                 </p>
@@ -174,7 +200,7 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
             )}
           </>
         ) : (
-          <div className="text-center py-4">
+          <div className="text-center py-3">
             <p className="text-sm text-gray-500">No assessments taken yet</p>
             <p className="text-xs text-gray-400 mt-1">Take your first assessment to get started</p>
           </div>

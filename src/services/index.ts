@@ -18,6 +18,15 @@ export type {
   UpdateStudentRequest,
 } from "./student.service";
 
+// Checklist Service
+export { ChecklistService } from "./checklist.service";
+export type {
+  PersonalProblemsChecklist,
+  ChecklistAnalysis,
+  CreateChecklistRequest,
+  UpdateChecklistRequest,
+} from "./checklist.service";
+
 // Consent Service
 export { ConsentService } from "./consent.service";
 export type { ConsentFormData, ConsentResponse, GetConsentResponse } from "./consent.service";

@@ -18,7 +18,7 @@ export interface InsightsDrilldownLevel {
 }
 
 export interface MentalHealthInsights {
-  type: "anxiety" | "depression" | "stress";
+  type: "anxiety" | "depression" | "stress" | "suicide" | "checklist";
   currentLevel: InsightsDrilldownLevel;
   availableYears: number[];
   availableMonths: { value: number; label: string }[];

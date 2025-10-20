@@ -6,7 +6,7 @@ interface AssessmentCardProps {
   title: string;
   description: string;
   icon: React.ReactNode;
-  color: "anxiety" | "depression" | "stress" | "suicide";
+  color: "anxiety" | "depression" | "stress" | "suicide" | "checklist";
   onClick: () => void;
   className?: string;
   disabled?: boolean;
@@ -23,10 +23,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
   disabled = false,
   cooldownMessage,
 }) => {
-  const getColorClasses = (
-    color: "anxiety" | "depression" | "stress" | "suicide",
-    disabled: boolean
-  ) => {
+  const getColorClasses = (color: "anxiety" | "depression" | "stress" | "suicide" | "checklist", disabled: boolean) => {
     const baseClasses = disabled
       ? "border-gray-200 bg-gray-50 cursor-not-allowed opacity-60"
       : "hover:shadow-lg transform hover:-translate-y-1";
@@ -42,15 +39,14 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
         return `${baseClasses} border-yellow-200 hover:border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100 hover:from-yellow-100 hover:to-yellow-150`;
       case "suicide":
         return `${baseClasses} border-purple-200 hover:border-purple-300 bg-gradient-to-br from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-150`;
+      case "checklist":
+        return `${baseClasses} border-green-200 hover:border-green-300 bg-gradient-to-br from-green-50 to-green-100 hover:from-green-100 hover:to-green-150`;
       default:
         return `${baseClasses} border-gray-200 hover:border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100`;
     }
   };
 
-  const getIconColor = (
-    color: "anxiety" | "depression" | "stress" | "suicide",
-    disabled: boolean
-  ) => {
+  const getIconColor = (color: "anxiety" | "depression" | "stress" | "suicide" | "checklist", disabled: boolean) => {
     if (disabled) return "text-gray-400";
 
     switch (color) {
@@ -62,6 +58,8 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
         return "text-yellow-600";
       case "suicide":
         return "text-purple-600";
+      case "checklist":
+        return "text-green-600";
       default:
         return "text-gray-600";
     }
@@ -90,12 +88,7 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
           >
             {title}
           </h3>
-          <p
-            className={cn(
-              "text-xs sm:text-sm leading-relaxed",
-              disabled ? "text-gray-400" : "text-gray-600"
-            )}
-          >
+          <p className={cn("text-xs sm:text-sm leading-relaxed", disabled ? "text-gray-400" : "text-gray-600")}>
             {disabled && cooldownMessage ? cooldownMessage : description}
           </p>
         </div>

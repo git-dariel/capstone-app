@@ -18,7 +18,7 @@ export const useInsights = () => {
   });
 
   const fetchInsights = useCallback(
-    async (type: "anxiety" | "depression" | "stress", filters: ChartFilters = {}) => {
+    async (type: "anxiety" | "depression" | "stress" | "suicide" | "checklist", filters: ChartFilters = {}) => {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
       try {

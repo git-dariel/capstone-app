@@ -41,7 +41,7 @@ export const FAQSection: React.FC = () => {
     {
       question: "How do I access counseling services?",
       answer:
-        "Our Student Counseling Center offers free, confidential counseling services. You can call (555) 123-HELP to schedule an appointment or visit our campus wellness center. Emergency services are available 24/7.",
+        "Our Student Counseling Center offers free, confidential counseling services. You can call 0928-832-7363 or email codotado@pup.edu.ph to schedule an appointment or visit our campus wellness center. Emergency services are available during office hours.",
     },
     {
       question: "What if I'm having technical issues with the platform?",

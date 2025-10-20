@@ -133,6 +133,19 @@ const residenceOptions = [
   },
 ];
 
+const ordinalPositionOptions = [
+  { value: "1st child", label: "1st child" },
+  { value: "2nd child", label: "2nd child" },
+  { value: "3rd child", label: "3rd child" },
+  { value: "4th child", label: "4th child" },
+  { value: "5th child", label: "5th child" },
+  { value: "6th child", label: "6th child" },
+  { value: "7th child", label: "7th child" },
+  { value: "8th child", label: "8th child" },
+  { value: "9th child", label: "9th child" },
+  { value: "10th child", label: "10th child" },
+];
+
 export const InventoryForm: React.FC<InventoryFormProps> = ({
   studentId,
   onSubmit,
@@ -191,9 +204,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
         educational_attainment: "high_school",
         occupation: "",
         employer: {
-          firstName: "",
-          lastName: "",
-          middleName: "",
+          name: "",
           address: {
             houseNo: undefined,
             street: "",
@@ -214,9 +225,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
         educational_attainment: "high_school",
         occupation: "",
         employer: {
-          firstName: "",
-          lastName: "",
-          middleName: "",
+          name: "",
           address: {
             houseNo: undefined,
             street: "",
@@ -237,9 +246,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
         educational_attainment: "high_school",
         occupation: "",
         employer: {
-          firstName: "",
-          lastName: "",
-          middleName: "",
+          name: "",
           address: {
             houseNo: undefined,
             street: "",
@@ -252,7 +259,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
         },
       },
       parents_martial_relationship: "married_and_staying_together",
-      number_of_children_in_the_family_including_yourself: 1,
+      number_of_children_in_the_family_including_yourself: 0,
       number_of_brothers: 0,
       number_of_sisters: 0,
       number_of_brothers_or_sisters_employed: 0,
@@ -765,41 +772,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
           <div className="mb-2">
             <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
-                id="father_employer_firstName"
-                label="Employer First Name"
+                id="father_employer_name"
+                label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.father.employer.firstName}
+                value={formData.home_and_family_background.father.employer?.name || ""}
                 onChange={(e) =>
                   handleFieldChange(
-                    "home_and_family_background.father.employer.firstName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="father_employer_lastName"
-                label="Employer Last Name"
-                type="text"
-                value={formData.home_and_family_background.father.employer.lastName}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.father.employer.lastName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="father_employer_middleName"
-                label="Employer Middle Name"
-                type="text"
-                value={formData.home_and_family_background.father.employer.middleName || ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.father.employer.middleName",
+                    "home_and_family_background.father.employer.name",
                     e.target.value
                   )
                 }
@@ -811,7 +792,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="father_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.father.employer.address.street || ""}
+                value={formData.home_and_family_background.father.employer?.address?.street || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.father.employer.address.street",
@@ -824,7 +805,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="father_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.father.employer.address.city || ""}
+                value={formData.home_and_family_background.father.employer?.address?.city || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.father.employer.address.city",
@@ -837,7 +818,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="father_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.father.employer.address.province || ""}
+                value={formData.home_and_family_background.father.employer?.address?.province || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.father.employer.address.province",
@@ -940,41 +921,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
           <div className="mb-2">
             <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
-                id="mother_employer_firstName"
-                label="Employer First Name"
+                id="mother_employer_name"
+                label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.mother.employer.firstName}
+                value={formData.home_and_family_background.mother.employer?.name || ""}
                 onChange={(e) =>
                   handleFieldChange(
-                    "home_and_family_background.mother.employer.firstName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="mother_employer_lastName"
-                label="Employer Last Name"
-                type="text"
-                value={formData.home_and_family_background.mother.employer.lastName}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.mother.employer.lastName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="mother_employer_middleName"
-                label="Employer Middle Name"
-                type="text"
-                value={formData.home_and_family_background.mother.employer.middleName || ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.mother.employer.middleName",
+                    "home_and_family_background.mother.employer.name",
                     e.target.value
                   )
                 }
@@ -986,7 +941,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="mother_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.mother.employer.address.street || ""}
+                value={formData.home_and_family_background.mother.employer?.address?.street || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.mother.employer.address.street",
@@ -999,7 +954,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="mother_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.mother.employer.address.city || ""}
+                value={formData.home_and_family_background.mother.employer?.address?.city || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.mother.employer.address.city",
@@ -1012,7 +967,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="mother_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.mother.employer.address.province || ""}
+                value={formData.home_and_family_background.mother.employer?.address?.province || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.mother.employer.address.province",
@@ -1118,41 +1073,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
           <div className="mb-2">
             <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
-                id="guardian_employer_firstName"
-                label="Employer First Name"
+                id="guardian_employer_name"
+                label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer.firstName}
+                value={formData.home_and_family_background.guardian.employer?.name || ""}
                 onChange={(e) =>
                   handleFieldChange(
-                    "home_and_family_background.guardian.employer.firstName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="guardian_employer_lastName"
-                label="Employer Last Name"
-                type="text"
-                value={formData.home_and_family_background.guardian.employer.lastName}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.guardian.employer.lastName",
-                    e.target.value
-                  )
-                }
-                disabled={loading}
-              />
-              <FormField
-                id="guardian_employer_middleName"
-                label="Employer Middle Name"
-                type="text"
-                value={formData.home_and_family_background.guardian.employer.middleName || ""}
-                onChange={(e) =>
-                  handleFieldChange(
-                    "home_and_family_background.guardian.employer.middleName",
+                    "home_and_family_background.guardian.employer.name",
                     e.target.value
                   )
                 }
@@ -1164,7 +1093,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="guardian_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer.address.street || ""}
+                value={formData.home_and_family_background.guardian.employer?.address?.street || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.guardian.employer.address.street",
@@ -1177,7 +1106,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="guardian_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer.address.city || ""}
+                value={formData.home_and_family_background.guardian.employer?.address?.city || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.guardian.employer.address.city",
@@ -1190,7 +1119,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
                 id="guardian_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer.address.province || ""}
+                value={formData.home_and_family_background.guardian.employer?.address?.province || ""}
                 onChange={(e) =>
                   handleFieldChange(
                     "home_and_family_background.guardian.employer.address.province",
@@ -1240,12 +1169,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
               type="number"
               value={
                 formData.home_and_family_background?.number_of_children_in_the_family_including_yourself?.toString() ||
-                "1"
+                "0"
               }
               onChange={(e) =>
                 handleFieldChange(
                   "home_and_family_background.number_of_children_in_the_family_including_yourself",
-                  parseInt(e.target.value) || 1
+                  parseInt(e.target.value) || 0
                 )
               }
               required
@@ -1296,17 +1225,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
+            <FormSelect
               id="ordinal_position"
               label="Ordinal Position *"
-              type="text"
-              value={formData.home_and_family_background?.ordinal_position || ""}
-              onChange={(e) =>
-                handleFieldChange("home_and_family_background.ordinal_position", e.target.value)
+              value={formData.home_and_family_background?.ordinal_position || "1st child"}
+              onChange={(value) =>
+                handleFieldChange("home_and_family_background.ordinal_position", value)
               }
+              options={ordinalPositionOptions}
               required
               disabled={loading}
-              placeholder="e.g., 1st child, 2nd child, etc."
             />
             <FormSelect
               id="sibling_support"
@@ -1519,7 +1447,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
         </div>
 
         <div className="mb-6">
-          <h4 className="text-md font-medium text-gray-800 mb-3">Psychological Health</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-3">Psychological Health (Optional)</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormSelect
               id="psychological_consulted"
@@ -1655,7 +1583,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({
 
       {/* Test Results */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Test Results</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Test Results (Optional)</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <FormField
             id="test_date"

@@ -3,10 +3,12 @@ import {
   AnxietyAssessmentTable,
   DepressionAssessmentTable,
   StressAssessmentTable,
+  SuicideAssessmentTable,
+  ChecklistAssessmentTable,
   ExportFilterDropdown,
   StudentProgressTable,
 } from "@/components/molecules";
-import { useAnxiety, useDepression, useStress } from "@/hooks";
+import { useAnxiety, useDepression, useStress, useSuicide, useChecklist } from "@/hooks";
 import { UserService } from "@/services";
 import type { ExportFilters } from "@/services";
 
@@ -14,6 +16,8 @@ export const ReportsContent: React.FC = () => {
   const { fetchAssessments: fetchAnxiety } = useAnxiety();
   const { fetchAssessments: fetchDepression } = useDepression();
   const { fetchAssessments: fetchStress } = useStress();
+  const { fetchAssessments: fetchSuicide } = useSuicide();
+  const { fetchChecklists: fetchChecklist } = useChecklist();
   const [isExporting, setIsExporting] = useState(false);
 
   // Automatically fetch all assessments when component mounts
@@ -35,6 +39,16 @@ export const ReportsContent: React.FC = () => {
             limit: 100,
             fields:
               "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+          }),
+          fetchSuicide({
+            limit: 100,
+            fields:
+              "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+          }),
+          fetchChecklist({
+            limit: 100,
+            fields:
+              "id,userId,checklist_analysis.riskLevel,checklist_analysis.totalProblemsChecked,date_completed,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
           }),
         ];
 
@@ -97,6 +111,12 @@ export const ReportsContent: React.FC = () => {
 
           {/* Stress Assessment Table */}
           <StressAssessmentTable />
+
+          {/* Suicide Assessment Table */}
+          <SuicideAssessmentTable />
+
+          {/* Personal Checklist Problems Table */}
+          <ChecklistAssessmentTable />
         </div>
       </div>
     </main>

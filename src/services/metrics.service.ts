@@ -135,11 +135,23 @@ export class MetricsService {
 
   // Get total count for a specific assessment type
   static async getTotalCount(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ): Promise<number> {
-    const model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
-    const metricKey = `total${model}`;
+    let model: string;
+    let metricKey: string;
+    
+    // Handle special cases for suicide and checklist
+    if (assessmentType === "suicide") {
+      model = "Suicide";
+      metricKey = "totalSuicide";
+    } else if (assessmentType === "checklist") {
+      model = "PersonalProblemsChecklist";
+      metricKey = "totalChecklist";
+    } else {
+      model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+      metricKey = `total${model}`;
+    }
 
     const request: MetricRequest = {
       model,
@@ -153,11 +165,23 @@ export class MetricsService {
 
   // Get assessments by program
   static async getByProgram(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ): Promise<ProgramMetric[]> {
-    const model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
-    const metricKey = `total${model}ByProgram`;
+    let model: string;
+    let metricKey: string;
+    
+    // Handle special cases for suicide and checklist
+    if (assessmentType === "suicide") {
+      model = "Suicide";
+      metricKey = "totalSuicideByProgram";
+    } else if (assessmentType === "checklist") {
+      model = "PersonalProblemsChecklist";
+      metricKey = "totalChecklistByProgram";
+    } else {
+      model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+      metricKey = `total${model}ByProgram`;
+    }
 
     const request: MetricRequest = {
       model,
@@ -171,11 +195,23 @@ export class MetricsService {
 
   // Get assessments by academic year
   static async getByYear(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ): Promise<YearMetric[]> {
-    const model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
-    const metricKey = `total${model}ByYear`;
+    let model: string;
+    let metricKey: string;
+    
+    // Handle special cases for suicide and checklist
+    if (assessmentType === "suicide") {
+      model = "Suicide";
+      metricKey = "totalSuicideByYear";
+    } else if (assessmentType === "checklist") {
+      model = "PersonalProblemsChecklist";
+      metricKey = "totalChecklistByYear";
+    } else {
+      model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+      metricKey = `total${model}ByYear`;
+    }
 
     const request: MetricRequest = {
       model,
@@ -189,11 +225,23 @@ export class MetricsService {
 
   // Get assessments by gender
   static async getByGender(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ): Promise<GenderMetric[]> {
-    const model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
-    const metricKey = `total${model}ByGender`;
+    let model: string;
+    let metricKey: string;
+    
+    // Handle special cases for suicide and checklist
+    if (assessmentType === "suicide") {
+      model = "Suicide";
+      metricKey = "totalSuicideByGender";
+    } else if (assessmentType === "checklist") {
+      model = "PersonalProblemsChecklist";
+      metricKey = "totalChecklistByGender";
+    } else {
+      model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+      metricKey = `total${model}ByGender`;
+    }
 
     const request: MetricRequest = {
       model,
@@ -207,7 +255,7 @@ export class MetricsService {
 
   // Get comprehensive metrics for overview (program breakdown)
   static async getOverviewMetrics(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ) {
     const programData = await this.getByProgram(assessmentType, filter);
@@ -238,7 +286,7 @@ export class MetricsService {
 
   // Get year metrics for drilldown
   static async getYearMetrics(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ) {
     const yearData = await this.getByYear(assessmentType, filter);
@@ -259,7 +307,7 @@ export class MetricsService {
 
   // Get gender metrics for drilldown
   static async getGenderMetrics(
-    assessmentType: "anxiety" | "depression" | "stress",
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
     filter?: MetricFilter
   ) {
     const genderData = await this.getByGender(assessmentType, filter);

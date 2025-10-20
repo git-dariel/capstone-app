@@ -22,8 +22,8 @@ export const InsightsContent: React.FC = () => {
   } = useInsights();
 
   useEffect(() => {
-    if (type && ["anxiety", "depression", "stress"].includes(type)) {
-      fetchInsights(type as "anxiety" | "depression" | "stress");
+    if (type && ["anxiety", "depression", "stress", "suicide", "checklist"].includes(type)) {
+      fetchInsights(type as "anxiety" | "depression" | "stress" | "suicide" | "checklist");
     } else {
       navigate("/dashboard");
     }
@@ -162,7 +162,7 @@ export const InsightsContent: React.FC = () => {
             />
 
             {/* Data Table */}
-            <div className="mt-6 sm:mt-8">
+            <div className="mt-4 sm:mt-6">
               <h3 className="text-sm sm:text-base font-medium text-gray-900 mb-3 sm:mb-4">
                 Detailed Breakdown
               </h3>

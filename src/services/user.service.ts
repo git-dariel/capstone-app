@@ -52,6 +52,7 @@ export interface ExportFilters {
   studentId?: string;
   firstName?: string;
   lastName?: string;
+  year?: string;
 }
 
 // Add these interfaces for avatar management
