@@ -190,7 +190,10 @@ export const UsersTable: React.FC = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await UserService.getAllUsers();
+      const response = await UserService.getAllUsers({
+        type: 'guidance',
+        limit: 100 // Increase limit to handle more guidance users
+      });
 
       // Debug logging to help identify the response format
       console.log("API Response:", response);
@@ -235,40 +238,36 @@ export const UsersTable: React.FC = () => {
         allUsers = [];
       }
 
-      // Filter for guidance users only and add defensive checks
-      const guidanceUsers = allUsers
-        .filter((user) => {
-          // Ensure user object has required properties
-          return user && user.type === "guidance";
-        })
-        .map((user) => {
-          // Ensure person property exists, if not create a default one
-          if (!user.person) {
-            console.warn("User missing person property, creating default:", user);
-            const rawUser = user as any; // Cast to any to access potentially different structure
-            return {
-              ...user,
-              person: {
-                id: rawUser.personId || user.id || "",
-                firstName: rawUser.firstName || "Unknown",
-                lastName: rawUser.lastName || "User",
-                email: rawUser.email || user.email || "",
-                middleName: rawUser.middleName || "",
-                contactNumber: rawUser.contactNumber || "",
-                gender: rawUser.gender || "",
-                birthDate: rawUser.birthDate || "",
-                birthPlace: rawUser.birthPlace || "",
-                age: rawUser.age || undefined,
-                religion: rawUser.religion || "",
-                civilStatus: rawUser.civilStatus || "",
-              },
-            };
-          }
-          return user;
-        });
+      // Since we're filtering by type=guidance on the backend, we get only guidance users
+      // Just add defensive checks for missing person property
+      const processedUsers = allUsers.map((user) => {
+        // Ensure person property exists, if not create a default one
+        if (!user.person) {
+          console.warn("User missing person property, creating default:", user);
+          const rawUser = user as any; // Cast to any to access potentially different structure
+          return {
+            ...user,
+            person: {
+              id: rawUser.personId || user.id || "",
+              firstName: rawUser.firstName || "Unknown",
+              lastName: rawUser.lastName || "User",
+              email: rawUser.email || user.email || "",
+              middleName: rawUser.middleName || "",
+              contactNumber: rawUser.contactNumber || "",
+              gender: rawUser.gender || "",
+              birthDate: rawUser.birthDate || "",
+              birthPlace: rawUser.birthPlace || "",
+              age: rawUser.age || undefined,
+              religion: rawUser.religion || "",
+              civilStatus: rawUser.civilStatus || "",
+            },
+          };
+        }
+        return user;
+      });
 
-      console.log("Filtered guidance users:", guidanceUsers);
-      setUsers(guidanceUsers);
+      console.log("Guidance users from API:", processedUsers);
+      setUsers(processedUsers);
     } catch (error: any) {
       setError(error.message || "Failed to fetch users");
     } finally {

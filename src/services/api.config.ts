@@ -46,6 +46,7 @@ export interface QueryParams {
   fields?: string;
   query?: string;
   order?: "asc" | "desc";
+  type?: string;
 }
 
 // Token management

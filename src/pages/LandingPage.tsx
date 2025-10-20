@@ -937,9 +937,9 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <div className="pt-8 border-t border-primary-200">
-                <p className="text-sm text-gray-500">Secure • HIPAA Compliant • FERPA Compliant • Available 24/7</p>
+                <p className="text-sm text-gray-500">Secure • HIPAA Compliant • FERPA Compliant</p>
               </div>
-            </div>
+          </div>
           </div>
         </div>
       </section>
@@ -959,7 +959,7 @@ export const LandingPage: React.FC = () => {
               Student Mental Health Assessment Platform - A comprehensive digital solution for mental health screening, counseling, and wellness support.
             </p>
             <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
-              <p>© 2024 Office of Guidance and Counseling Services. Academic use only. All rights reserved.</p>
+              <p>© 2025 Office of Guidance and Counseling Services. Academic use only. All rights reserved.</p>
               <p className="mt-1">HIPAA Compliant • FERPA Compliant • Secure & Confidential</p>
             </div>
           </div>

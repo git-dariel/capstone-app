@@ -73,7 +73,7 @@ export const AidFunctionContent: React.FC = () => {
               </button>
 
               {/* Future tab for additional aid functions */}
-              <button
+              {/* <button
                 onClick={() => setCurrentView("cooldown-management")}
                 className={`whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex-shrink-0 ${
                   currentView === "cooldown-management"
@@ -86,7 +86,7 @@ export const AidFunctionContent: React.FC = () => {
                 <span className="ml-2 bg-yellow-100 text-yellow-800 hidden sm:inline-block py-0.5 px-2.5 rounded-full text-xs font-medium">
                   Coming Soon
                 </span>
-              </button>
+              </button> */}
             </nav>
           </div>
         </div>

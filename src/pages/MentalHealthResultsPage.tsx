@@ -323,10 +323,10 @@ export const MentalHealthResultsPage: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 sm:gap-4 mt-6 sm:mt-8">
           <Button
-            onClick={() => navigate("/home")}
+            onClick={() => navigate("/student-dashboard")}
             className="w-full bg-primary-700 hover:bg-primary-800 text-white px-4 sm:px-6 py-3 rounded-lg font-medium"
           >
-            Continue to Home
+            Continue to Dashboard
           </Button>
           <Button
             onClick={() => navigate("/resources")}

@@ -66,10 +66,8 @@ export interface InventoryFormData {
         | "vocational";
       occupation: string; // Required in schema
       employer: {
-        firstName: string;
-        lastName: string;
-        middleName?: string;
-        address: {
+        name?: string;
+        address?: {
           houseNo?: number;
           street?: string;
           province?: string;
@@ -95,10 +93,8 @@ export interface InventoryFormData {
         | "vocational";
       occupation: string; // Required in schema
       employer: {
-        firstName: string;
-        lastName: string;
-        middleName?: string;
-        address: {
+        name?: string;
+        address?: {
           houseNo?: number;
           street?: string;
           province?: string;
@@ -124,10 +120,8 @@ export interface InventoryFormData {
         | "vocational";
       occupation: string; // Required in schema
       employer: {
-        firstName: string;
-        lastName: string;
-        middleName?: string;
-        address: {
+        name?: string;
+        address?: {
           houseNo?: number;
           street?: string;
           province?: string;

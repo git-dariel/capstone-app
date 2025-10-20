@@ -251,7 +251,7 @@ export const ResourcesContent: React.FC = () => {
                   </p>
                   <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
                     <p className="text-red-800 font-medium text-sm sm:text-base">
-                      📞 Student Counseling Center: Available 24/7
+                      📞 Student Counseling Center: Available during office hours
                     </p>
                     <p className="text-red-700 text-xs sm:text-sm mt-1">
                       Please don't hesitate to reach out for support. You don't have to face this
