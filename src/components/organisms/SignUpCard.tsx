@@ -10,6 +10,7 @@ import { AuthService } from "@/services/auth.service";
 interface SignUpFormData {
   firstName: string;
   lastName: string;
+  studentNumber: string;
   program: string;
   year: string;
   gender: string;

@@ -14,6 +14,7 @@ interface AuthState {
 interface SignUpFormData {
   firstName: string;
   lastName: string;
+  studentNumber: string;
   program: string;
   year: string;
   gender: string;
@@ -103,7 +104,7 @@ export const useAuth = () => {
         userName: formData.email, // Use email as username
         type: "student", // Default to student for signup
         role: "user", // Default to user role
-        studentNumber: generateStudentNumber(), // Generate a student number
+        studentNumber: formData.studentNumber, // Use provided student number
         program: mapProgramValue(formData.program),
         year: formData.year, // Use year from form data
       };
@@ -328,15 +329,6 @@ export const useAuth = () => {
     isAuthenticated,
   };
 };
-
-// Helper function to generate a simple student number
-function generateStudentNumber(): string {
-  const currentYear = new Date().getFullYear();
-  const randomNum = Math.floor(Math.random() * 9999)
-    .toString()
-    .padStart(4, "0");
-  return `${currentYear}-${randomNum}`;
-}
 
 // Helper function to map program values from form to proper program names
 function mapProgramValue(value: string): string {
