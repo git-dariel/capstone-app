@@ -1,6 +1,7 @@
 export { SignInForm } from "./SignInForm";
 export { SignUpForm } from "./SignUpForm";
 export { ConsentForm } from "./ConsentForm";
+export { TermsAndConditionsModal } from "./TermsAndConditionsModal";
 export { InventoryForm } from "./InventoryForm";
 export { TopNavigation } from "./TopNavigation";
 export { SidebarNavigation, MobileMenuToggle } from "./SidebarNavigation";

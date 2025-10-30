@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FormSelect } from "@/components/atoms/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { TermsAndConditionsModal } from "./TermsAndConditionsModal";
 import type { ConsentFormData } from "@/services";
 
 interface ConsentFormProps {
@@ -70,12 +71,7 @@ const concernLevels = [
   { value: "most_important", label: "Most Important" },
 ];
 
-export const ConsentForm: React.FC<ConsentFormProps> = ({
-  studentId,
-  onSubmit,
-  loading = false,
-  error,
-}) => {
+export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, loading = false, error }) => {
   const [formData, setFormData] = useState<ConsentFormData>({
     studentId,
     referred: "self",
@@ -106,6 +102,10 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
     services: "general_information",
   });
 
+  // State for Terms and Conditions
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onSubmit(formData);
@@ -131,7 +131,9 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
     formData.physical_symptoms &&
     formData.services &&
     // Check that at least some concerns are filled
-    Object.values(formData.concerns).some((value) => value !== undefined);
+    Object.values(formData.concerns).some((value) => value !== undefined) &&
+    // Check that terms are accepted
+    termsAccepted;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
@@ -143,9 +145,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
 
       {/* Referral Information */}
       <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
-          Referral Information
-        </h3>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Referral Information</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormSelect
@@ -170,9 +170,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
 
       {/* Financial and Personal Information */}
       <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
-          Personal Information
-        </h3>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
 
         <div className="space-y-4">
           <FormSelect
@@ -186,10 +184,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
           />
 
           <div>
-            <Label
-              htmlFor="guidance_reason"
-              className="text-sm font-medium text-gray-700 block mb-1"
-            >
+            <Label htmlFor="guidance_reason" className="text-sm font-medium text-gray-700 block mb-1">
               What brings you to guidance counseling?
             </Label>
             <textarea
@@ -257,9 +252,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       {/* Concerns Assessment */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Level of Concerns</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Please rate your level of concern in each area:
-        </p>
+        <p className="text-sm text-gray-600 mb-4">Please rate your level of concern in each area:</p>
 
         <div className="space-y-4">
           {Object.entries({
@@ -290,9 +283,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
                       type="radio"
                       name={`concern_${key}`}
                       value={level.value}
-                      checked={
-                        formData.concerns[key as keyof typeof formData.concerns] === level.value
-                      }
+                      checked={formData.concerns[key as keyof typeof formData.concerns] === level.value}
                       onChange={(e) => handleConcernChange(key, e.target.value)}
                       disabled={loading}
                       className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
@@ -322,13 +313,64 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
       </div>
 
       {/* Disclaimer */}
-      <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
+      {/* <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
         <p className="text-xs sm:text-sm text-blue-800">
-          <strong>Important:</strong> The information you provide will be used to create a
-          preliminary mental health assessment. This is for screening purposes only and should not
-          be considered a professional diagnosis. For comprehensive mental health evaluation, please
-          consult with qualified mental health professionals.
+          <strong>Important:</strong> The information you provide will be used to create a preliminary mental health
+          assessment. This is for screening purposes only and should not be considered a professional diagnosis. For
+          comprehensive mental health evaluation, please consult with qualified mental health professionals.
         </p>
+      </div> */}
+
+      {/* Terms and Conditions */}
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Terms and Conditions</h3>
+
+        <div className="space-y-4">
+          <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
+            <p className="text-xs sm:text-sm text-yellow-800">
+              <strong>Data Privacy Notice:</strong> Your personal information will be securely stored and used
+              exclusively for mental health assessments and counseling services. We ensure your privacy through
+              encryption, strict access controls, and adherence to privacy laws.
+            </p>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <input
+              type="checkbox"
+              id="terms-checkbox"
+              checked={termsAccepted}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  // Open modal when checkbox is checked
+                  setShowTermsModal(true);
+                } else {
+                  // Allow unchecking without modal
+                  setTermsAccepted(false);
+                }
+              }}
+              disabled={loading}
+              className="mt-1 w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
+            />
+            <label htmlFor="terms-checkbox" className="text-sm text-gray-700 cursor-pointer">
+              I acknowledge that I have read and agree to the{" "}
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="text-primary-700 hover:text-primary-800 underline font-medium"
+                disabled={loading}
+              >
+                Terms and Conditions
+              </button>{" "}
+              regarding the collection, use, and protection of my personal information for mental health assessment and
+              counseling purposes.
+            </label>
+          </div>
+
+          <p className="text-xs text-gray-600">
+            <strong>Note:</strong> Checking the box above will open the Terms and Conditions for you to review. You must
+            read and accept the terms to submit the consent form.
+          </p>
+        </div>
       </div>
 
       {/* Submit Button */}
@@ -341,6 +383,13 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({
           {loading ? "Submitting..." : "Submit Consent Form"}
         </Button>
       </div>
+
+      {/* Terms and Conditions Modal */}
+      <TermsAndConditionsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        onAccept={() => setTermsAccepted(true)}
+      />
     </form>
   );
 };
