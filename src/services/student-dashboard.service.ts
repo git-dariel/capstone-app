@@ -42,6 +42,7 @@ export interface AssessmentTrend {
   level: string;
   date: string;
   requiresIntervention?: boolean;
+  count?: number; // Number of assessments on this date
 }
 
 export interface AssessmentTrends {
@@ -138,9 +139,13 @@ export class StudentDashboardService {
   }
 
   // Get assessment trends for the authenticated student
-  static async getAssessmentTrends(_days: number = 30): Promise<AssessmentTrends> {
+  static async getAssessmentTrends(timeRange: string = "30d"): Promise<AssessmentTrends> {
     try {
-      const response = await MetricsService.fetchDashboardMetrics(["assessmentTrends"]);
+      const response = await MetricsService.fetchDashboardMetrics(
+        ["assessmentTrends"],
+        {},
+        { timeRange }
+      );
 
       if (response.data && response.data.length > 0) {
         const trends = response.data[0].assessmentTrends;
@@ -156,7 +161,7 @@ export class StudentDashboardService {
       console.error("Error fetching assessment trends:", error);
       // Return empty trends as fallback
       return {
-        period: "Last 30 days",
+        period: timeRange,
         startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         endDate: new Date().toISOString(),
         anxiety: [],
@@ -201,7 +206,7 @@ export class StudentDashboardService {
     try {
       const [summary, trends] = await Promise.all([
         this.getPersonalSummary(),
-        this.getAssessmentTrends(30),
+        this.getAssessmentTrends("30d"),
       ]);
 
       const insights: ProgressInsight[] = [];

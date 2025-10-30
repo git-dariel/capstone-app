@@ -1,6 +1,7 @@
 export { SignInForm } from "./SignInForm";
 export { SignUpForm } from "./SignUpForm";
 export { ConsentForm } from "./ConsentForm";
+export { TermsAndConditionsModal } from "./TermsAndConditionsModal";
 export { InventoryForm } from "./InventoryForm";
 export { TopNavigation } from "./TopNavigation";
 export { SidebarNavigation, MobileMenuToggle } from "./SidebarNavigation";
@@ -66,6 +67,7 @@ export { ProgressTrendChart } from "./ProgressTrendChart";
 export { SeverityIndicator } from "./SeverityIndicator";
 export { WarningCard } from "./WarningCard";
 export { AssessmentOverviewCard } from "./AssessmentOverviewCard";
+export { AssessmentTrendsChart } from "./AssessmentTrendsChart";
 export { RecommendationsPanel } from "./RecommendationsPanel";
 export { StudentProgressTable } from "./StudentProgressTable";
 export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";
