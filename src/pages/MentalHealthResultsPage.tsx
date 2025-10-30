@@ -23,12 +23,7 @@ export const MentalHealthResultsPage: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <div className="text-gray-400 mb-4">
-            <svg
-              className="w-10 h-10 sm:w-12 sm:h-12 mx-auto"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-10 h-10 sm:w-12 sm:h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -61,65 +56,48 @@ export const MentalHealthResultsPage: React.FC = () => {
 
   const getRiskLevelBgColor = (level: string) => {
     const lowerLevel = level.toLowerCase();
-    if (lowerLevel.includes("high") || lowerLevel.includes("urgent"))
-      return "bg-red-50 border-red-200";
-    if (lowerLevel.includes("medium") || lowerLevel.includes("moderate"))
-      return "bg-yellow-50 border-yellow-200";
+    if (lowerLevel.includes("high") || lowerLevel.includes("urgent")) return "bg-red-50 border-red-200";
+    if (lowerLevel.includes("medium") || lowerLevel.includes("moderate")) return "bg-yellow-50 border-yellow-200";
     return "bg-green-50 border-green-200";
   };
 
-  const getPerformanceIcon = (outlook: string) => {
-    switch (outlook.toLowerCase()) {
-      case "improved":
-        return (
-          <svg
-            className="w-6 h-6 text-green-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 11l3-3m0 0l3 3m-3-3v8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        );
-      case "declined":
-        return (
-          <svg
-            className="w-6 h-6 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 13l-3 3m0 0l-3-3m3 3V4M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        );
-      default:
-        return (
-          <svg
-            className="w-6 h-6 text-gray-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-            />
-          </svg>
-        );
-    }
-  };
+  // const getPerformanceIcon = (outlook: string) => {
+  //   switch (outlook.toLowerCase()) {
+  //     case "improved":
+  //       return (
+  //         <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //           <path
+  //             strokeLinecap="round"
+  //             strokeLinejoin="round"
+  //             strokeWidth={2}
+  //             d="M7 11l3-3m0 0l3 3m-3-3v8M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+  //           />
+  //         </svg>
+  //       );
+  //     case "declined":
+  //       return (
+  //         <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //           <path
+  //             strokeLinecap="round"
+  //             strokeLinejoin="round"
+  //             strokeWidth={2}
+  //             d="M17 13l-3 3m0 0l-3-3m3 3V4M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+  //           />
+  //         </svg>
+  //       );
+  //     default:
+  //       return (
+  //         <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //           <path
+  //             strokeLinecap="round"
+  //             strokeLinejoin="round"
+  //             strokeWidth={2}
+  //             d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+  //           />
+  //         </svg>
+  //       );
+  //   }
+  // };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -135,9 +113,7 @@ export const MentalHealthResultsPage: React.FC = () => {
             </div>
           </div>
           <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-              Predicted Mental Health Results
-            </h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900"> Mental Health Risk Assessment</h1>
             <p className="text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-0">
               Your personalized mental health screening results
             </p>
@@ -173,9 +149,9 @@ export const MentalHealthResultsPage: React.FC = () => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6">
           {/* Academic Performance Prediction */}
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+          {/* <div className="bg-white rounded-lg shadow p-4 sm:p-6">
             <div className="flex items-center mb-3 sm:mb-4">
               {getPerformanceIcon(prediction.academicPerformanceOutlook)}
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 ml-2">
@@ -190,33 +166,23 @@ export const MentalHealthResultsPage: React.FC = () => {
                 Confidence: {prediction.confidence}
               </div>
             </div>
-          </div>
+          </div> */}
 
           {/* Mental Health Risk Level */}
           <div
-            className={`rounded-lg shadow p-4 sm:p-6 border ${getRiskLevelBgColor(
-              prediction.mentalHealthRisk.level
-            )}`}
+            className={`rounded-lg shadow p-4 sm:p-6 border ${getRiskLevelBgColor(prediction.mentalHealthRisk.level)}`}
           >
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+            {/* <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 text-center">
               Mental Health Risk Assessment
-            </h3>
+            </h3> */}
             <div className="text-center py-3 sm:py-4">
               <div
-                className={`text-xl sm:text-2xl font-bold mb-2 ${getRiskLevelColor(
-                  prediction.mentalHealthRisk.level
-                )}`}
+                className={`text-xl sm:text-2xl font-bold mb-2 ${getRiskLevelColor(prediction.mentalHealthRisk.level)}`}
               >
                 {prediction.mentalHealthRisk.level}
               </div>
-              <div className="text-xs sm:text-sm text-gray-700 mb-3">
-                {prediction.mentalHealthRisk.description}
-              </div>
-              <div
-                className={`text-xs sm:text-sm font-medium ${getRiskLevelColor(
-                  prediction.mentalHealthRisk.level
-                )}`}
-              >
+              <div className="text-xs sm:text-sm text-gray-700 mb-3">{prediction.mentalHealthRisk.description}</div>
+              <div className={`text-xs sm:text-sm font-medium ${getRiskLevelColor(prediction.mentalHealthRisk.level)}`}>
                 {prediction.mentalHealthRisk.assessmentSummary}
               </div>
             </div>
@@ -224,32 +190,24 @@ export const MentalHealthResultsPage: React.FC = () => {
         </div>
 
         {/* Model Accuracy */}
-        <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-            Prediction Model Accuracy
-          </h3>
+        {/* <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Prediction Model Accuracy</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-              <div className="text-lg sm:text-xl font-bold text-gray-900">
-                {prediction.modelAccuracy.decisionTree}
-              </div>
+              <div className="text-lg sm:text-xl font-bold text-gray-900">{prediction.modelAccuracy.decisionTree}</div>
               <div className="text-xs sm:text-sm text-gray-600">Decision Tree Model</div>
             </div>
             <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-              <div className="text-lg sm:text-xl font-bold text-gray-900">
-                {prediction.modelAccuracy.randomForest}
-              </div>
+              <div className="text-lg sm:text-xl font-bold text-gray-900">{prediction.modelAccuracy.randomForest}</div>
               <div className="text-xs sm:text-sm text-gray-600">Random Forest Model</div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {/* Risk Factors */}
         {prediction.riskFactors && prediction.riskFactors.length > 0 && (
           <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-              Areas to Monitor
-            </h3>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Areas to Monitor</h3>
             <div className="space-y-2">
               {prediction.riskFactors.map((factor, index) => (
                 <div key={index} className="flex items-start">
@@ -312,9 +270,7 @@ export const MentalHealthResultsPage: React.FC = () => {
                 </svg>
               </div>
               <div className="sm:ml-3 text-center sm:text-left">
-                <p className="text-xs sm:text-sm text-amber-800">
-                  {prediction.mentalHealthRisk.disclaimer}
-                </p>
+                <p className="text-xs sm:text-sm text-amber-800">{prediction.mentalHealthRisk.disclaimer}</p>
               </div>
             </div>
           </div>
@@ -344,7 +300,6 @@ export const MentalHealthResultsPage: React.FC = () => {
             <p>• Access personalized resources and coping strategies</p>
             <p>• Connect with guidance counselors and mental health professionals</p>
             <p>• Track your progress over time with regular check-ins</p>
-            <p>• Join support groups and wellness programs</p>
           </div>
         </div>
       </div>
