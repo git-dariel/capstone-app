@@ -68,11 +68,17 @@ export class MetricsService {
   }
 
   // Method to fetch dashboard metrics for authenticated users
-  static async fetchDashboardMetrics(data: string[]): Promise<MetricResponse> {
+  static async fetchDashboardMetrics(
+    data: string[], 
+    filter?: MetricFilter, 
+    methodParams?: Record<string, any>
+  ): Promise<MetricResponse> {
     try {
-      console.log("📤 Sending dashboard metrics request:", JSON.stringify(data, null, 2));
+      console.log("📤 Sending dashboard metrics request:", JSON.stringify({ data, filter, methodParams }, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics/student/dashboard", {
         data,
+        filter,
+        methodParams,
       });
       console.log("📥 Received dashboard metrics response:", response);
       return response as any;

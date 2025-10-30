@@ -67,6 +67,7 @@ export { ProgressTrendChart } from "./ProgressTrendChart";
 export { SeverityIndicator } from "./SeverityIndicator";
 export { WarningCard } from "./WarningCard";
 export { AssessmentOverviewCard } from "./AssessmentOverviewCard";
+export { AssessmentTrendsChart } from "./AssessmentTrendsChart";
 export { RecommendationsPanel } from "./RecommendationsPanel";
 export { StudentProgressTable } from "./StudentProgressTable";
 export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";

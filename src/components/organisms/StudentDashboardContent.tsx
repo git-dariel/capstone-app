@@ -11,7 +11,7 @@ import type {
 } from "@/services/student-dashboard.service";
 import {
   AssessmentOverviewCard,
-  ProgressTrendChart,
+  AssessmentTrendsChart,
   WarningCard,
   RecommendationsPanel,
 } from "@/components/molecules";
@@ -30,8 +30,16 @@ export const StudentDashboardContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [assessmentTimeRanges, setAssessmentTimeRanges] = useState<Record<string, string>>({
+    anxiety: "30d",
+    depression: "30d",
+    stress: "30d",
+    checklist: "30d",
+    suicide: "30d",
+  });
 
-  const loadDashboardData = async (showRefreshing = false) => {
+  const loadDashboardData = async (showRefreshing = false, selectedTimeRange?: string) => {
+    const timeRangeToUse = selectedTimeRange || "30d";
     try {
       if (showRefreshing) {
         setRefreshing(true);
@@ -43,7 +51,7 @@ export const StudentDashboardContent: React.FC = () => {
       const [summary, history, trends, stats, insights] = await Promise.all([
         StudentDashboardService.getPersonalSummary(),
         StudentDashboardService.getAssessmentHistory(undefined, 5),
-        StudentDashboardService.getAssessmentTrends(30),
+        StudentDashboardService.getAssessmentTrends(timeRangeToUse),
         StudentDashboardService.getAssessmentStats(),
         StudentDashboardService.getProgressInsights(),
       ]);
@@ -90,6 +98,34 @@ export const StudentDashboardContent: React.FC = () => {
 
   const handleRefresh = () => {
     loadDashboardData(true);
+  };
+
+  const handleAssessmentTimeRangeChange = async (assessmentType: string, newTimeRange: string) => {
+    // Update the individual assessment time range
+    setAssessmentTimeRanges((prev) => ({
+      ...prev,
+      [assessmentType]: newTimeRange,
+    }));
+
+    // Reload only the trends data with the new time range
+    try {
+      setRefreshing(true);
+      const updatedTrends = await StudentDashboardService.getAssessmentTrends(newTimeRange);
+      
+      // Only update the specific assessment's data, keep others unchanged
+      setAssessmentTrends((prevTrends) => {
+        if (!prevTrends) return updatedTrends;
+        
+        return {
+          ...prevTrends,
+          [assessmentType]: updatedTrends[assessmentType as keyof typeof updatedTrends],
+        };
+      });
+    } catch (error: any) {
+      console.error(`Error loading ${assessmentType} trends:`, error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -294,36 +330,14 @@ export const StudentDashboardContent: React.FC = () => {
           </div>
         </div>
 
-        {/* Progress Trends */}
-        {assessmentTrends && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <ProgressTrendChart
-              data={assessmentTrends.anxiety}
-              title="Anxiety Progress (Last 30 Days)"
-              color="#8b5cf6"
-            />
-            <ProgressTrendChart
-              data={assessmentTrends.stress}
-              title="Stress Progress (Last 30 Days)"
-              color="#f59e0b"
-            />
-            <ProgressTrendChart
-              data={assessmentTrends.depression}
-              title="Depression Progress (Last 30 Days)"
-              color="#3b82f6"
-            />
-            <ProgressTrendChart
-              data={assessmentTrends.suicide}
-              title="Suicide Risk Assessment (Last 30 Days)"
-              color="#ef4444"
-            />
-            <ProgressTrendChart
-              data={assessmentTrends.checklist}
-              title="Personal Problems (Last 30 Days)"
-              color="#10b981"
-            />
-          </div>
-        )}
+        {/* Assessment Severity Trends */}
+        <AssessmentTrendsChart
+          trends={assessmentTrends || undefined}
+          title="Assessment Severity Trends"
+          description="Track how your mental health severity levels change over time"
+          onAssessmentTimeRangeChange={handleAssessmentTimeRangeChange}
+          currentTimeRange={assessmentTimeRanges["anxiety"] || "30d"}
+        />
 
         {/* Recent Assessment History */}
         {assessmentHistory.length > 0 && (
