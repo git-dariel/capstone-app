@@ -75,3 +75,7 @@ export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";
 export { VideoCallButton } from "./VideoCallButton";
 export { NotificationModal } from "./NotificationModal";
 export { AssessmentDetailModal } from "./AssessmentDetailModal";
+export { InventoryStatsGrid } from "./InventoryStatsGrid";
+export { InventoryInsightsHeader } from "./InventoryInsightsHeader";
+export { InventoryStudentList } from "./InventoryStudentList";
+export { AssessmentStudentList } from "./AssessmentStudentList";

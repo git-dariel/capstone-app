@@ -6,6 +6,9 @@ export interface MetricFilter {
   endDate?: string | Date;
   page?: number;
   limit?: number;
+  program?: string;
+  yearLevel?: string;
+  gender?: string;
 }
 
 export interface MetricRequest {
@@ -57,9 +60,7 @@ export class MetricsService {
   // Generic method to fetch metrics
   static async fetchMetrics(request: MetricRequest): Promise<MetricResponse> {
     try {
-      console.log("📤 Sending metrics request:", JSON.stringify(request, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics", request);
-      console.log("📥 Received metrics response:", response);
       return response as any;
     } catch (error) {
       console.error("Error fetching metrics:", error);
@@ -74,13 +75,11 @@ export class MetricsService {
     methodParams?: Record<string, any>
   ): Promise<MetricResponse> {
     try {
-      console.log("📤 Sending dashboard metrics request:", JSON.stringify({ data, filter, methodParams }, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics/student/dashboard", {
         data,
         filter,
         methodParams,
       });
-      console.log("📥 Received dashboard metrics response:", response);
       return response as any;
     } catch (error) {
       console.error("Error fetching dashboard metrics:", error);
@@ -91,12 +90,10 @@ export class MetricsService {
   // Method to fetch guidance dashboard metrics
   static async fetchGuidanceDashboardMetrics(data: string[], filter?: MetricFilter): Promise<MetricResponse> {
     try {
-      console.log("📤 Sending guidance dashboard metrics request:", JSON.stringify({ data, filter }, null, 2));
       const response = await HttpClient.post<MetricResponse>("/metrics/guidance/dashboard", {
         data,
         filter,
       });
-      console.log("📥 Received guidance dashboard metrics response:", response);
       return response as any;
     } catch (error) {
       console.error("Error fetching guidance dashboard metrics:", error);
@@ -256,7 +253,19 @@ export class MetricsService {
     };
 
     const response = await this.fetchMetrics(request);
-    return response.data[0]?.[metricKey] || [];
+    
+    // Try to access the data directly if it's in the response.data array
+    let result;
+    if (Array.isArray(response.data) && response.data[0]?.[metricKey]) {
+      result = response.data[0][metricKey];
+    } else if (Array.isArray(response.data)) {
+      // Data might be directly in response.data if it's an array of gender objects
+      result = response.data;
+    } else {
+      result = [];
+    }
+    
+    return result;
   }
 
   // Get comprehensive metrics for overview (program breakdown)
@@ -303,6 +312,7 @@ export class MetricsService {
     return {
       data: yearData.map((item, index) => ({
         label: `${item.year} Year`,
+        rawValue: item.year, // Store the raw year value (e.g., "4th")
         value: item.count,
         percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
         color: colors[index % colors.length],
@@ -336,6 +346,36 @@ export class MetricsService {
       })),
       total,
     };
+  }
+
+  // Get student list for assessments
+  static async getAssessmentStudentList(
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
+    filter?: MetricFilter
+  ) {
+    let model: string;
+    let metricKey: string;
+    
+    // Handle special cases for suicide and checklist
+    if (assessmentType === "suicide") {
+      model = "Suicide";
+      metricKey = "assessmentStudentList";
+    } else if (assessmentType === "checklist") {
+      model = "PersonalProblemsChecklist";
+      metricKey = "assessmentStudentList";
+    } else {
+      model = assessmentType.charAt(0).toUpperCase() + assessmentType.slice(1);
+      metricKey = "assessmentStudentList";
+    }
+
+    const request: MetricRequest = {
+      model,
+      data: [metricKey],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    return response.data[0]?.[metricKey] || [];
   }
 
   // Retake Request Metrics
@@ -413,5 +453,253 @@ export class MetricsService {
       })),
       total,
     };
+  }
+
+  // Inventory Metrics Methods
+  static async getInventoryStats(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["inventoryStats"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const stats = response.data[0]?.inventoryStats || {};
+
+    return {
+      totalRecords: stats.totalRecords || 0,
+      highRiskCount: stats.highRiskCount || 0,
+      completionRate: stats.completionRate || 0,
+      avgBmi: stats.avgBmi || 0,
+    };
+  }
+
+  static async getInventoryAvailableYears(): Promise<number[]> {
+    try {
+      const response = await this.fetchMetrics({
+        model: "Inventory",
+        data: ["availableYears"],
+      });
+
+      const years = response.data[0]?.availableYears || [];
+      if (years.length > 0) {
+        return years.sort((a: number, b: number) => b - a);
+      }
+
+      throw new Error("No years data available");
+    } catch (error) {
+      console.error("Error fetching available years:", error);
+      const currentYear = new Date().getFullYear();
+      return [currentYear, currentYear - 1, currentYear - 2];
+    }
+  }
+
+  static async getMentalHealthPredictionOverview(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["mentalHealthPredictionDistribution"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.mentalHealthPredictionDistribution || [];
+
+    const colors: Record<string, string> = {
+      "Low Risk": "#10B981",
+      "Moderate Risk": "#F59E0B",
+      "High Risk": "#EF4444",
+      "Critical Risk": "#8B5CF6",
+    };
+
+    const total = data.reduce((sum: number, item: any) => sum + item.count, 0);
+
+    return {
+      data: data.map((item: any) => ({
+        label: item.risk,
+        value: item.count,
+        percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+        color: colors[item.risk] || "#6B7280",
+      })),
+      total,
+    };
+  }
+
+  static async getBMICategoryOverview(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["bmiCategoryDistribution"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.bmiCategoryDistribution || [];
+
+    const colors: Record<string, string> = {
+      "Underweight": "#3B82F6",
+      "Normal": "#10B981",
+      "Overweight": "#F59E0B",
+      "Obese": "#EF4444",
+    };
+
+    const total = data.reduce((sum: number, item: any) => sum + item.count, 0);
+
+    return {
+      data: data.map((item: any) => ({
+        label: item.category,
+        value: item.count,
+        percentage: total > 0 ? Math.round((item.count / total) * 100) : 0,
+        color: colors[item.category] || "#6B7280",
+      })),
+      total,
+    };
+  }
+
+  static async getMentalHealthPredictionByProgram(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["mentalHealthPredictionByProgram"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.mentalHealthPredictionByProgram || [];
+
+    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.program,
+        value: item.total,
+        percentage: 0, // Will be calculated after
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getMentalHealthPredictionByYear(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["mentalHealthPredictionByYear"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.mentalHealthPredictionByYear || [];
+
+    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.year,
+        value: item.total,
+        percentage: 0,
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getMentalHealthPredictionByGender(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["mentalHealthPredictionByGender"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.mentalHealthPredictionByGender || [];
+
+    const colors = ["#3B82F6", "#EC4899"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.gender,
+        value: item.total,
+        percentage: 0,
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getBMICategoryByProgram(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["bmiCategoryByProgram"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.bmiCategoryByProgram || [];
+
+    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.program,
+        value: item.total,
+        percentage: 0,
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getBMICategoryByYear(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["bmiCategoryByYear"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.bmiCategoryByYear || [];
+
+    const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.year,
+        value: item.total,
+        percentage: 0,
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getBMICategoryByGender(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["bmiCategoryByGender"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    const data = response.data[0]?.bmiCategoryByGender || [];
+
+    const colors = ["#3B82F6", "#EC4899"];
+
+    return {
+      data: data.map((item: any, index: number) => ({
+        label: item.gender,
+        value: item.total,
+        percentage: 0,
+        color: colors[index % colors.length],
+      })),
+      total: data.reduce((sum: number, item: any) => sum + item.total, 0),
+    };
+  }
+
+  static async getInventoryStudentList(filter?: MetricFilter) {
+    const request: MetricRequest = {
+      model: "Inventory",
+      data: ["inventoryStudentList"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    return response.data[0]?.inventoryStudentList || [];
   }
 }
