@@ -7,7 +7,7 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "full";
 }
 
 export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, size = "md" }) => {
@@ -18,24 +18,41 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
     md: "max-w-lg",
     lg: "max-w-2xl",
     xl: "max-w-4xl",
+    full: "max-w-none w-full h-full",
   };
 
+  const containerClasses = size === "full" 
+    ? "flex h-full w-full p-0 items-stretch justify-stretch" 
+    : "flex min-h-full items-center justify-center p-4";
+
+  const modalClasses = size === "full"
+    ? "relative w-full h-full bg-white shadow-xl transform transition-all flex flex-col"
+    : cn(
+        "relative w-full bg-white rounded-lg shadow-xl transform transition-all",
+        sizeClasses[size]
+      );
+
+  const headerClasses = size === "full"
+    ? "flex items-center justify-between px-6 py-4 border-b border-gray-200 flex-shrink-0"
+    : "flex items-center justify-between px-6 py-4 border-b border-gray-200";
+
+  const contentClasses = size === "full"
+    ? "flex-1 overflow-y-auto"
+    : "px-6 py-4";
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-hidden">
       {/* Backdrop */}
       <div className="fixed inset-0 backdrop-blur-sm transition-all" onClick={onClose} />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className={containerClasses}>
         <div
-          className={cn(
-            "relative w-full bg-white rounded-lg shadow-xl transform transition-all",
-            sizeClasses[size]
-          )}
+          className={modalClasses}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <div className={headerClasses}>
             <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
             <button
               onClick={onClose}
@@ -46,7 +63,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
           </div>
 
           {/* Content */}
-          <div className="px-6 py-4">{children}</div>
+          <div className={contentClasses}>{children}</div>
         </div>
       </div>
     </div>

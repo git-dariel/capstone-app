@@ -22,6 +22,7 @@ export interface SuicideAssessment {
     crisisProtocolRequired: boolean;
     safetyPlanNeeded: boolean;
     riskScore?: number;
+    recommendations: string[];
   };
   createdAt: string;
   updatedAt: string;

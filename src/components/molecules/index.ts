@@ -69,6 +69,7 @@ export { WarningCard } from "./WarningCard";
 export { AssessmentOverviewCard } from "./AssessmentOverviewCard";
 export { AssessmentTrendsChart } from "./AssessmentTrendsChart";
 export { RecommendationsPanel } from "./RecommendationsPanel";
+export { RecommendationsCard } from "./RecommendationsCard";
 export { StudentProgressTable } from "./StudentProgressTable";
 export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";
 export { VideoCallButton } from "./VideoCallButton";

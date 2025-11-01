@@ -8,10 +8,12 @@ import {
   RetakeRequestsTable,
   StressQuestionnaire,
   SuicideQuestionnaire,
+  RecommendationsCard,
 } from "@/components/molecules";
 import { useAnxiety, useAuth, useChecklist, useDepression, useStress, useSuicide } from "@/hooks";
 import type { CooldownInfo } from "@/services/stress.service";
-import { AlertCircle, CheckCircle, Clock, FileText } from "lucide-react";
+import { activityCategories, type Activity } from "@/data/activities";
+import { AlertCircle, CheckCircle, Clock, FileText, Play, BookOpen, Headphones, Heart } from "lucide-react";
 import React, { useState } from "react";
 
 type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | "checklist" | null;
@@ -159,22 +161,143 @@ export const ResourcesContent: React.FC = () => {
     }
   };
 
+  const getRecommendedActivities = (assessmentType: AssessmentType, severityLevel?: string): Activity[] => {
+    if (!assessmentType || !severityLevel) return [];
+
+    const normalizedSeverity = severityLevel.toLowerCase().replace("_", " ");
+    const allActivities = activityCategories.flatMap((category) => category.activities);
+
+    // Filter activities based on assessment type and severity
+    let recommendedActivities: Activity[] = [];
+
+    switch (assessmentType) {
+      case "anxiety":
+        // For anxiety, prioritize breathing exercises and mindfulness
+        recommendedActivities = allActivities.filter(
+          (activity) =>
+            activity.type === "breathing" ||
+            activity.type === "audio" ||
+            activity.benefits.some(
+              (benefit) =>
+                benefit.toLowerCase().includes("anxiety") ||
+                benefit.toLowerCase().includes("calm") ||
+                benefit.toLowerCase().includes("stress")
+            )
+        );
+        break;
+
+      case "depression":
+        // For depression, prioritize mood-boosting activities
+        recommendedActivities = allActivities.filter(
+          (activity) =>
+            activity.type === "exercise" ||
+            activity.type === "video" ||
+            activity.benefits.some(
+              (benefit) =>
+                benefit.toLowerCase().includes("mood") ||
+                benefit.toLowerCase().includes("depression") ||
+                benefit.toLowerCase().includes("energy")
+            )
+        );
+        break;
+
+      case "stress":
+        // For stress, prioritize relaxation and physical activities
+        recommendedActivities = allActivities.filter(
+          (activity) =>
+            activity.type === "breathing" ||
+            activity.type === "exercise" ||
+            activity.type === "audio" ||
+            activity.benefits.some(
+              (benefit) =>
+                benefit.toLowerCase().includes("stress") ||
+                benefit.toLowerCase().includes("relax") ||
+                benefit.toLowerCase().includes("tension")
+            )
+        );
+        break;
+
+      case "suicide":
+        // For suicide risk, prioritize immediate coping and grounding activities
+        recommendedActivities = allActivities.filter(
+          (activity) =>
+            activity.type === "breathing" ||
+            activity.type === "video" ||
+            activity.benefits.some(
+              (benefit) =>
+                benefit.toLowerCase().includes("grounding") ||
+                benefit.toLowerCase().includes("immediate") ||
+                benefit.toLowerCase().includes("panic")
+            )
+        );
+        break;
+
+      case "checklist":
+        // For general checklist, provide a balanced mix
+        recommendedActivities = allActivities.filter(
+          (activity) => activity.isRecommended || activity.type === "breathing" || activity.type === "exercise"
+        );
+        break;
+
+      default:
+        recommendedActivities = allActivities.filter((activity) => activity.isRecommended);
+    }
+
+    // Adjust recommendations based on severity
+    if (normalizedSeverity.includes("severe") || normalizedSeverity.includes("high")) {
+      // For severe cases, prioritize beginner-friendly, immediate relief activities
+      recommendedActivities = recommendedActivities
+        .filter((activity) => activity.difficulty === "beginner")
+        .sort((a, b) => {
+          // Prioritize shorter duration activities for immediate relief
+          const aDuration = parseInt(a.duration) || 999;
+          const bDuration = parseInt(b.duration) || 999;
+          return aDuration - bDuration;
+        });
+    } else if (normalizedSeverity.includes("moderate") || normalizedSeverity.includes("mild")) {
+      // For moderate cases, include beginner and intermediate activities
+      recommendedActivities = recommendedActivities.filter(
+        (activity) => activity.difficulty === "beginner" || activity.difficulty === "intermediate"
+      );
+    }
+
+    // Return top 6 activities to avoid overwhelming the user
+    return recommendedActivities.slice(0, 6);
+  };
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case "breathing":
+        return <Heart className="w-5 h-5" />;
+      case "video":
+        return <Play className="w-5 h-5" />;
+      case "audio":
+        return <Headphones className="w-5 h-5" />;
+      case "reading":
+        return <BookOpen className="w-5 h-5" />;
+      case "exercise":
+        return <Heart className="w-5 h-5" />;
+      default:
+        return <CheckCircle className="w-5 h-5" />;
+    }
+  };
+
   const renderResultsModal = () => {
     if (!submissionState.success || !submissionState.results) return null;
 
     // Handle different response structures for different assessment types
-    const analysis = currentAssessment === "checklist" 
-      ? submissionState.results.checklist_analysis 
-      : submissionState.results.analysis;
-    
+    const analysis =
+      currentAssessment === "checklist" ? submissionState.results.checklist_analysis : submissionState.results.analysis;
+
     const { totalScore } = submissionState.results;
     const assessmentName = currentAssessment
       ? currentAssessment.charAt(0).toUpperCase() + currentAssessment.slice(1)
       : "Assessment";
 
-    // For checklist, we show total problems checked instead of totalScore
+    // For suicide and checklist, we do not display a total score in the UI
+    const shouldShowScore = !(currentAssessment === "suicide" || currentAssessment === "checklist");
+    // For checklist, if needed elsewhere, we compute but won't render in the summary
     const displayScore = currentAssessment === "checklist" ? analysis?.totalProblemsChecked : totalScore;
-
     const scoreLabel = currentAssessment === "checklist" ? "Problems Identified" : "Total Score";
 
     // Handle different assessment types
@@ -185,12 +308,12 @@ export const ResourcesContent: React.FC = () => {
         ? analysis?.riskLevel
         : analysis?.severityLevel;
 
-    const displayDescription =
-      currentAssessment === "suicide"
-        ? analysis?.riskDescription
-        : currentAssessment === "checklist"
-        ? analysis?.disclaimer
-        : analysis?.severityDescription;
+    // const displayDescription =
+    //   currentAssessment === "suicide"
+    //     ? analysis?.riskDescription
+    //     : currentAssessment === "checklist"
+    //     ? analysis?.disclaimer
+    //     : analysis?.severityDescription;
 
     // Determine severity level color and styling
     const getSeverityColor = (level: string) => {
@@ -238,150 +361,240 @@ export const ResourcesContent: React.FC = () => {
     const severityColors = getSeverityColor(displayLevel || "");
 
     return (
-      <Modal isOpen={submissionState.success} onClose={handleCloseModal} title="Assessment Results" size="xl">
-        <div className="max-w-3xl mx-auto px-3 sm:px-4 lg:px-6">
-          {/* Hero Section - Prominent Result Display */}
-          <div
-            className={`${severityColors.bg} ${severityColors.border} border-2 rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 mb-4 sm:mb-6 lg:mb-8 text-center`}
-          >
-            <div className="flex items-center justify-center mb-2 sm:mb-3 lg:mb-4">
-              <CheckCircle
-                className={`w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 ${severityColors.icon}`}
-              />
-            </div>
+      <Modal isOpen={submissionState.success} onClose={handleCloseModal} title="Assessment Results" size="full">
+        <div className="h-full flex flex-col bg-gray-50">
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-7xl mx-auto p-6 lg:p-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Summary Column */}
+                <section className="lg:col-span-4 space-y-6">
+                  {/* Result Summary Card */}
+                  <div className={`rounded-xl border ${severityColors.border} bg-white`}>
+                    <div className={`px-6 py-5 border-b ${severityColors.border} ${severityColors.bg}`}>
+                      <div className="flex items-center gap-3">
+                        <CheckCircle className={`w-6 h-6 ${severityColors.icon}`} />
+                        <h2 className="text-lg font-semibold text-gray-900">{assessmentName} Assessment</h2>
+                      </div>
+                    </div>
+                    <div className="px-6 py-5 space-y-5">
+                      {/* Severity */}
+                      <div className="flex flex-col items-center text-center">
+                        <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Result</p>
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${severityColors.badge}`}
+                        >
+                          {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
+                        </span>
+                      </div>
 
-            <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-gray-900 mb-2">
-              {assessmentName} Assessment Complete
-            </h2>
+                      {/* Metrics */}
+                      <div className={"grid gap-4 " + (shouldShowScore ? "grid-cols-2" : "grid-cols-1")}>
+                        {shouldShowScore && (
+                          <div className="rounded-lg border border-gray-200 p-4 text-center">
+                            <p className="text-xs text-gray-500">{scoreLabel}</p>
+                            <p className="text-2xl font-bold text-gray-900">{displayScore}</p>
+                          </div>
+                        )}
+                        <div className="rounded-lg border border-gray-200 p-4 text-center">
+                          <p className="text-xs text-gray-500">Assessment Date</p>
+                          <p className="text-base font-medium text-gray-900">{new Date().toLocaleDateString()}</p>
+                        </div>
+                      </div>
 
-            {/* Severity Level - Most Prominent */}
-            <div className="mb-3 sm:mb-4">
-              <p className="text-xs sm:text-sm text-gray-600 mb-2">Your Result</p>
-              <div
-                className={`inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 md:px-6 md:py-3 rounded-full text-base sm:text-lg md:text-xl font-bold ${severityColors.badge}`}
-              >
-                {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
-              </div>
-            </div>
-
-            {/* Score Display */}
-            <div className="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-8 mt-4 sm:mt-6">
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">{scoreLabel}</p>
-                <p className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">{displayScore}</p>
-              </div>
-              <div className="hidden sm:block h-8 md:h-12 w-px bg-gray-300"></div>
-              <div className="sm:hidden w-full h-px bg-gray-300"></div>
-              <div>
-                <p className="text-xs sm:text-sm text-gray-600">Assessment Date</p>
-                <p className="text-sm sm:text-base md:text-lg font-medium text-gray-900">
-                  {new Date().toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Professional Help Alert - High Priority */}
-          {(analysis?.needsProfessionalHelp || analysis?.requiresImmediateIntervention) && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 lg:mb-8">
-              <div className="flex flex-col sm:flex-row items-start space-y-3 sm:space-y-0 sm:space-x-4">
-                <AlertCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 flex-shrink-0 mx-auto sm:mx-0 sm:mt-1" />
-                <div className="text-center sm:text-left">
-                  <h3 className="text-base sm:text-lg md:text-xl font-bold text-red-800 mb-2">
-                    🚨 Professional Support Recommended
-                  </h3>
-                  <p className="text-sm sm:text-base md:text-lg text-red-700 mb-3 sm:mb-4">
-                    Based on your results, we strongly recommend speaking with a mental health professional.
-                  </p>
-                  <div className="bg-white rounded-lg p-3 sm:p-4 border border-red-200">
-                    <p className="text-red-800 font-medium text-sm sm:text-base">
-                      📞 Student Counseling Center: Available during office hours
-                    </p>
-                    <p className="text-red-700 text-xs sm:text-sm mt-1">
-                      Please don't hesitate to reach out for support. You don't have to face this alone.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Analysis Section */}
-          {displayDescription && (
-            <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center sm:justify-start">
-                📊 What This Means
-              </h3>
-              <div className="prose prose-gray max-w-none">
-                <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed text-center sm:text-left">
-                  {displayDescription}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Recommendations Section */}
-          {analysis?.recommendationMessage && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4 md:p-6 mb-3 sm:mb-4 md:mb-6">
-              <h3 className="text-base sm:text-lg md:text-xl font-bold text-blue-900 mb-2 sm:mb-3 md:mb-4 flex items-center justify-center sm:justify-start">
-                💡 Personalized Recommendations
-              </h3>
-              <div className="prose prose-blue max-w-none">
-                <p className="text-blue-800 text-sm sm:text-base md:text-lg leading-relaxed text-center sm:text-left">
-                  {analysis.recommendationMessage}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Score Breakdown - Collapsible/Secondary */}
-          {analysis?.scoreBreakdown && (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 lg:mb-8">
-              <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-2 sm:mb-3 md:mb-4 text-center sm:text-left">
-                📈 Detailed Score Breakdown
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-                {Object.entries(analysis.scoreBreakdown).map(([key, value]) => (
-                  <div key={key} className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200">
-                    <div className="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
-                      <span className="text-gray-700 font-medium capitalize text-xs sm:text-sm md:text-base mb-1 sm:mb-0">
-                        {key.replace(/_/g, " ")}
-                      </span>
-                      <span className="text-base sm:text-lg md:text-xl font-bold text-gray-900">{value as number}</span>
+                      {/* Key message (if any) */}
+                      {analysis?.recommendationMessage && (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                          <p className="text-sm text-blue-900">{analysis.recommendationMessage}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+
+                  {/* Safety Notice for high risk */}
+                  {displayLevel &&
+                    (displayLevel.toLowerCase().includes("high") || displayLevel.toLowerCase().includes("severe")) && (
+                      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                        <p className="text-sm font-semibold text-red-800">Immediate attention recommended.</p>
+                        <p className="text-sm text-red-700 mt-1">
+                          If there is imminent risk, contact emergency services or a crisis hotline right away.
+                        </p>
+                      </div>
+                    )}
+                </section>
+
+                {/* Detail Column */}
+                <section className="lg:col-span-8 space-y-6">
+                  {/* Clinical Interpretation */}
+                  {/* {displayDescription && (
+                    <div className="rounded-xl border border-gray-200 bg-white">
+                      <div className="px-6 py-5 border-b border-gray-200">
+                        <h3 className="text-base font-semibold text-gray-900">Clinical Interpretation</h3>
+                      </div>
+                      <div className="px-6 py-5">
+                        <p className="text-gray-700 leading-relaxed">{displayDescription}</p>
+                      </div>
+                    </div>
+                  )} */}
+
+                  {/* Recommendations */}
+                  {analysis?.recommendations && analysis.recommendations.length > 0 && (
+                    <div className="rounded-xl border border-gray-200 bg-white">
+                      <div className="px-6 py-5">
+                        <RecommendationsCard
+                          recommendations={analysis.recommendations}
+                          assessmentType={currentAssessment!}
+                          severity={displayLevel}
+                          className="border-0"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recommended Activities */}
+                  {(() => {
+                    const recommendedActivities = getRecommendedActivities(currentAssessment, displayLevel);
+                    return (
+                      recommendedActivities.length > 0 && (
+                        <div className="rounded-xl border border-gray-200 bg-white">
+                          <div className="px-6 py-5 border-b border-gray-200">
+                            <h3 className="text-base font-semibold text-gray-900">Recommended Activities</h3>
+                            <p className="text-sm text-gray-600 mt-1">
+                              Activities specifically selected based on your assessment results
+                            </p>
+                          </div>
+                          <div className="px-6 py-5">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              {recommendedActivities.map((activity) => (
+                                <div
+                                  key={activity.id}
+                                  className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:bg-primary-50 transition-colors"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex-shrink-0 text-primary-600 mt-0.5">
+                                      {getActivityIcon(activity.type)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-2">
+                                        <h4 className="text-sm font-semibold text-gray-900 truncate">
+                                          {activity.title}
+                                        </h4>
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                          {activity.duration}
+                                        </span>
+                                      </div>
+                                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{activity.description}</p>
+                                      <div className="flex flex-wrap gap-1 mb-3">
+                                        {activity.benefits.slice(0, 2).map((benefit) => (
+                                          <span
+                                            key={benefit}
+                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+                                          >
+                                            {benefit}
+                                          </span>
+                                        ))}
+                                      </div>
+                                      {activity.url && (
+                                        <a
+                                          href={activity.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
+                                        >
+                                          Start Activity
+                                          <svg className="ml-1 w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </a>
+                                      )}
+                                      {activity.instructions && !activity.url && (
+                                        <button
+                                          onClick={() => {
+                                            const activityData = encodeURIComponent(JSON.stringify(activity));
+                                            const timerUrl = `/activity-timer?activity=${activityData}`;
+                                            window.open(timerUrl, "_blank");
+                                          }}
+                                          className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
+                                        >
+                                          Start Activity
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    );
+                  })()}
+
+                  {/* Score Breakdown */}
+                  {/* {analysis?.scoreBreakdown && (
+                    <div className="rounded-xl border border-gray-200 bg-white">
+                      <div className="px-6 py-5 border-b border-gray-200">
+                        <h3 className="text-base font-semibold text-gray-900">Score Breakdown</h3>
+                      </div>
+                      <div className="px-6 py-5 overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Domain</th>
+                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {Object.entries(analysis.scoreBreakdown).map(([key, value]) => (
+                              <tr key={key}>
+                                <td className="px-4 py-2 text-sm text-gray-700 capitalize">{key.replace(/_/g, " ")}</td>
+                                <td className="px-4 py-2 text-sm font-semibold text-gray-900">{value as number}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )} */}
+                </section>
               </div>
             </div>
-          )}
-
-          {/* Action Buttons - Enhanced */}
-          <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
-            <button
-              onClick={() => {
-                handleCloseModal();
-                window.location.href = "/resources";
-              }}
-              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-primary-700 text-white rounded-xl hover:bg-primary-800 transition-all duration-200 font-semibold text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              ✨ Take Another Assessment
-            </button>
-            <button
-              onClick={() => {
-                handleCloseModal();
-                window.location.href = "/history";
-              }}
-              className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 transition-all duration-200 font-semibold text-sm sm:text-base md:text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-            >
-              📋 View All Results
-            </button>
           </div>
 
-          {/* Additional Resources */}
-          <div className="mt-4 sm:mt-6 md:mt-8 pt-3 sm:pt-4 md:pt-6 border-t border-gray-200">
-            <p className="text-center text-xs sm:text-sm text-gray-500">
-              💙 Remember: Seeking help is a sign of strength, not weakness.
-            </p>
+          {/* Footer actions */}
+          <div className="border-t border-gray-200 bg-white p-4 lg:p-6">
+            <div className="max-w-7xl mx-auto flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex gap-3 w-full sm:w-auto">
+                <button
+                  onClick={() => {
+                    handleCloseModal();
+                    window.location.href = "/history";
+                  }}
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  View All Results
+                </button>
+                {/* <button
+                  onClick={() => window.print()}
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Print Report
+                </button> */}
+              </div>
+              <button
+                onClick={() => {
+                  handleCloseModal();
+                  window.location.href = "/resources";
+                }}
+                className="w-full sm:w-auto inline-flex items-center justify-center rounded-md bg-primary-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-800"
+              >
+                Return to Assessments
+              </button>
+            </div>
           </div>
         </div>
       </Modal>

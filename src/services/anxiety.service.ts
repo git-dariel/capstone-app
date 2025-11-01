@@ -38,6 +38,7 @@ export interface AnxietyAssessment {
     severityDescription: string;
     recommendationMessage: string;
     needsProfessionalHelp: boolean;
+    recommendations: string[];
   };
   cooldownInfo?: CooldownInfo;
   createdAt: string;
