@@ -1,6 +1,7 @@
 import { useAnxiety, useAuth, useChecklist, useDepression, useStress, useSuicide } from "@/hooks";
-import { AlertCircle, Calendar, Clock, Loader2, Search } from "lucide-react";
+import { AlertCircle, Calendar, Clock, Loader2, Search, ChevronRight } from "lucide-react";
 import React, { useEffect, useMemo, useState } from "react";
+import { AssessmentDetailModal } from "@/components/molecules";
 
 interface AssessmentHistoryItem {
   id: string;
@@ -74,6 +75,8 @@ export const HistoryContent: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [displayCount, setDisplayCount] = useState(10);
+  const [selectedAssessment, setSelectedAssessment] = useState<AssessmentHistoryItem | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { fetchAssessments: fetchAnxietyAssessments } = useAnxiety();
   const { fetchAssessments: fetchDepressionAssessments } = useDepression();
@@ -193,6 +196,16 @@ export const HistoryContent: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRowClick = (assessment: AssessmentHistoryItem) => {
+    setSelectedAssessment(assessment);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedAssessment(null);
   };
 
   useEffect(() => {
@@ -338,7 +351,7 @@ export const HistoryContent: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   {loading
                     ? "Loading assessments..."
-                    : `Showing ${displayedHistory.length} of ${filteredHistory.length} assessments`}
+                    : `Showing ${displayedHistory.length} of ${filteredHistory.length} assessments • Click any row for details`}
                 </p>
               </div>
             </div>
@@ -407,12 +420,19 @@ export const HistoryContent: React.FC = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Time
                       </th>
+                      <th className="relative px-6 py-3">
+                        <span className="sr-only">View Details</span>
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {displayedHistory.map((assessment, _index) => {
                       return (
-                        <tr key={assessment.id} className="hover:bg-primary-50 transition-colors">
+                        <tr 
+                          key={assessment.id} 
+                          className="hover:bg-primary-50 transition-colors cursor-pointer"
+                          onClick={() => handleRowClick(assessment)}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div
                               className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(
@@ -461,6 +481,9 @@ export const HistoryContent: React.FC = () => {
                               <span>{formatTime(assessment.date || assessment.createdAt)}</span>
                             </div>
                           </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <ChevronRight className="w-5 h-5 text-gray-400" />
+                          </td>
                         </tr>
                       );
                     })}
@@ -472,7 +495,8 @@ export const HistoryContent: React.FC = () => {
                   {displayedHistory.map((assessment, _index) => (
                     <div
                       key={assessment.id}
-                      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleRowClick(assessment)}
                     >
                       {/* Assessment Type and Score Row */}
                       <div className="flex items-center justify-between mb-3">
@@ -521,6 +545,7 @@ export const HistoryContent: React.FC = () => {
                         <div className="flex items-center">
                           <Clock className="w-4 h-4 mr-1" />
                           <span>{formatTime(assessment.date || assessment.createdAt)}</span>
+                          <ChevronRight className="w-4 h-4 ml-2 text-gray-400" />
                         </div>
                       </div>
                     </div>
@@ -540,6 +565,13 @@ export const HistoryContent: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Assessment Detail Modal */}
+        <AssessmentDetailModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          assessment={selectedAssessment}
+        />
       </div>
     </main>
   );

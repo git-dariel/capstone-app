@@ -32,7 +32,8 @@ const severityLevelMap: Record<string, number> = {
   minimal: 1,
   mild: 2,
   moderate: 3,
-  severe: 4,
+  moderately_severe: 4,
+  severe: 5,
   "extremely severe": 5,
 
   // Suicide risk levels

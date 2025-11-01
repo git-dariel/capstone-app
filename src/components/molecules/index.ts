@@ -74,3 +74,4 @@ export { StudentProgressTable } from "./StudentProgressTable";
 export { DiceBearAvatarSelector } from "./DiceBearAvatarSelector";
 export { VideoCallButton } from "./VideoCallButton";
 export { NotificationModal } from "./NotificationModal";
+export { AssessmentDetailModal } from "./AssessmentDetailModal";
