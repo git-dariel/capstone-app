@@ -18,3 +18,4 @@ export { useNotifications } from "./useNotifications";
 export { useAppointments } from "./useAppointments";
 export { useSchedules } from "./useSchedules";
 export { useToast } from "./useToast";
+export { useInventoryInsights } from "./useInventoryInsights";

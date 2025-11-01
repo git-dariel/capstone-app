@@ -1,9 +1,10 @@
 import { MetricsService, type MetricFilter } from "@/services";
-import type { ChartFilters, InsightsDrilldownLevel, MentalHealthInsights } from "@/types/insights";
+import type { ChartFilters, InsightsDrilldownLevel, MentalHealthInsights, StudentDetails } from "@/types/insights";
 import { useCallback, useState } from "react";
 
 interface UseInsightsState {
   insights: MentalHealthInsights | null;
+  studentList: StudentDetails[];
   loading: boolean;
   error: string | null;
   navigationStack: InsightsDrilldownLevel[];
@@ -12,6 +13,7 @@ interface UseInsightsState {
 export const useInsights = () => {
   const [state, setState] = useState<UseInsightsState>({
     insights: null,
+    studentList: [],
     loading: false,
     error: null,
     navigationStack: [],
@@ -31,18 +33,12 @@ export const useInsights = () => {
           const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999); // Last day of month
           metricFilter.startDate = startDate.toISOString();
           metricFilter.endDate = endDate.toISOString();
-
-          console.log(`🔍 Month Filter Applied: ${filters.month}/${filters.year}`);
-          console.log(`📅 Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         } else if (filters.year) {
           // If only year is specified, get data for the whole year
           const startDate = new Date(filters.year, 0, 1); // First day of year
           const endDate = new Date(filters.year, 11, 31, 23, 59, 59, 999); // Last day of year
           metricFilter.startDate = startDate.toISOString();
           metricFilter.endDate = endDate.toISOString();
-
-          console.log(`🔍 Year Filter Applied: ${filters.year}`);
-          console.log(`📅 Date Range: ${startDate.toISOString()} to ${endDate.toISOString()}`);
         }
 
         // Fetch real data and available years from API
@@ -127,46 +123,95 @@ export const useInsights = () => {
 
         switch (currentLevel.level) {
           case "overview": {
-            // Drill down to year level
+            // Drill down to year level - filter by program
+            metricFilter.program = selectedValue;
+            
             const yearData = await MetricsService.getYearMetrics(state.insights.type, metricFilter);
             nextLevel = {
               level: "year",
               title: "By Academic Year",
               data: yearData.data,
               parentValue: selectedValue,
+              parentProgram: selectedValue, // Store the selected program
             };
             break;
           }
           case "year": {
-            // Drill down to gender level
+            // Drill down to gender level - filter by program and year
+            metricFilter.program = currentLevel.parentProgram || currentLevel.parentValue; // Use stored program
+            metricFilter.yearLevel = selectedValue;
+            
             const genderData = await MetricsService.getGenderMetrics(
               state.insights.type,
               metricFilter
             );
+            
             nextLevel = {
               level: "gender",
               title: `${selectedValue} - By Gender`,
               data: genderData.data,
               parentValue: selectedValue,
+              parentProgram: currentLevel.parentProgram || currentLevel.parentValue, // Pass program forward
+              parentYear: selectedValue, // Store the selected year
             };
+            
             break;
+          }
+          case "gender": {
+            // Drill down to student list - filter by program, year, and gender
+            metricFilter.program = currentLevel.parentProgram;
+            metricFilter.yearLevel = currentLevel.parentYear;
+            metricFilter.gender = selectedValue.toLowerCase(); // Use the selected gender
+            
+            const studentList = await MetricsService.getAssessmentStudentList(
+              state.insights.type,
+              metricFilter
+            );
+            
+            nextLevel = {
+              level: "students",
+              title: `Students - ${currentLevel.parentProgram} ${currentLevel.parentYear} ${selectedValue}`,
+              data: [], // No chart data for student list
+              parentValue: selectedValue,
+              parentProgram: currentLevel.parentProgram,
+              parentYear: currentLevel.parentYear,
+            };
+            
+            setState((prev) => ({
+              ...prev,
+              insights: prev.insights
+                ? {
+                    ...prev.insights,
+                    currentLevel: nextLevel,
+                  }
+                : null,
+              navigationStack: [...prev.navigationStack, nextLevel],
+              studentList: studentList,
+              loading: false,
+            }));
+            return;
           }
           default:
             setState((prev) => ({ ...prev, loading: false }));
             return; // Can't drill down further
         }
 
-        setState((prev) => ({
-          ...prev,
-          insights: prev.insights
-            ? {
-                ...prev.insights,
-                currentLevel: nextLevel,
-              }
-            : null,
-          navigationStack: [...prev.navigationStack, nextLevel],
-          loading: false,
-        }));
+        setState((prev) => {
+          const newState = {
+            ...prev,
+            insights: prev.insights
+              ? {
+                  ...prev.insights,
+                  currentLevel: nextLevel,
+                }
+              : null,
+            navigationStack: [...prev.navigationStack, nextLevel],
+            studentList: [], // Clear student list for non-student views
+            loading: false,
+          };
+          
+          return newState;
+        });
       } catch (error: any) {
         console.error("Error drilling down:", error);
         setState((prev) => ({
@@ -197,6 +242,7 @@ export const useInsights = () => {
             }
           : null,
         navigationStack: newStack,
+        studentList: [], // Clear student list when navigating back
       };
     });
   }, []);
@@ -229,16 +275,18 @@ export const useInsights = () => {
   }, []);
 
   const canNavigateBack = state.navigationStack.length > 1;
-  const canDrillDown = state.insights?.currentLevel.level !== "gender";
+  const canDrillDown = state.insights?.currentLevel.level !== "students"; // Can drill down from all levels except students
 
   return {
     // State
     insights: state.insights,
+    studentList: state.studentList,
     loading: state.loading,
     error: state.error,
     navigationStack: state.navigationStack,
     canNavigateBack,
     canDrillDown,
+    isStudentView: state.insights?.currentLevel.level === "students" || state.studentList.length > 0,
 
     // Actions
     fetchInsights,

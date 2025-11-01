@@ -16,6 +16,7 @@ import {
   InsightsPage,
   InventoryPage,
   InventoryRecordsPage,
+  InventoryInsightsPage,
   LandingPage,
   MentalHealthResultsPage,
   MessagesPage,
@@ -153,6 +154,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InventoryRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/inventory/insights/:type"
+            element={
+              <ProtectedRoute>
+                <InventoryInsightsPage />
               </ProtectedRoute>
             }
           />

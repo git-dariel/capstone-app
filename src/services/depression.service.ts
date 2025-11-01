@@ -39,6 +39,7 @@ export interface DepressionAssessment {
     recommendationMessage: string;
     needsProfessionalHelp: boolean;
     requiresImmediateAttention: boolean;
+    recommendations: string[];
   };
   cooldownInfo?: CooldownInfo;
   createdAt: string;

@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useInsights } from "@/hooks";
-import { InsightsHeader, InsightsBarChart } from "@/components/molecules";
+import { InsightsHeader, InsightsBarChart, AssessmentStudentList } from "@/components/molecules";
 import { TrendingUp, Users, BarChart3 } from "lucide-react";
 import type { InsightData } from "@/types/insights";
 
@@ -10,10 +10,12 @@ export const InsightsContent: React.FC = () => {
   const navigate = useNavigate();
   const {
     insights,
+    studentList,
     loading,
     error,
     canNavigateBack,
     canDrillDown,
+    isStudentView,
     fetchInsights,
     drillDown,
     navigateBack,
@@ -31,7 +33,8 @@ export const InsightsContent: React.FC = () => {
 
   const handleBarClick = (data: InsightData) => {
     if (canDrillDown) {
-      drillDown(data.label);
+      // Use rawValue for filtering if available, otherwise use label
+      drillDown(data.rawValue || data.label);
     }
   };
 
@@ -89,8 +92,17 @@ export const InsightsContent: React.FC = () => {
 
       <div className="flex-1 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          {/* Student List View */}
+          {isStudentView ? (
+            <AssessmentStudentList
+              students={studentList}
+              loading={loading}
+              title={insights.currentLevel.title}
+            />
+          ) : (
+            <>
+              {/* Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white rounded-lg border shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
@@ -233,6 +245,8 @@ export const InsightsContent: React.FC = () => {
               </div>
             </div>
           </div>
+          </>
+          )}
         </div>
       </div>
     </div>
