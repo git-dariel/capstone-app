@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import type { StudentDetails } from "@/types/inventory-insights";
 import { StudentDetailsModal } from "./StudentDetailsModal";
 import { useStudents } from "@/hooks";
+import { Search } from "lucide-react";
 import type { Student } from "@/services/student.service";
 
 interface InventoryStudentListProps {
@@ -17,7 +18,36 @@ export const InventoryStudentList: React.FC<InventoryStudentListProps> = ({
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const { fetchStudentById } = useStudents();
+
+  // Filter students based on search term
+  const filteredStudents = useMemo(() => {
+    if (!searchTerm) return students;
+
+    const searchLower = searchTerm.toLowerCase();
+    return students.filter((student) => {
+      const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
+      const studentNumber = student.studentNumber?.toLowerCase() || "";
+      const program = student.program?.toLowerCase() || "";
+      const year = student.year?.toLowerCase() || "";
+      const email = student.email?.toLowerCase() || "";
+      const gender = student.gender?.toLowerCase() || "";
+      const mentalHealth = student.mentalHealthPrediction?.toLowerCase() || "";
+      const bmiCategory = student.bmiCategory?.toLowerCase() || "";
+
+      return (
+        fullName.includes(searchLower) ||
+        studentNumber.includes(searchLower) ||
+        program.includes(searchLower) ||
+        year.includes(searchLower) ||
+        email.includes(searchLower) ||
+        gender.includes(searchLower) ||
+        mentalHealth.includes(searchLower) ||
+        bmiCategory.includes(searchLower)
+      );
+    });
+  }, [students, searchTerm]);
 
   const handleStudentRowClick = async (studentDetails: (typeof students)[0]) => {
     try {
@@ -73,10 +103,28 @@ export const InventoryStudentList: React.FC<InventoryStudentListProps> = ({
     <>
       <div className="bg-white rounded-lg border shadow-sm">
         <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">{title}</h3>
-          <p className="text-sm text-gray-600 mt-1">
-            {students.length} student{students.length !== 1 ? "s" : ""} found matching your criteria
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">{title}</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {filteredStudents.length} student{filteredStudents.length !== 1 ? "s" : ""} found
+                {searchTerm && ` matching "${searchTerm}"`}
+              </p>
+            </div>
+          </div>
+
+          {/* Search Bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, program, year, email, gender, mental health, or BMI..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              disabled={loading}
+            />
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -107,7 +155,7 @@ export const InventoryStudentList: React.FC<InventoryStudentListProps> = ({
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {students.map((student) => (
+              {filteredStudents.map((student) => (
                 <tr
                   key={student.id}
                   onClick={() => handleStudentRowClick(student)}
@@ -173,9 +221,13 @@ export const InventoryStudentList: React.FC<InventoryStudentListProps> = ({
           </table>
         </div>
 
-        {students.length === 0 && (
+        {filteredStudents.length === 0 && !loading && (
           <div className="p-6 text-center">
-            <p className="text-gray-500">No students found matching your criteria.</p>
+            <p className="text-gray-500">
+              {searchTerm
+                ? `No students found matching "${searchTerm}"`
+                : "No students found matching your criteria"}
+            </p>
           </div>
         )}
       </div>

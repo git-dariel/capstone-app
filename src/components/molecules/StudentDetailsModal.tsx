@@ -40,11 +40,7 @@ interface AssessmentHistory {
   totalScore?: number;
 }
 
-export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
-  isOpen,
-  onClose,
-  student,
-}) => {
+export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen, onClose, student }) => {
   const [expandedSections, setExpandedSections] = useState<ExpandedSections>({
     studentDetails: true,
     personDetails: true,
@@ -131,9 +127,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         }
 
         // Sort by date descending
-        assessments.sort(
-          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
-        );
+        assessments.sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime());
         setAssessmentHistory(assessments);
       } catch (err) {
         console.error("Error fetching student data:", err);
@@ -224,48 +218,44 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="full">
-      <div className="space-y-4 h-full overflow-y-auto px-6 py-4">
-        {/* Student Header Card - Improved for Desktop */}
-        <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-6 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+      <div className="space-y-4 h-full overflow-y-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        {/* Student Header Card - Mobile Responsive */}
+        <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5 md:gap-6">
             {/* Left: Avatar and Basic Info */}
-            <div className="flex items-center space-x-4 flex-1">
+            <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
               <Avatar
                 src={studentAvatar}
                 fallback={studentName.charAt(0)}
-                className="w-24 h-24 text-2xl flex-shrink-0"
+                className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-xl sm:text-2xl flex-shrink-0"
               />
-              <div className="flex-1">
-                <h2 className="text-3xl font-bold text-primary-900">{studentName}</h2>
-                <p className="text-primary-600 text-sm font-medium mt-1">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-900 truncate">{studentName}</h2>
+                <p className="text-primary-600 text-xs sm:text-sm font-medium mt-1 truncate">
                   ID: {student.studentNumber || "N/A"}
                 </p>
               </div>
             </div>
 
-            {/* Right: Quick Stats Grid */}
-            <div className="grid grid-cols-3 gap-3 lg:gap-4">
-              <div className="bg-white bg-opacity-70 rounded-lg p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+            {/* Right: Quick Stats Grid - Mobile Optimized */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                   Program
                 </p>
-                <p className="text-lg lg:text-xl font-bold text-primary-900 truncate">
-                  {student.program}
-                </p>
+                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900 truncate">{student.program}</p>
               </div>
-              <div className="bg-white bg-opacity-70 rounded-lg p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                   Year Level
                 </p>
-                <p className="text-lg lg:text-xl font-bold text-primary-900">Year {student.year}</p>
+                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">Year {student.year}</p>
               </div>
-              <div className="bg-white bg-opacity-70 rounded-lg p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-xs font-semibold text-primary-600 uppercase tracking-wide">
+              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                   Assessments
                 </p>
-                <p className="text-lg lg:text-xl font-bold text-primary-900">
-                  {assessmentHistory.length}
-                </p>
+                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">{assessmentHistory.length}</p>
               </div>
             </div>
           </div>
@@ -273,9 +263,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 flex items-start space-x-2 sm:space-x-3">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm text-red-700">{error}</p>
           </div>
         )}
 
@@ -283,24 +273,24 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
         {loading && (
           <div className="space-y-3">
             <div className="flex items-center space-x-2 text-gray-600">
-              <Loader className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Loading student information...</span>
+              <Loader className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+              <span className="text-xs sm:text-sm">Loading student information...</span>
             </div>
           </div>
         )}
 
-        {/* Expandable Sections - 2 Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Expandable Sections - Responsive Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
           {/* LEFT COLUMN - 4 Sections */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Student Details Section */}
             <CollapsibleSection
               title="Student Details"
-              icon={<GraduationCap className="w-5 h-5" />}
+              icon={<GraduationCap className="w-4 h-4 sm:w-5 sm:h-5" />}
               isExpanded={expandedSections.studentDetails}
               onToggle={() => toggleSection("studentDetails")}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <InfoField label="Student Number" value={student.studentNumber || "N/A"} />
                 <InfoField label="Program" value={student.program || "N/A"} />
                 <InfoField label="Year Level" value={student.year || "N/A"} />
@@ -312,11 +302,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {/* Person Details Section */}
             <CollapsibleSection
               title="Person Details"
-              icon={<User className="w-5 h-5" />}
+              icon={<User className="w-4 h-4 sm:w-5 sm:h-5" />}
               isExpanded={expandedSections.personDetails}
               onToggle={() => toggleSection("personDetails")}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <InfoField label="First Name" value={person?.firstName || "N/A"} />
                 <InfoField label="Last Name" value={person?.lastName || "N/A"} />
                 <InfoField label="Middle Name" value={person?.middleName || "N/A"} />
@@ -331,20 +321,20 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {/* User Details Section */}
             <CollapsibleSection
               title="User Details"
-              icon={<User className="w-5 h-5" />}
+              icon={<User className="w-4 h-4 sm:w-5 sm:h-5" />}
               isExpanded={expandedSections.userDetails}
               onToggle={() => toggleSection("userDetails")}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <InfoField
                   label="Email"
                   value={person?.email || "N/A"}
-                  icon={<Mail className="w-4 h-4" />}
+                  icon={<Mail className="w-3 h-3 sm:w-4 sm:h-4" />}
                 />
                 <InfoField
                   label="Contact Number"
                   value={person?.contactNumber || "N/A"}
-                  icon={<Phone className="w-4 h-4" />}
+                  icon={<Phone className="w-3 h-3 sm:w-4 sm:h-4" />}
                 />
               </div>
             </CollapsibleSection>
@@ -353,17 +343,17 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {inventoryData && (
               <CollapsibleSection
                 title="Inventory Details"
-                icon={<BarChart3 className="w-5 h-5" />}
+                icon={<BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />}
                 isExpanded={expandedSections.inventoryDetails}
                 onToggle={() => toggleSection("inventoryDetails")}
               >
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-5 md:space-y-6">
                   {/* Physical Information */}
                   <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 text-base">
+                    <h4 className="font-semibold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">
                       Physical Information
                     </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
                       <InfoField label="Height" value={inventoryData.height || "N/A"} />
                       <InfoField label="Weight" value={inventoryData.weight || "N/A"} />
                       <InfoField label="Complexion" value={inventoryData.coplexion || "N/A"} />
@@ -372,11 +362,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Person to be Contacted */}
                   {inventoryData.person_to_be_contacted_in_case_of_accident_or_illness && (
-                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-purple-900 mb-3 text-base">
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-purple-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Emergency Contact
                       </h4>
-                      <div className="space-y-2 text-base">
+                      <div className="space-y-2 text-sm sm:text-base">
                         <InfoField
                           label="Name"
                           value={`${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.firstName} ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.lastName}`}
@@ -384,12 +374,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         <InfoField
                           label="Relationship"
                           value={
-                            inventoryData.person_to_be_contacted_in_case_of_accident_or_illness
-                              .relationship || "N/A"
+                            inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.relationship || "N/A"
                           }
                         />
-                        {inventoryData.person_to_be_contacted_in_case_of_accident_or_illness
-                          .address && (
+                        {inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address && (
                           <InfoField
                             label="Address"
                             value={`${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.houseNo} ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.street}, ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.barangay}, ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.city}`}
@@ -401,19 +389,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Educational Background */}
                   {inventoryData.educational_background && (
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-indigo-900 mb-3 text-base">
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-indigo-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Educational Background
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-base">
-                        <InfoField
-                          label="Level"
-                          value={inventoryData.educational_background.level || "N/A"}
-                        />
-                        <InfoField
-                          label="Status"
-                          value={inventoryData.educational_background.status || "N/A"}
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
+                        <InfoField label="Level" value={inventoryData.educational_background.level || "N/A"} />
+                        <InfoField label="Status" value={inventoryData.educational_background.status || "N/A"} />
                         <InfoField
                           label="Graduation"
                           value={inventoryData.educational_background.school_graduation || "N/A"}
@@ -428,11 +410,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Nature of Schooling */}
                   {inventoryData.nature_of_schooling && (
-                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-cyan-900 mb-3 text-base">
+                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-cyan-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Nature of Schooling
                       </h4>
-                      <div className="space-y-2 text-base">
+                      <div className="space-y-2 text-sm sm:text-base">
                         <div className="flex justify-between">
                           <span className="text-cyan-800">Continuous:</span>
                           <span className="font-medium text-cyan-900">
@@ -448,9 +430,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         {inventoryData.nature_of_schooling.exaplain_why && (
                           <div className="text-cyan-700 border-t border-cyan-200 pt-2">
                             <p className="text-sm font-medium text-cyan-800 mb-1">Explanation:</p>
-                            <p className="text-sm">
-                              {inventoryData.nature_of_schooling.exaplain_why}
-                            </p>
+                            <p className="text-sm">{inventoryData.nature_of_schooling.exaplain_why}</p>
                           </div>
                         )}
                       </div>
@@ -459,24 +439,19 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Home and Family Background */}
                   {inventoryData.home_and_family_background && (
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-amber-900 mb-3 text-base">
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-amber-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Home & Family Background
                       </h4>
-                      <div className="space-y-3 text-base">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-3 text-sm sm:text-base">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <InfoField
                             label="Marital Relationship"
-                            value={
-                              inventoryData.home_and_family_background
-                                .parents_martial_relationship || "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.parents_martial_relationship || "N/A"}
                           />
                           <InfoField
                             label="Ordinal Position"
-                            value={
-                              inventoryData.home_and_family_background.ordinal_position || "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.ordinal_position || "N/A"}
                           />
                           <InfoField
                             label="Children in Family"
@@ -487,17 +462,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           />
                           <InfoField
                             label="Brothers"
-                            value={
-                              inventoryData.home_and_family_background.number_of_brothers?.toString() ||
-                              "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.number_of_brothers?.toString() || "N/A"}
                           />
                           <InfoField
                             label="Sisters"
-                            value={
-                              inventoryData.home_and_family_background.number_of_sisters?.toString() ||
-                              "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.number_of_sisters?.toString() || "N/A"}
                           />
                           <InfoField
                             label="Employed Siblings"
@@ -508,10 +477,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           />
                           <InfoField
                             label="Finances Schooling"
-                            value={
-                              inventoryData.home_and_family_background
-                                .who_finances_your_schooling || "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.who_finances_your_schooling || "N/A"}
                           />
                           <InfoField
                             label="Weekly Allowance"
@@ -522,26 +488,22 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           />
                           <InfoField
                             label="Quiet Place to Study"
-                            value={
-                              inventoryData.home_and_family_background
-                                .do_you_have_quiet_place_to_study || "N/A"
-                            }
+                            value={inventoryData.home_and_family_background.do_you_have_quiet_place_to_study || "N/A"}
                           />
                           <InfoField
                             label="Residence Type"
                             value={
-                              inventoryData.home_and_family_background
-                                .nature_of_residence_while_attending_school || "N/A"
+                              inventoryData.home_and_family_background.nature_of_residence_while_attending_school ||
+                              "N/A"
                             }
                           />
                         </div>
-                        {inventoryData.home_and_family_background
-                          .do_you_share_your_room_with_anyone && (
+                        {inventoryData.home_and_family_background.do_you_share_your_room_with_anyone && (
                           <div className="border-t border-amber-200 pt-2">
                             <p className="text-sm font-medium text-amber-800 mb-1">Room Sharing:</p>
                             <p className="text-sm text-amber-900">
-                              {inventoryData.home_and_family_background
-                                .do_you_share_your_room_with_anyone.status === "yes"
+                              {inventoryData.home_and_family_background.do_you_share_your_room_with_anyone.status ===
+                              "yes"
                                 ? `Yes - ${inventoryData.home_and_family_background.do_you_share_your_room_with_anyone.if_yes_with_whom}`
                                 : "No"}
                             </p>
@@ -553,16 +515,14 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Health Information */}
                   {inventoryData.health && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-red-900 mb-3 text-base">
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Health Information
                       </h4>
-                      <div className="space-y-3 text-base">
+                      <div className="space-y-3 text-sm sm:text-base">
                         {inventoryData.health.physical && (
                           <div>
-                            <p className="text-sm font-medium text-red-800 mb-2">
-                              Physical Health:
-                            </p>
+                            <p className="text-sm font-medium text-red-800 mb-2">Physical Health:</p>
                             <div className="grid grid-cols-2 gap-2 ml-2">
                               <div className="flex justify-between">
                                 <span>Vision:</span>
@@ -634,28 +594,23 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Interest and Hobbies */}
                   {inventoryData.interest_and_hobbies && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-green-900 mb-3 text-base">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-green-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Interest & Hobbies
                       </h4>
-                      <div className="space-y-3 text-base">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-3 text-sm sm:text-base">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <InfoField
                             label="Academic Club"
                             value={inventoryData.interest_and_hobbies.academic || "N/A"}
                           />
                           <InfoField
                             label="Organization"
-                            value={
-                              inventoryData.interest_and_hobbies.organizations_participated || "N/A"
-                            }
+                            value={inventoryData.interest_and_hobbies.organizations_participated || "N/A"}
                           />
                           <InfoField
                             label="Position"
-                            value={
-                              inventoryData.interest_and_hobbies
-                                .occupational_position_organization || "N/A"
-                            }
+                            value={inventoryData.interest_and_hobbies.occupational_position_organization || "N/A"}
                           />
                           <InfoField
                             label="Favorite Subject"
@@ -663,9 +618,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           />
                           <InfoField
                             label="Least Favorite"
-                            value={
-                              inventoryData.interest_and_hobbies.favorite_least_subject || "N/A"
-                            }
+                            value={inventoryData.interest_and_hobbies.favorite_least_subject || "N/A"}
                           />
                         </div>
                         {inventoryData.interest_and_hobbies.what_are_your_hobbies &&
@@ -673,16 +626,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                             <div className="border-t border-green-200 pt-2">
                               <p className="text-sm font-medium text-green-800 mb-2">Hobbies:</p>
                               <div className="flex flex-wrap gap-2">
-                                {inventoryData.interest_and_hobbies.what_are_your_hobbies.map(
-                                  (hobby, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
-                                    >
-                                      {hobby}
-                                    </span>
-                                  )
-                                )}
+                                {inventoryData.interest_and_hobbies.what_are_your_hobbies.map((hobby, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
+                                    {hobby}
+                                  </span>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -692,35 +640,20 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Test Results */}
                   {inventoryData.test_results && (
-                    <div className="bg-rose-50 border border-rose-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-rose-900 mb-3 text-base">Test Results</h4>
-                      <div className="space-y-2 text-base">
-                        <InfoField
-                          label="Test Name"
-                          value={inventoryData.test_results.name_of_test || "N/A"}
-                        />
+                    <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-rose-900 mb-2 sm:mb-3 text-sm sm:text-base">Test Results</h4>
+                      <div className="space-y-2 text-sm sm:text-base">
+                        <InfoField label="Test Name" value={inventoryData.test_results.name_of_test || "N/A"} />
                         <InfoField
                           label="Date"
-                          value={
-                            inventoryData.test_results.date
-                              ? formatDate(inventoryData.test_results.date)
-                              : "N/A"
-                          }
+                          value={inventoryData.test_results.date ? formatDate(inventoryData.test_results.date) : "N/A"}
                         />
-                        <InfoField
-                          label="Raw Score (RS)"
-                          value={inventoryData.test_results.rs || "N/A"}
-                        />
-                        <InfoField
-                          label="Percentile Rank (PR)"
-                          value={inventoryData.test_results.pr || "N/A"}
-                        />
+                        <InfoField label="Raw Score (RS)" value={inventoryData.test_results.rs || "N/A"} />
+                        <InfoField label="Percentile Rank (PR)" value={inventoryData.test_results.pr || "N/A"} />
                         {inventoryData.test_results.description && (
                           <div className="border-t border-rose-200 pt-2">
                             <p className="text-sm font-medium text-rose-800 mb-1">Description:</p>
-                            <p className="text-sm text-rose-900">
-                              {inventoryData.test_results.description}
-                            </p>
+                            <p className="text-sm text-rose-900">{inventoryData.test_results.description}</p>
                           </div>
                         )}
                       </div>
@@ -729,12 +662,12 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Mental Health Prediction */}
                   {inventoryData.mentalHealthPrediction && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-900 mb-3 text-base flex items-center space-x-2">
-                        <Heart className="w-5 h-5" />
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 sm:mb-3 text-sm sm:text-base flex items-center space-x-2">
+                        <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span>Mental Health Prediction</span>
                       </h4>
-                      <div className="space-y-3 text-base">
+                      <div className="space-y-3 text-sm sm:text-base">
                         {/* Risk Level */}
                         <div className="flex justify-between items-center">
                           <span className="text-blue-800 font-medium">Risk Level:</span>
@@ -742,11 +675,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                             className={`font-semibold px-3 py-1 rounded-full text-sm ${
                               inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "low"
                                 ? "bg-green-100 text-green-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
-                                  "moderate"
+                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "moderate"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
-                                  "high"
+                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "high"
                                 ? "bg-orange-100 text-orange-800"
                                 : "bg-red-100 text-red-800"
                             }`}
@@ -766,21 +697,14 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         {/* Description */}
                         <div className="text-blue-700">
                           <p className="text-sm font-medium text-blue-800 mb-1">Description:</p>
-                          <p className="text-sm">
-                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.description}
-                          </p>
+                          <p className="text-sm">{inventoryData.mentalHealthPrediction.mentalHealthRisk.description}</p>
                         </div>
 
                         {/* Assessment Summary */}
                         <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">
-                            Assessment Summary:
-                          </p>
+                          <p className="text-sm font-medium text-blue-800 mb-1">Assessment Summary:</p>
                           <p className="text-sm">
-                            {
-                              inventoryData.mentalHealthPrediction.mentalHealthRisk
-                                .assessmentSummary
-                            }
+                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.assessmentSummary}
                           </p>
                         </div>
 
@@ -795,30 +719,20 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           <div>
                             <p className="text-sm font-medium text-blue-800">Decision Tree</p>
                             <p className="text-sm text-blue-700">
-                              {(
-                                inventoryData.mentalHealthPrediction.modelAccuracy.decisionTree *
-                                100
-                              ).toFixed(1)}
-                              %
+                              {(inventoryData.mentalHealthPrediction.modelAccuracy.decisionTree * 100).toFixed(1)}%
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-blue-800">Random Forest</p>
                             <p className="text-sm text-blue-700">
-                              {(
-                                inventoryData.mentalHealthPrediction.modelAccuracy.randomForest *
-                                100
-                              ).toFixed(1)}
-                              %
+                              {(inventoryData.mentalHealthPrediction.modelAccuracy.randomForest * 100).toFixed(1)}%
                             </p>
                           </div>
                         </div>
 
                         {/* Academic Performance Outlook */}
                         <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">
-                            Academic Outlook:
-                          </p>
+                          <p className="text-sm font-medium text-blue-800 mb-1">Academic Outlook:</p>
                           <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium capitalize">
                             {inventoryData.mentalHealthPrediction.academicPerformanceOutlook}
                           </span>
@@ -828,20 +742,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         {inventoryData.mentalHealthPrediction.riskFactors &&
                           inventoryData.mentalHealthPrediction.riskFactors.length > 0 && (
                             <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">
-                                Risk Factors:
-                              </p>
+                              <p className="text-sm font-medium text-blue-800 mb-2">Risk Factors:</p>
                               <div className="flex flex-wrap gap-2">
-                                {inventoryData.mentalHealthPrediction.riskFactors.map(
-                                  (factor, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
-                                    >
-                                      {factor}
-                                    </span>
-                                  )
-                                )}
+                                {inventoryData.mentalHealthPrediction.riskFactors.map((factor, idx) => (
+                                  <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
+                                    {factor}
+                                  </span>
+                                ))}
                               </div>
                             </div>
                           )}
@@ -850,18 +757,14 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         {inventoryData.mentalHealthPrediction.recommendations &&
                           inventoryData.mentalHealthPrediction.recommendations.length > 0 && (
                             <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">
-                                Recommendations:
-                              </p>
+                              <p className="text-sm font-medium text-blue-800 mb-2">Recommendations:</p>
                               <ul className="space-y-1 text-sm">
-                                {inventoryData.mentalHealthPrediction.recommendations.map(
-                                  (rec, idx) => (
-                                    <li key={idx} className="flex items-start space-x-2">
-                                      <span className="text-blue-600 font-bold">•</span>
-                                      <span>{rec}</span>
-                                    </li>
-                                  )
-                                )}
+                                {inventoryData.mentalHealthPrediction.recommendations.map((rec, idx) => (
+                                  <li key={idx} className="flex items-start space-x-2">
+                                    <span className="text-blue-600 font-bold">•</span>
+                                    <span>{rec}</span>
+                                  </li>
+                                ))}
                               </ul>
                             </div>
                           )}
@@ -881,13 +784,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   )}
 
                   {/* Timestamps */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                     <InfoField label="Created" value={formatDate(inventoryData.createdAt)} />
                     <InfoField label="Last Updated" value={formatDate(inventoryData.updatedAt)} />
                   </div>
 
                   {/* Prediction Status */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <div>
                       <p className="text-xs font-medium text-gray-600">Prediction Generated</p>
                       <p className="text-sm font-semibold text-gray-900">
@@ -909,12 +812,12 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
           </div>
 
           {/* RIGHT COLUMN - 3 Sections */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Assessment History Section */}
             {assessmentHistory.length > 0 && (
               <CollapsibleSection
                 title={`Assessment History (${assessmentHistory.length})`}
-                icon={<Activity className="w-5 h-5" />}
+                icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
                 isExpanded={expandedSections.assessmentHistory}
                 onToggle={() => toggleSection("assessmentHistory")}
               >
@@ -922,40 +825,35 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   {assessmentHistory.map((assessment) => (
                     <div
                       key={assessment.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                      className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-xl">{getAssessmentTypeIcon(assessment.type)}</span>
+                          <span className="text-base sm:text-xl">{getAssessmentTypeIcon(assessment.type)}</span>
                           <div>
-                            <h4 className="font-semibold text-gray-900 capitalize">
-                              {assessment.type === "checklist"
-                                ? "Personal Problems"
-                                : assessment.type}{" "}
-                              Assessment
+                            <h4 className="font-semibold text-gray-900 capitalize text-sm sm:text-base">
+                              {assessment.type === "checklist" ? "Personal Problems" : assessment.type} Assessment
                             </h4>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-[10px] sm:text-xs text-gray-500">
                               {formatDate(assessment.assessmentDate)}
                               {" at "}
                               {formatTime(assessment.assessmentDate)}
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-wrap gap-2">
                           {assessment.totalScore !== undefined && (
-                            <div className="text-sm font-semibold text-gray-900 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
+                            <div className="text-xs sm:text-sm font-semibold text-gray-900 bg-gray-100 px-2 sm:px-3 py-1 rounded-full border border-gray-300">
                               Score: {assessment.totalScore}
                             </div>
                           )}
                           {assessment.severityLevel || assessment.riskLevel ? (
                             <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getSeverityColor(
                                 assessment.severityLevel || assessment.riskLevel
                               )}`}
                             >
-                              {formatSeverityLabel(
-                                assessment.severityLevel || assessment.riskLevel || "Unknown"
-                              )}
+                              {formatSeverityLabel(assessment.severityLevel || assessment.riskLevel || "Unknown")}
                             </span>
                           ) : null}
                         </div>
@@ -969,37 +867,32 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {/* Consultation Details Section */}
             <CollapsibleSection
               title={`Consultation Details (${consultationNotes.length})`}
-              icon={<FileText className="w-5 h-5" />}
+              icon={<FileText className="w-4 h-4 sm:w-5 sm:h-5" />}
               isExpanded={expandedSections.consultationDetails}
               onToggle={() => toggleSection("consultationDetails")}
             >
               {consultationNotes.length > 0 ? (
                 <div className="space-y-3">
                   {consultationNotes.map((note, index) => (
-                    <div
-                      key={index}
-                      className="bg-primary-50 border border-primary-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-primary-900">
+                    <div key={index} className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4">
+                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+                        <h4 className="font-semibold text-primary-900 text-sm sm:text-base">
                           {note.title || `Consultation Record ${index + 1}`}
                         </h4>
-                        <span className="text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                        <span className="text-[10px] sm:text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
                           Record #{index + 1}
                         </span>
                       </div>
                       {note.content && (
-                        <div className="text-sm text-primary-800 whitespace-pre-wrap">
-                          {note.content}
-                        </div>
+                        <div className="text-xs sm:text-sm text-primary-800 whitespace-pre-wrap">{note.content}</div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-500">
-                  <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm">No consultation records available</p>
+                <div className="text-center py-4 sm:py-6 text-gray-500">
+                  <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-2" />
+                  <p className="text-xs sm:text-sm">No consultation records available</p>
                 </div>
               )}
             </CollapsibleSection>
@@ -1008,35 +901,24 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {consentData && (
               <CollapsibleSection
                 title="Consent Details"
-                icon={<Shield className="w-5 h-5" />}
+                icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
                 isExpanded={expandedSections.consentDetails}
                 onToggle={() => toggleSection("consentDetails")}
               >
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   {/* Basic Information */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <InfoField label="Referred By" value={consentData.referred || "N/A"} />
-                    <InfoField
-                      label="Living With"
-                      value={consentData.with_whom_do_you_live || "N/A"}
-                    />
-                    <InfoField
-                      label="Financial Status"
-                      value={consentData.financial_status || "N/A"}
-                    />
-                    <InfoField
-                      label="Physical Problem"
-                      value={consentData.physical_problem === "yes" ? "Yes" : "No"}
-                    />
+                    <InfoField label="Living With" value={consentData.with_whom_do_you_live || "N/A"} />
+                    <InfoField label="Financial Status" value={consentData.financial_status || "N/A"} />
+                    <InfoField label="Physical Problem" value={consentData.physical_problem === "yes" ? "Yes" : "No"} />
                   </div>
 
                   {/* Reason for Guidance */}
                   {consentData.what_brings_you_to_guidance && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-900 mb-2 text-base">
-                        Reason for Guidance
-                      </h4>
-                      <p className="text-base text-blue-800 whitespace-pre-wrap">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Reason for Guidance</h4>
+                      <p className="text-sm sm:text-base text-blue-800 whitespace-pre-wrap">
                         {consentData.what_brings_you_to_guidance}
                       </p>
                     </div>
@@ -1044,9 +926,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Physical Symptoms */}
                   {consentData.physical_symptoms && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-red-900 mb-3 text-base flex items-center space-x-2">
-                        <Heart className="w-5 h-5" />
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm sm:text-base flex items-center space-x-2">
+                        <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                         <span>Physical Symptoms</span>
                       </h4>
                       <div className="flex flex-wrap gap-2">
@@ -1054,13 +936,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           consentData.physical_symptoms.map((symptom: string) => (
                             <span
                               key={symptom}
-                              className="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-100 text-red-700 rounded-full"
+                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-red-100 text-red-700 rounded-full"
                             >
                               {String(symptom).replace(/_/g, " ")}
                             </span>
                           ))
                         ) : (
-                          <span className="text-base text-red-700 bg-red-100 px-3 py-1 rounded-full">
+                          <span className="text-xs sm:text-base text-red-700 bg-red-100 px-2 sm:px-3 py-1 rounded-full">
                             {String(consentData.physical_symptoms).replace(/_/g, " ")}
                           </span>
                         )}
@@ -1070,11 +952,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Present Concerns */}
                   {consentData.concerns && (
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-indigo-900 mb-3 text-base">
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-indigo-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Present Concerns
                       </h4>
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-2 text-xs sm:text-sm">
                         {Object.entries(consentData.concerns).map(([key, value]: [string, any]) => {
                           const displayKey = String(key)
                             .replace(/_/g, " ")
@@ -1094,8 +976,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
                   {/* Services */}
                   {consentData.services && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-green-900 mb-3 text-base">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-green-900 mb-2 sm:mb-3 text-sm sm:text-base">
                         Services Interested
                       </h4>
                       <div className="flex flex-wrap gap-2">
@@ -1103,13 +985,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           consentData.services.map((service: string) => (
                             <span
                               key={service}
-                              className="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full"
+                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full"
                             >
                               {String(service).replace(/_/g, " ")}
                             </span>
                           ))
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1 text-sm font-medium bg-green-100 text-green-700 rounded-full">
+                          <span className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full">
                             {String(consentData.services).replace(/_/g, " ")}
                           </span>
                         )}
@@ -1118,7 +1000,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   )}
 
                   {/* Timestamps */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-gray-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                     <InfoField label="Created" value={formatDate(consentData.createdAt)} />
                     <InfoField label="Last Updated" value={formatDate(consentData.updatedAt)} />
                   </div>
@@ -1141,34 +1023,28 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
 }
 
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
-  title,
-  icon,
-  isExpanded,
-  onToggle,
-  children,
-}) => {
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, isExpanded, onToggle, children }) => {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-4 sm:px-6 py-4 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors"
       >
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <div className="text-primary-600 flex-shrink-0">{icon}</div>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900">{title}</h3>
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">{title}</h3>
         </div>
         <div className="text-gray-400 flex-shrink-0">
           {isExpanded ? (
-            <ChevronUp className="w-5 h-5 transition-transform" />
+            <ChevronUp className="w-4 h-4 sm:w-5 sm:h-5 transition-transform" />
           ) : (
-            <ChevronDown className="w-5 h-5 transition-transform" />
+            <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 transition-transform" />
           )}
         </div>
       </button>
 
       {isExpanded && (
-        <div className="px-4 sm:px-6 py-4 border-t border-gray-200 bg-gray-50">{children}</div>
+        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">{children}</div>
       )}
     </div>
   );
@@ -1184,10 +1060,10 @@ interface InfoFieldProps {
 const InfoField: React.FC<InfoFieldProps> = ({ label, value, icon }) => {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <div className="flex items-center space-x-2 text-sm text-gray-900 py-2 px-3 bg-white rounded-md border border-gray-200">
+      <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-900 py-1.5 sm:py-2 px-2 sm:px-3 bg-white rounded-md border border-gray-200">
         {icon}
-        <span>{value}</span>
+        <span className="truncate">{value}</span>
       </div>
     </div>
   );

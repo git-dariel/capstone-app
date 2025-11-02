@@ -309,7 +309,6 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Program & Year</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Physical Info</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Prediction Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Academic Outlook</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Risk Level</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Created</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
@@ -359,13 +358,6 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                             )}
                           </div>
                           {inventory.predictionUpdatedAt && <div className="text-xs text-gray-400 mt-1">{formatDate(inventory.predictionUpdatedAt)}</div>}
-                        </td>
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            {getPerformanceIcon(inventory.academicPerformanceOutlook)}
-                            <span className={`ml-2 text-sm font-medium capitalize ${getPerformanceColor(inventory.academicPerformanceOutlook)}`}>{inventory.academicPerformanceOutlook || "N/A"}</span>
-                          </div>
-                          {inventory.confidence && <div className="text-xs text-gray-500 mt-1">{(inventory.confidence * 100).toFixed(1)}% confidence</div>}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(inventory.riskLevel)}`}>{inventory.riskLevel || "N/A"}</span>

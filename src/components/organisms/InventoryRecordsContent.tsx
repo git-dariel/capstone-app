@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { InventoryRecordsTable, ViewInventoryDrawer, InventoryStatsGrid } from "@/components/molecules";
+import { InventoryRecordsTable, StudentDetailsModal, InventoryStatsGrid } from "@/components/molecules";
 import { useInventory } from "@/hooks";
 import { Brain, Activity, Heart } from "lucide-react";
 import type { GetInventoryResponse } from "@/services/inventory.service";
+import type { Student } from "@/services/student.service";
 
-// Constants for consistent data fetching
+// Constants for consistent data fetching - Include comprehensive student data for modal
 const INVENTORY_FIELDS =
-  "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar";
+  "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.id,student.studentNumber,student.program,student.year,student.status,student.notes,student.createdAt,student.updatedAt,student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.suffix,student.person.email,student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.birthPlace,student.person.age,student.person.religion,student.person.civilStatus,student.person.users.id,student.person.users.avatar,student.person.users.anxietyAssessments.id,student.person.users.anxietyAssessments.severityLevel,student.person.users.anxietyAssessments.assessmentDate,student.person.users.anxietyAssessments.totalScore,student.person.users.depressionAssessments.id,student.person.users.depressionAssessments.severityLevel,student.person.users.depressionAssessments.assessmentDate,student.person.users.depressionAssessments.totalScore,student.person.users.stressAssessments.id,student.person.users.stressAssessments.severityLevel,student.person.users.stressAssessments.assessmentDate,student.person.users.stressAssessments.totalScore,student.person.users.suicideAssessments.id,student.person.users.suicideAssessments.riskLevel,student.person.users.suicideAssessments.assessmentDate";
 
 export const InventoryRecordsContent: React.FC = () => {
   const navigate = useNavigate();
-  const [viewingInventory, setViewingInventory] = useState<GetInventoryResponse | null>(null);
-  const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
 
   const { inventories, loading, error, fetchInventories } = useInventory();
 
@@ -25,13 +26,16 @@ export const InventoryRecordsContent: React.FC = () => {
   }, [fetchInventories]);
 
   const handleViewInventory = (inventory: GetInventoryResponse) => {
-    setViewingInventory(inventory);
-    setIsViewDrawerOpen(true);
+    // Extract student data from inventory
+    if (inventory.student) {
+      setViewingStudent(inventory.student as Student);
+      setIsStudentModalOpen(true);
+    }
   };
 
-  const handleCloseViewDrawer = () => {
-    setIsViewDrawerOpen(false);
-    setViewingInventory(null);
+  const handleCloseStudentModal = () => {
+    setIsStudentModalOpen(false);
+    setViewingStudent(null);
   };
 
   const handleInsightClick = (type: string) => {
@@ -53,17 +57,15 @@ export const InventoryRecordsContent: React.FC = () => {
 
       {/* Insights Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div 
-          onClick={() => handleInsightClick('mental-health-prediction')}
+        <div
+          onClick={() => handleInsightClick("mental-health-prediction")}
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 cursor-pointer hover:shadow-md hover:border-blue-300 transition-all duration-200 group"
         >
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-600 truncate">Mental Health Insights</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">View Analysis</p>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                Risk predictions & distribution
-              </p>
+              <p className="text-xs text-gray-500 mt-1 truncate">Risk predictions & distribution</p>
             </div>
             <div className="w-12 h-12 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg flex-shrink-0 group-hover:bg-blue-100 transition-colors">
               <Brain className="w-6 h-6" />
@@ -76,17 +78,15 @@ export const InventoryRecordsContent: React.FC = () => {
           </div>
         </div>
 
-        <div 
-          onClick={() => handleInsightClick('bmi-category')}
+        <div
+          onClick={() => handleInsightClick("bmi-category")}
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 cursor-pointer hover:shadow-md hover:border-green-300 transition-all duration-200 group"
         >
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-600 truncate">BMI Analysis</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">View Distribution</p>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                Body mass index categories
-              </p>
+              <p className="text-xs text-gray-500 mt-1 truncate">Body mass index categories</p>
             </div>
             <div className="w-12 h-12 flex items-center justify-center text-green-600 bg-green-50 rounded-lg flex-shrink-0 group-hover:bg-green-100 transition-colors">
               <Activity className="w-6 h-6" />
@@ -99,17 +99,15 @@ export const InventoryRecordsContent: React.FC = () => {
           </div>
         </div>
 
-        <div 
-          onClick={() => handleInsightClick('physical-health')}
+        <div
+          onClick={() => handleInsightClick("physical-health")}
           className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 cursor-pointer hover:shadow-md hover:border-purple-300 transition-all duration-200 group"
         >
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-600 truncate">Physical Health</p>
               <p className="text-2xl font-bold text-gray-900 mt-1">View Patterns</p>
-              <p className="text-xs text-gray-500 mt-1 truncate">
-                Overall health indicators
-              </p>
+              <p className="text-xs text-gray-500 mt-1 truncate">Overall health indicators</p>
             </div>
             <div className="w-12 h-12 flex items-center justify-center text-purple-600 bg-purple-50 rounded-lg flex-shrink-0 group-hover:bg-purple-100 transition-colors">
               <Heart className="w-6 h-6" />
@@ -127,19 +125,10 @@ export const InventoryRecordsContent: React.FC = () => {
       <InventoryStatsGrid />
 
       <div className="bg-white rounded-lg shadow-sm">
-        <InventoryRecordsTable
-          inventories={inventories}
-          loading={loading}
-          error={error}
-          onView={handleViewInventory}
-        />
+        <InventoryRecordsTable inventories={inventories} loading={loading} error={error} onView={handleViewInventory} />
       </div>
 
-      <ViewInventoryDrawer
-        isOpen={isViewDrawerOpen}
-        onClose={handleCloseViewDrawer}
-        inventory={viewingInventory}
-      />
+      <StudentDetailsModal isOpen={isStudentModalOpen} onClose={handleCloseStudentModal} student={viewingStudent} />
     </div>
   );
 };
