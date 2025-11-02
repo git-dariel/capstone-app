@@ -17,13 +17,15 @@ export const DashboardContent: React.FC = () => {
   const [trendsLoading, setTrendsLoading] = useState(true);
   const [programLoading, setProgramLoading] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState<number>(7);
+  const [selectedAssessmentType, setSelectedAssessmentType] = useState<string>("all");
 
-  // Load static chart data (programs and breakdown) only once - no date filtering
+  // Load static chart data (programs and breakdown) only once on mount, reload when assessment filter changes
   useEffect(() => {
     const loadStaticChartData = async () => {
       try {
+        setProgramLoading(true);
         const [programs, breakdown] = await Promise.all([
-          DashboardService.getProgramDistribution(),
+          DashboardService.getProgramDistribution(selectedAssessmentType),
           DashboardService.getAssessmentBreakdown(),
         ]);
 
@@ -40,7 +42,7 @@ export const DashboardContent: React.FC = () => {
     };
 
     loadStaticChartData();
-  }, []); // Only run once on mount
+  }, [selectedAssessmentType]); // Reload when assessment type changes
 
   // Load trends data when time range changes
   useEffect(() => {
@@ -67,6 +69,10 @@ export const DashboardContent: React.FC = () => {
     // Convert time range string to number of days
     const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
     setSelectedTimeRange(days);
+  };
+
+  const handleAssessmentTypeChange = (assessmentType: string) => {
+    setSelectedAssessmentType(assessmentType);
   };
 
   const getDescriptionForTimeRange = (days: number) => {
@@ -147,6 +153,8 @@ export const DashboardContent: React.FC = () => {
               }))}
               title="Assessment Distribution by Program"
               description="Breakdown of assessments across academic programs"
+              onAssessmentTypeChange={handleAssessmentTypeChange}
+              currentAssessmentType={selectedAssessmentType}
             />
           )}
         </div>

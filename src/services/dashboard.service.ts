@@ -42,7 +42,7 @@ export interface DashboardChartsData {
 
 export class DashboardService {
   // Get chart data from the metrics API
-  static async getChartData(days: number = 7): Promise<DashboardChartsData> {
+  static async getChartData(days: number = 7, assessmentType: string = "all"): Promise<DashboardChartsData> {
     try {
       const response = await HttpClient.get<{
         success: boolean;
@@ -62,7 +62,7 @@ export class DashboardService {
             total: number;
           };
         };
-      }>(`/metrics/chart-data?days=${days}`);
+      }>(`/metrics/chart-data?days=${days}&assessmentType=${assessmentType}`);
 
       if (response.success) {
         return {
@@ -159,9 +159,9 @@ export class DashboardService {
   }
 
   // Get program distribution (no date filtering)
-  static async getProgramDistribution(): Promise<ProgramDistribution[]> {
+  static async getProgramDistribution(assessmentType: string = "all"): Promise<ProgramDistribution[]> {
     try {
-      const data = await this.getChartData(); // Use default 7 days but program data ignores date filtering
+      const data = await this.getChartData(7, assessmentType); // Days don't matter for program distribution
       return data.programData;
     } catch (error) {
       console.error("Error fetching program distribution:", error);
