@@ -71,26 +71,34 @@ export const AssessmentCard: React.FC<AssessmentCardProps> = ({
       disabled={disabled}
       className={cn(
         "w-full p-4 sm:p-6 rounded-xl border-2 transition-all duration-300 text-left",
+        "min-h-[180px] max-h-[280px] flex flex-col",
         getColorClasses(color, disabled),
         className
       )}
     >
-      <div className="flex items-start space-x-3 sm:space-x-4">
-        <div className={cn("p-2 sm:p-3 rounded-lg bg-white/80", getIconColor(color, disabled))}>
+      <div className="flex items-start space-x-3 sm:space-x-4 h-full">
+        <div className={cn("p-2 sm:p-3 rounded-lg bg-white/80 flex-shrink-0", getIconColor(color, disabled))}>
           {disabled && cooldownMessage ? <Clock className="w-6 h-6" /> : icon}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-0 flex flex-col h-full">
           <h3
             className={cn(
-              "text-base sm:text-lg font-semibold mb-1 sm:mb-2",
+              "text-base sm:text-lg font-semibold mb-2 flex-shrink-0",
               disabled ? "text-gray-500" : "text-gray-900"
             )}
           >
             {title}
           </h3>
-          <p className={cn("text-xs sm:text-sm leading-relaxed", disabled ? "text-gray-400" : "text-gray-600")}>
+          <div 
+            className={cn(
+              "text-xs sm:text-sm leading-relaxed overflow-y-auto flex-1 pr-2",
+              "scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent hover:scrollbar-thumb-gray-500",
+              disabled ? "text-gray-400" : "text-gray-700"
+            )}
+            style={{ maxHeight: "calc(100% - 2rem)" }}
+          >
             {disabled && cooldownMessage ? cooldownMessage : description}
-          </p>
+          </div>
         </div>
       </div>
     </button>

@@ -4,11 +4,7 @@ import { ChartPieInteractive } from "@/components/ui/piechart";
 import { ChartAreaInteractive } from "@/components/ui/areachart";
 import { ChartBarInteractive } from "@/components/ui/barchart";
 import { DashboardService } from "@/services/dashboard.service";
-import type {
-  ChartDataPoint,
-  ProgramDistribution,
-  AssessmentBreakdown,
-} from "@/services/dashboard.service";
+import type { ChartDataPoint, ProgramDistribution, AssessmentBreakdown } from "@/services/dashboard.service";
 
 export const DashboardContent: React.FC = () => {
   const [trendsData, setTrendsData] = useState<ChartDataPoint[]>([]);
@@ -126,11 +122,6 @@ export const DashboardContent: React.FC = () => {
               data={assessmentBreakdown}
               title="Assessment Distribution"
               description="Breakdown of assessment types by distribution"
-              centerText={
-                assessmentBreakdown && assessmentBreakdown.length > 0
-                  ? assessmentBreakdown.reduce((sum, item) => sum + item.value, 0).toString()
-                  : "0"
-              }
             />
           </div>
         </div>
