@@ -190,6 +190,9 @@ export const ConsultantRecordsContent: React.FC = () => {
 
       let updatedNotes;
 
+      // Convert date string to ISO DateTime format
+      const consultationDateTime = new Date(recordData.consultationDate).toISOString();
+
       if (editingRecord) {
         // Update existing record - find the note by its index in the original array
         const noteIndex = parseInt(editingRecord.id.split("-").pop() || "0");
@@ -198,7 +201,7 @@ export const ConsultantRecordsContent: React.FC = () => {
             ? {
                 title: recordData.title,
                 content: recordData.content,
-                createdAt: recordData.consultationDate,
+                createdAt: consultationDateTime,
               }
             : note
         );
@@ -209,7 +212,7 @@ export const ConsultantRecordsContent: React.FC = () => {
           {
             title: recordData.title,
             content: recordData.content,
-            createdAt: recordData.consultationDate,
+            createdAt: consultationDateTime,
           },
         ];
       }
