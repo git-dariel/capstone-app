@@ -99,4 +99,34 @@ export class GuidanceDashboardService {
       return null;
     }
   }
+
+  // Get detailed assessment data by ID and type
+  static async getAssessmentDetails(
+    assessmentId: string,
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist"
+  ): Promise<any> {
+    try {
+      const response = await MetricsService.fetchGuidanceDashboardMetrics(
+        ["getAssessmentDetails"],
+        { assessmentId, assessmentType }
+      );
+
+      console.log("📥 Assessment details response:", response);
+
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        const detailsData = response.data[0];
+        
+        // The backend returns [{ getAssessmentDetails: { ...assessment data } }]
+        if (detailsData && detailsData.getAssessmentDetails) {
+          console.log("📋 Assessment details:", detailsData.getAssessmentDetails);
+          return detailsData.getAssessmentDetails;
+        }
+      }
+
+      throw new Error("No assessment details received from API");
+    } catch (error) {
+      console.error("Error fetching assessment details:", error);
+      throw error;
+    }
+  }
 }

@@ -80,3 +80,4 @@ export { InventoryInsightsHeader } from "./InventoryInsightsHeader";
 export { InventoryStudentList } from "./InventoryStudentList";
 export { AssessmentStudentList } from "./AssessmentStudentList";
 export { StudentDetailsModal } from "./StudentDetailsModal";
+export { AssessmentHistoryModal } from "./AssessmentHistoryModal";

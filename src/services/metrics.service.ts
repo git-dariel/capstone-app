@@ -9,6 +9,8 @@ export interface MetricFilter {
   program?: string;
   yearLevel?: string;
   gender?: string;
+  assessmentId?: string;
+  assessmentType?: string;
 }
 
 export interface MetricRequest {

@@ -159,3 +159,10 @@ export type {
   ProgressInsight,
   AssessmentTrend,
 } from "./student-dashboard.service";
+
+// Guidance Dashboard Service
+export { GuidanceDashboardService } from "./guidance-dashboard.service";
+export type {
+  StudentProgressInsight,
+  StudentProgressOverview,
+} from "./guidance-dashboard.service";
