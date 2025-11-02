@@ -12,6 +12,7 @@ export interface Student {
     title?: string;
     content?: string;
     isMinimized?: boolean;
+    createdAt?: string;
   }>;
   createdAt: string;
   updatedAt: string;
@@ -67,6 +68,7 @@ export interface CreateStudentRequest {
     title?: string;
     content?: string;
     isMinimized?: boolean;
+    createdAt?: string;
   }>;
   personId?: string; // If linking to existing person
   // If creating new person
@@ -102,6 +104,7 @@ export interface UpdateStudentRequest {
     title?: string;
     content?: string;
     isMinimized?: boolean;
+    createdAt?: string;
   }>;
   firstName?: string;
   lastName?: string;

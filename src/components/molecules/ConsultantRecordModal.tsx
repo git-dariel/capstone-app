@@ -8,7 +8,7 @@ import type { ConsultantRecord } from "@/types/consultant-record.types";
 interface ConsultantRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: { title: string; content: string; studentId: string }) => Promise<void>;
+  onSave: (data: { title: string; content: string; studentId: string; consultationDate: string }) => Promise<void>;
   students: Student[];
   record?: ConsultantRecord | null;
   preSelectedStudentId?: string;
@@ -19,6 +19,7 @@ interface FormData {
   title: string;
   content: string;
   studentId: string;
+  consultationDate: string;
 }
 
 export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
@@ -34,6 +35,7 @@ export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
     title: "",
     content: "",
     studentId: "",
+    consultationDate: new Date().toISOString().split('T')[0], // Default to today
   });
   const [errors, setErrors] = useState<Partial<FormData>>({});
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -50,12 +52,14 @@ export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
           title: record.title,
           content: record.content,
           studentId: record.studentId,
+          consultationDate: record.consultationDate.split('T')[0], // Extract date part
         });
       } else {
         setFormData({
           title: "",
           content: "",
           studentId: preSelectedStudentId || (students.length > 0 ? students[0].id : ""),
+          consultationDate: new Date().toISOString().split('T')[0],
         });
       }
       setErrors({});
@@ -118,6 +122,7 @@ export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
         title: formData.title.trim(),
         content: formData.content.trim(),
         studentId: formData.studentId,
+        consultationDate: formData.consultationDate,
       });
     } catch (error) {
       console.error("Error saving record:", error);
@@ -126,7 +131,12 @@ export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
 
   const handleClose = () => {
     if (!loading) {
-      setFormData({ title: "", content: "", studentId: "" });
+      setFormData({ 
+        title: "", 
+        content: "", 
+        studentId: "",
+        consultationDate: new Date().toISOString().split('T')[0],
+      });
       setErrors({});
       setSearchTerm("");
       setIsDropdownOpen(false);
@@ -285,6 +295,26 @@ export const ConsultantRecordModal: React.FC<ConsultantRecordModalProps> = ({
               required
             />
             {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+          </div>
+
+          {/* Consultation Date */}
+          <div>
+            <label htmlFor="consultationDate" className="block text-sm font-medium text-gray-700 mb-2">
+              Consultation Date *
+            </label>
+            <input
+              type="date"
+              id="consultationDate"
+              value={formData.consultationDate}
+              onChange={(e) => handleChange("consultationDate", e.target.value)}
+              disabled={loading}
+              max={new Date().toISOString().split('T')[0]}
+              className="w-full h-10 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-500 text-sm"
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Date when the consultation took place
+            </p>
           </div>
 
           {/* Content */}
