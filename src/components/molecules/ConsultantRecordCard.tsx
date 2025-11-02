@@ -142,7 +142,7 @@ export const ConsultantRecordCard: React.FC<ConsultantRecordCardProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-gray-500 pt-2 border-t border-black/10 space-y-1 sm:space-y-0">
         <div className="flex items-center space-x-1">
           <Calendar className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-          <span>{formatDate(record.createdAt)}</span>
+          <span>{formatDate(record.consultationDate)}</span>
         </div>
 
         <div className="flex items-center justify-end space-x-2">

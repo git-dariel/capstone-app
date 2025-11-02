@@ -20,6 +20,8 @@ export const ConsultantRecordsContent: React.FC = () => {
   const [filteredRecords, setFilteredRecords] = useState<ConsultantRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<string>("all");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ConsultantRecord | null>(null);
   const [selectedStudentForNewRecord, setSelectedStudentForNewRecord] = useState<string>("");
@@ -66,6 +68,7 @@ export const ConsultantRecordsContent: React.FC = () => {
                 studentId: student.id,
                 title: note.title || `Consultant Record ${index + 1}`,
                 content: note.content || "",
+                consultationDate: note.createdAt || new Date().toISOString(), // Use note's createdAt or fallback
                 createdAt: student.createdAt,
                 updatedAt: student.updatedAt,
                 student: student,
@@ -75,9 +78,9 @@ export const ConsultantRecordsContent: React.FC = () => {
         }
       });
 
-      // Sort by creation date (newest first)
+      // Sort by consultation date (newest first)
       extractedRecords.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => new Date(b.consultationDate).getTime() - new Date(a.consultationDate).getTime()
       );
 
       setRecords(extractedRecords);
@@ -107,8 +110,25 @@ export const ConsultantRecordsContent: React.FC = () => {
       filtered = filtered.filter((record) => record.studentId === selectedStudent);
     }
 
+    // Filter by date range
+    if (startDate) {
+      const startDateTime = new Date(startDate).getTime();
+      filtered = filtered.filter((record) => {
+        const recordDate = new Date(record.consultationDate).getTime();
+        return recordDate >= startDateTime;
+      });
+    }
+
+    if (endDate) {
+      const endDateTime = new Date(endDate).setHours(23, 59, 59, 999);
+      filtered = filtered.filter((record) => {
+        const recordDate = new Date(record.consultationDate).getTime();
+        return recordDate <= endDateTime;
+      });
+    }
+
     setFilteredRecords(filtered);
-  }, [records, searchTerm, selectedStudent]);
+  }, [records, searchTerm, selectedStudent, startDate, endDate]);
 
   const handleCreateRecord = () => {
     setEditingRecord(null);
@@ -155,6 +175,7 @@ export const ConsultantRecordsContent: React.FC = () => {
     title: string;
     content: string;
     studentId: string;
+    consultationDate: string;
   }) => {
     setLoading(true);
     try {
@@ -169,11 +190,20 @@ export const ConsultantRecordsContent: React.FC = () => {
 
       let updatedNotes;
 
+      // Convert date string to ISO DateTime format
+      const consultationDateTime = new Date(recordData.consultationDate).toISOString();
+
       if (editingRecord) {
         // Update existing record - find the note by its index in the original array
         const noteIndex = parseInt(editingRecord.id.split("-").pop() || "0");
         updatedNotes = existingNotes.map((note, index) =>
-          index === noteIndex ? { title: recordData.title, content: recordData.content } : note
+          index === noteIndex
+            ? {
+                title: recordData.title,
+                content: recordData.content,
+                createdAt: consultationDateTime,
+              }
+            : note
         );
       } else {
         // Add new record
@@ -182,6 +212,7 @@ export const ConsultantRecordsContent: React.FC = () => {
           {
             title: recordData.title,
             content: recordData.content,
+            createdAt: consultationDateTime,
           },
         ];
       }
@@ -373,11 +404,11 @@ export const ConsultantRecordsContent: React.FC = () => {
             <p className="text-lg sm:text-2xl font-semibold text-green-600 mt-1">
               {
                 records.filter((r) => {
-                  const created = new Date(r.createdAt);
+                  const consultDate = new Date(r.consultationDate);
                   const now = new Date();
                   return (
-                    created.getMonth() === now.getMonth() &&
-                    created.getFullYear() === now.getFullYear()
+                    consultDate.getMonth() === now.getMonth() &&
+                    consultDate.getFullYear() === now.getFullYear()
                   );
                 }).length
               }
@@ -414,34 +445,83 @@ export const ConsultantRecordsContent: React.FC = () => {
 
         {/* Search and Filter Controls */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-            {/* Search Bar */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search records..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-              />
+          <div className="flex flex-col gap-3">
+            {/* First Row: Search and Student Filter */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              {/* Search Bar */}
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search records..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                />
+              </div>
+
+              {/* Student Filter */}
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <select
+                  value={selectedStudent}
+                  onChange={(e) => setSelectedStudent(e.target.value)}
+                  className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 w-full sm:min-w-[200px]"
+                >
+                  <option value="all">All Students</option>
+                  {students.map((student) => (
+                    <option key={student.id} value={student.id}>
+                      {student.person?.firstName} {student.person?.lastName} ({student.program})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {/* Student Filter */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <select
-                value={selectedStudent}
-                onChange={(e) => setSelectedStudent(e.target.value)}
-                className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 w-full sm:min-w-[200px]"
-              >
-                <option value="all">All Students</option>
-                {students.map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.person?.firstName} {student.person?.lastName} ({student.program})
-                  </option>
-                ))}
-              </select>
+            {/* Second Row: Date Filters */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+                <label htmlFor="startDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  From:
+                </label>
+                <input
+                  type="date"
+                  id="startDate"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  max={endDate || new Date().toISOString().split('T')[0]}
+                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
+                <label htmlFor="endDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                  To:
+                </label>
+                <input
+                  type="date"
+                  id="endDate"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={startDate}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                />
+              </div>
+
+              {(startDate || endDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  Clear Dates
+                </Button>
+              )}
             </div>
           </div>
         </div>

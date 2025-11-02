@@ -49,15 +49,65 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filter, setFilter] = useState<"all" | "unread" | "read">("all");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [assessmentFilter, setAssessmentFilter] = useState<string>("all");
+  const [programFilter, setProgramFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
 
   const isGuidance = user?.type === "guidance";
 
+  // Extract unique programs and years from notifications
+  const availablePrograms = Array.from(
+    new Set(
+      notifications
+        .map((n) => n.user?.person?.students?.[0]?.program)
+        .filter(Boolean)
+    )
+  ).sort();
+
+  const availableYears = Array.from(
+    new Set(
+      notifications
+        .map((n) => n.user?.person?.students?.[0]?.year)
+        .filter(Boolean)
+    )
+  ).sort();
+
   // Filter notifications based on current filters
   const filteredNotifications = notifications.filter((notification) => {
+    // Status filter
     if (filter === "unread" && notification.status === "read") return false;
     if (filter === "read" && notification.status !== "read") return false;
+    
+    // Severity filter
     if (severityFilter !== "all" && notification.severity !== severityFilter) return false;
+    
+    // Assessment type filter
+    if (assessmentFilter !== "all") {
+      const assessmentActions = {
+        anxiety: ["ANXIETY_ASSESSMENT_CREATED", "ANXIETY_ASSESSMENT_UPDATED"],
+        depression: ["DEPRESSION_ASSESSMENT_CREATED", "DEPRESSION_ASSESSMENT_UPDATED"],
+        stress: ["STRESS_ASSESSMENT_CREATED", "STRESS_ASSESSMENT_UPDATED"],
+        suicide: ["SUICIDE_ASSESSMENT_CREATED", "SUICIDE_ASSESSMENT_UPDATED"],
+        checklist: ["CHECKLIST_CREATED", "CHECKLIST_UPDATED"],
+      };
+      
+      const actions = assessmentActions[assessmentFilter as keyof typeof assessmentActions];
+      if (actions && !actions.includes(notification.action)) return false;
+    }
+    
+    // Program filter
+    if (programFilter !== "all") {
+      const studentProgram = notification.user?.person?.students?.[0]?.program;
+      if (studentProgram !== programFilter) return false;
+    }
+    
+    // Year filter
+    if (yearFilter !== "all") {
+      const studentYear = notification.user?.person?.students?.[0]?.year;
+      if (studentYear !== yearFilter) return false;
+    }
+    
     return true;
   });
 
@@ -276,7 +326,7 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
                 <p className="text-xs sm:text-sm text-gray-500">
                   {loading
                     ? "Loading notifications..."
-                    : `Showing ${filteredNotifications.length} notifications`}
+                    : `Showing ${filteredNotifications.length} of ${notifications.length} notifications`}
                 </p>
               </div>
 
@@ -309,22 +359,97 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
               </div>
             </div>
 
-            {/* Severity Filter */}
-            <div className="flex items-center gap-3 sm:gap-4">
-              <Filter className="w-4 h-4 text-gray-500" />
-              <select
-                value={severityFilter}
-                onChange={(e) => setSeverityFilter(e.target.value)}
-                className="px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-              >
-                <option value="all">All Severities</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-                <option value="info">Info</option>
-              </select>
+            {/* Advanced Filters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {/* Severity Filter */}
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <select
+                  value={severityFilter}
+                  onChange={(e) => setSeverityFilter(e.target.value)}
+                  className="w-full px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                >
+                  <option value="all">All Severities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                  <option value="info">Info</option>
+                </select>
+              </div>
+
+              {/* Assessment Type Filter */}
+              <div className="flex items-center gap-2">
+                <select
+                  value={assessmentFilter}
+                  onChange={(e) => setAssessmentFilter(e.target.value)}
+                  className="w-full px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                >
+                  <option value="all">All Assessments</option>
+                  <option value="anxiety">Anxiety</option>
+                  <option value="depression">Depression</option>
+                  <option value="stress">Stress</option>
+                  <option value="suicide">Suicide</option>
+                  <option value="checklist">Checklist</option>
+                </select>
+              </div>
+
+              {/* Program Filter */}
+              {isGuidance && availablePrograms.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={programFilter}
+                    onChange={(e) => setProgramFilter(e.target.value)}
+                    className="w-full px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                  >
+                    <option value="all">All Programs</option>
+                    {availablePrograms.map((program) => (
+                      <option key={program} value={program}>
+                        {program}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Year Filter */}
+              {isGuidance && availableYears.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <select
+                    value={yearFilter}
+                    onChange={(e) => setYearFilter(e.target.value)}
+                    className="w-full px-2 sm:px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                  >
+                    <option value="all">All Years</option>
+                    {availableYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
+
+            {/* Clear Filters Button */}
+            {(severityFilter !== "all" || assessmentFilter !== "all" || programFilter !== "all" || yearFilter !== "all") && (
+              <div className="mt-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setSeverityFilter("all");
+                    setAssessmentFilter("all");
+                    setProgramFilter("all");
+                    setYearFilter("all");
+                  }}
+                  className="text-primary-600 hover:text-primary-700"
+                >
+                  <X className="w-4 h-4 mr-1" />
+                  Clear Filters
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Error Message */}

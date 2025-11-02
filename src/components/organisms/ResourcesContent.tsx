@@ -43,6 +43,7 @@ export const ResourcesContent: React.FC = () => {
   const checklistHook = useChecklist();
 
   const isStudent = user?.type === "student";
+  const isGuidance = user?.type === "guidance";
 
   const handleSelectAssessment = (type: AssessmentType) => {
     setCurrentAssessment(type);
@@ -711,7 +712,7 @@ export const ResourcesContent: React.FC = () => {
             {/* Content based on current view */}
             {(currentView === "assessments" || !isStudent) && (
               <>
-                <AssessmentGrid onSelectAssessment={handleSelectAssessment} />
+                <AssessmentGrid onSelectAssessment={handleSelectAssessment} isGuidanceUser={isGuidance} />
 
                 <div className="mt-6 sm:mt-8 lg:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6 mx-2 sm:mx-0">
                   <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2 text-center sm:text-left">

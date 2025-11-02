@@ -20,6 +20,11 @@ export interface Notification {
     person?: {
       firstName: string;
       lastName: string;
+      students?: Array<{
+        id: string;
+        program: string;
+        year: string;
+      }>;
     };
   };
 }
@@ -58,6 +63,7 @@ export class NotificationService {
     try {
       const queryParams: any = {
         type: "notification", // Only fetch notification type logs
+        fields: "id,type,action,title,message,userId,entityType,entityId,data,status,severity,readAt,createdAt,user.id,user.userName,user.person.firstName,user.person.lastName,user.person.students.id,user.person.students.program,user.person.students.year",
         ...params,
       };
 

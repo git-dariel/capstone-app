@@ -12,6 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 
 export const description = "An interactive bar chart";
 
@@ -28,6 +29,8 @@ interface ChartBarInteractiveProps {
   data?: ProgramData[];
   title?: string;
   description?: string;
+  onAssessmentTypeChange?: (assessmentType: string) => void;
+  currentAssessmentType?: string;
 }
 
 // Default data for fallback
@@ -65,8 +68,24 @@ export function ChartBarInteractive({
   data = defaultData,
   title = "Assessment Distribution by Program",
   description = "Breakdown of assessments across academic programs",
+  onAssessmentTypeChange,
+  currentAssessmentType = "all",
 }: ChartBarInteractiveProps) {
   const [selectedProgram, setSelectedProgram] = React.useState<string>("all");
+  const [selectedAssessmentType, setSelectedAssessmentType] = React.useState<string>(currentAssessmentType);
+
+  // Sync internal state with prop changes
+  React.useEffect(() => {
+    setSelectedAssessmentType(currentAssessmentType);
+  }, [currentAssessmentType]);
+
+  // Handle assessment type change
+  const handleAssessmentTypeChange = (newAssessmentType: string) => {
+    setSelectedAssessmentType(newAssessmentType);
+    if (onAssessmentTypeChange) {
+      onAssessmentTypeChange(newAssessmentType);
+    }
+  };
 
   // Get unique programs for filtering
   const programs = React.useMemo(() => {
@@ -84,22 +103,60 @@ export function ChartBarInteractive({
 
   return (
     <div>
-      <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
-        <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
+      <CardHeader className="flex flex-col gap-3 space-y-0 border-b py-4 sm:flex-row sm:items-center sm:gap-2 sm:py-5">
+        <div className="grid flex-1 gap-1">
           <CardTitle className="text-sm sm:text-base">{title}</CardTitle>
           <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
         </div>
-        <div className="flex flex-wrap gap-2 px-4 py-3 sm:px-6 sm:py-4">
-          {programs.map((program) => (
-            <button
-              key={program}
-              data-active={selectedProgram === program}
-              className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground rounded-lg border px-3 py-1 text-xs font-medium transition-colors hover:bg-muted"
-              onClick={() => setSelectedProgram(program)}
+        <div className="flex flex-col gap-2 sm:flex-row sm:ml-auto">
+          {/* Assessment Type Filter */}
+          <Select value={selectedAssessmentType} onValueChange={handleAssessmentTypeChange}>
+            <SelectTrigger
+              className="w-full rounded-lg sm:w-[180px]"
+              aria-label="Select assessment type"
             >
-              {program === "all" ? "All Programs" : program.toUpperCase()}
-            </button>
-          ))}
+              {selectedAssessmentType === "all" ? "All Assessments" : 
+               selectedAssessmentType === "checklist" ? "Personal Problems" :
+               selectedAssessmentType.charAt(0).toUpperCase() + selectedAssessmentType.slice(1)}
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="all" className="rounded-lg">
+                All Assessments
+              </SelectItem>
+              <SelectItem value="anxiety" className="rounded-lg">
+                Anxiety
+              </SelectItem>
+              <SelectItem value="depression" className="rounded-lg">
+                Depression
+              </SelectItem>
+              <SelectItem value="stress" className="rounded-lg">
+                Stress
+              </SelectItem>
+              <SelectItem value="checklist" className="rounded-lg">
+                Personal Problems
+              </SelectItem>
+              <SelectItem value="suicide" className="rounded-lg">
+                Suicide Risk
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Program Filter */}
+          <Select value={selectedProgram} onValueChange={setSelectedProgram}>
+            <SelectTrigger
+              className="w-full rounded-lg sm:w-[180px]"
+              aria-label="Select a program"
+            >
+              {selectedProgram === "all" ? "All Programs" : selectedProgram.toUpperCase()}
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {programs.map((program) => (
+                <SelectItem key={program} value={program} className="rounded-lg">
+                  {program === "all" ? "All Programs" : program.toUpperCase()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardHeader>
       <CardContent className="px-2 pt-3 sm:px-6 sm:pt-6">
