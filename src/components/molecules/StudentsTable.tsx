@@ -5,6 +5,7 @@ import type { Student } from "@/services/student.service";
 import { AlertCircle, Edit, Loader2, Search, Trash2 } from "lucide-react";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmationModal } from "./ConfirmationModal";
+import { StudentDetailsModal } from "./StudentDetailsModal";
 
 interface StudentTableData {
   id: string;
@@ -23,7 +24,14 @@ interface StudentTableData {
   }>;
   latestAssessment?: {
     type: "stress" | "anxiety" | "depression" | "suicide";
-    severityLevel?: "low" | "moderate" | "high" | "minimal" | "mild" | "severe" | "moderately_severe";
+    severityLevel?:
+      | "low"
+      | "moderate"
+      | "high"
+      | "minimal"
+      | "mild"
+      | "severe"
+      | "moderately_severe";
     riskLevel?: "low" | "moderate" | "high"; // For suicide assessments
     assessmentDate: string;
     totalScore?: number;
@@ -54,6 +62,8 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   const [displayCount, setDisplayCount] = useState(10);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Use prop data if provided, otherwise fall back to hook
@@ -218,8 +228,12 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
 
   const handleView = (studentData: StudentTableData) => {
     const originalStudent = apiStudents.find((s) => s.id === studentData.id);
-    if (originalStudent && onView) {
-      onView(originalStudent);
+    if (originalStudent) {
+      setViewingStudent(originalStudent);
+      setIsDetailsModalOpen(true);
+      if (onView) {
+        onView(originalStudent);
+      }
     }
   };
 
@@ -344,7 +358,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
             <div>
               <h2 className="text-lg font-medium text-gray-900">Students</h2>
               <p className="text-sm text-gray-500">
-                {loading ? "Loading students..." : `Showing ${students.length} of ${filteredStudents.length} students`}
+                {loading
+                  ? "Loading students..."
+                  : `Showing ${students.length} of ${filteredStudents.length} students`}
               </p>
             </div>
           </div>
@@ -363,7 +379,11 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
           </div>
         </div>
 
-        <div ref={tableRef} className="overflow-x-auto max-h-96 overflow-y-auto" onScroll={handleScroll}>
+        <div
+          ref={tableRef}
+          className="overflow-x-auto max-h-96 overflow-y-auto"
+          onScroll={handleScroll}
+        >
           {error ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center space-x-2 text-red-600">
@@ -404,7 +424,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                           className="flex-shrink-0 w-10 h-10"
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">{student.studentName}</h3>
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {student.studentName}
+                          </h3>
                           <p className="text-sm text-gray-500">{student.program}</p>
                           <p className="text-xs text-gray-400">{student.year}</p>
                         </div>
@@ -455,7 +477,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
 
                       {/* Latest Assessment */}
                       <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-xs font-medium text-gray-600 mb-2">Latest Assessment</div>
+                        <div className="text-xs font-medium text-gray-600 mb-2">
+                          Latest Assessment
+                        </div>
                         {renderAssessmentInfo(student.latestAssessment)}
                       </div>
 
@@ -471,7 +495,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                                     {student.notes[0].title}
                                   </div>
                                 ) : (
-                                  <div className="text-xs text-primary-700 italic">Untitled consultant record</div>
+                                  <div className="text-xs text-primary-700 italic">
+                                    Untitled consultant record
+                                  </div>
                                 )}
                               </div>
                             ) : (
@@ -538,7 +564,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                               className="w-8 h-8 mr-3"
                             />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{student.studentName}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.studentName}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -550,7 +578,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                           <div className="text-sm text-gray-900">{student.email}</div>
                           <div className="text-sm text-gray-500">{student.contactNumber}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.gender}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {student.gender}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {renderAssessmentInfo(student.latestAssessment)}
                         </td>
@@ -566,7 +596,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                                         {student.notes[0].title}
                                       </div>
                                     ) : (
-                                      <div className="text-xs text-primary-700 italic">Untitled consultant record</div>
+                                      <div className="text-xs text-primary-700 italic">
+                                        Untitled consultant record
+                                      </div>
                                     )}
                                   </div>
                                 ) : (
@@ -637,6 +669,16 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
         cancelText="Cancel"
         isDestructive={true}
         loading={deleteLoading}
+      />
+
+      {/* Student Details Modal */}
+      <StudentDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setViewingStudent(null);
+        }}
+        student={viewingStudent}
       />
     </>
   );

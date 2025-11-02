@@ -7,7 +7,7 @@ export interface Student {
   studentNumber: string;
   program: string;
   year: string;
-  isActive: boolean;
+  status: "freshman" | "sophomore" | "junior" | "senior";
   notes?: Array<{
     title?: string;
     content?: string;

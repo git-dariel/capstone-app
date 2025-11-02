@@ -293,6 +293,131 @@ export interface GetInventoryResponse {
   updatedAt: string;
   predictionGenerated?: boolean;
   predictionUpdatedAt?: string;
+  // Person to be contacted
+  person_to_be_contacted_in_case_of_accident_or_illness?: {
+    firstName: string;
+    lastName: string;
+    middleName?: string;
+    relationship: string;
+    address?: {
+      houseNo?: number;
+      street?: string;
+      province?: string;
+      city?: string;
+      barangay?: string;
+      zipCode?: number;
+      country?: string;
+    };
+  };
+  // Educational background
+  educational_background?: {
+    level: string;
+    school_graduation: string;
+    status: string;
+    dates_of_attendance: string;
+    honors_received: string;
+    school_address?: {
+      houseNo?: number;
+      street?: string;
+      province?: string;
+      city?: string;
+      barangay?: string;
+      zipCode?: number;
+      country?: string;
+    };
+  };
+  // Nature of schooling
+  nature_of_schooling?: {
+    continuous: boolean;
+    interrupted: boolean;
+    exaplain_why?: string;
+  };
+  // Home and family background
+  home_and_family_background?: {
+    parents_martial_relationship: string;
+    number_of_children_in_the_family_including_yourself: number;
+    number_of_brothers: number;
+    number_of_sisters: number;
+    number_of_brothers_or_sisters_employed: number;
+    ordinal_position: string;
+    is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your: string;
+    who_finances_your_schooling: string;
+    how_much_is_your_weekly_allowance: number;
+    do_you_have_quiet_place_to_study: string;
+    nature_of_residence_while_attending_school: string;
+    parents_total_montly_income?: {
+      income: string;
+      others: string;
+    };
+    do_you_share_your_room_with_anyone?: {
+      status: string;
+      if_yes_with_whom?: string;
+    };
+    father?: {
+      firstName: string;
+      lastName: string;
+      age: number;
+      status: string;
+      educational_attainment: string;
+      occupation: string;
+    };
+    mother?: {
+      firstName: string;
+      lastName: string;
+      age: number;
+      status: string;
+      educational_attainment: string;
+      occupation: string;
+    };
+    guardian?: {
+      firstName: string;
+      lastName: string;
+      age: number;
+      status: string;
+      educational_attainment: string;
+      occupation: string;
+    };
+  };
+  // Health information
+  health?: {
+    physical?: {
+      your_vision?: boolean;
+      your_hearing?: boolean;
+      your_speech?: boolean;
+      your_general_health?: boolean;
+      if_yes_please_specify?: string;
+    };
+    psychological?: {
+      consulted: string;
+      status: string;
+      when?: string;
+      for_what?: string;
+    };
+  };
+  // Interest and hobbies
+  interest_and_hobbies?: {
+    academic: string;
+    favorite_subject: string;
+    favorite_least_subject: string;
+    what_are_your_hobbies: string[];
+    organizations_participated: string;
+    occupational_position_organization: string;
+  };
+  // Test results
+  test_results?: {
+    date?: string;
+    name_of_test?: string;
+    rs?: string;
+    pr?: string;
+    description?: string;
+  };
+  // Significant notes
+  significant_notes_councilor_only?: {
+    date?: string;
+    incident?: string;
+    remarks?: string;
+  };
+  student_signature?: string;
   mentalHealthPrediction?: {
     academicPerformanceOutlook: "improved" | "same" | "declined";
     confidence: number;
