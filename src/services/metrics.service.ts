@@ -11,6 +11,9 @@ export interface MetricFilter {
   gender?: string;
   assessmentId?: string;
   assessmentType?: string;
+  riskLevel?: string;
+  severityLevel?: string;
+  bmiCategory?: string;
 }
 
 export interface MetricRequest {

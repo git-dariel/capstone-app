@@ -11,6 +11,9 @@ export interface InventoryChartFilters {
   program?: string;
   yearLevel?: string;
   gender?: string;
+  riskLevel?: string;
+  severityLevel?: string;
+  bmiCategory?: string;
 }
 
 export interface InventoryDrilldownLevel {
