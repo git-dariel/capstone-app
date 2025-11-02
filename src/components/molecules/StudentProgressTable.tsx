@@ -299,7 +299,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                             onClick={() => toggleRowExpansion(student.studentId)}
                             className="text-indigo-600 hover:text-indigo-900"
                           >
-                            <span className="hidden md:inline">
+                            <span className="hidden md:inline cursor-pointer">
                               {expandedRows.has(student.studentId) ? "Hide Details" : "View Details"}
                             </span>
                             <span className="md:hidden">
@@ -312,7 +312,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                             className="text-purple-600 hover:text-purple-900 flex items-center space-x-1"
                           >
                             <FileText className="w-4 h-4" />
-                            <span className="hidden md:inline">History</span>
+                            <span className="hidden md:inline cursor-pointer">History</span>
                           </button>
                         </div>
                       </td>
