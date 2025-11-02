@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { StudentsTable, StudentDrawer, ViewStudentDrawer } from "@/components/molecules";
+import { StudentsTable, StudentDrawer } from "@/components/molecules";
 import { useStudents } from "@/hooks";
 import type {
   CreateStudentRequest,
@@ -13,9 +13,7 @@ const STUDENT_FIELDS =
 
 export const StudentsContent: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
   const {
@@ -99,21 +97,11 @@ export const StudentsContent: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleViewStudent = (student: Student) => {
-    setViewingStudent(student);
-    setIsViewDrawerOpen(true);
-  };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingStudent(null);
     setModalError(null);
     clearError();
-  };
-
-  const handleCloseViewDrawer = () => {
-    setIsViewDrawerOpen(false);
-    setViewingStudent(null);
   };
 
   const handleDeleteFromTable = (student: Student) => {
@@ -139,7 +127,6 @@ export const StudentsContent: React.FC = () => {
           loading={loading}
           error={error}
           onEdit={handleEditStudent}
-          onView={handleViewStudent}
           onDelete={handleDeleteFromTable}
           onCreate={handleOpenCreateModal}
           onDeleteConfirm={handleDeleteStudent}
@@ -155,12 +142,6 @@ export const StudentsContent: React.FC = () => {
         student={editingStudent}
         loading={loading}
         error={modalError || error}
-      />
-
-      <ViewStudentDrawer
-        isOpen={isViewDrawerOpen}
-        onClose={handleCloseViewDrawer}
-        student={viewingStudent}
       />
     </div>
   );

@@ -121,6 +121,15 @@ export const useInventoryInsights = () => {
       switch (currentLevel.level) {
         case "overview": {
           // Drill down to program level
+          // Store the selected risk/category level for filtering
+          if (state.insights.type === "mental-health-prediction") {
+            newFilters.riskLevel = selectedValue;
+            metricFilter.riskLevel = selectedValue;
+          } else if (state.insights.type === "bmi-category") {
+            newFilters.bmiCategory = selectedValue;
+            metricFilter.bmiCategory = selectedValue;
+          }
+          
           let programData;
           if (state.insights.type === "mental-health-prediction") {
             programData = await MetricsService.getMentalHealthPredictionByProgram(metricFilter);
@@ -130,7 +139,7 @@ export const useInventoryInsights = () => {
 
           nextLevel = {
             level: "program",
-            title: "By Program",
+            title: `${selectedValue} - By Program`,
             data: programData.data.map((item: any) => ({
               ...item,
               percentage: programData.total > 0 ? Math.round((item.value / programData.total) * 100) : 0,
@@ -143,8 +152,14 @@ export const useInventoryInsights = () => {
           // Drill down to year level
           newFilters.program = selectedValue;
           
-          // Add program filter to API call
+          // Add program filter to API call, keep risk/category level from previous drill-down
           metricFilter.program = selectedValue;
+          if (newFilters.riskLevel) {
+            metricFilter.riskLevel = newFilters.riskLevel;
+          }
+          if (newFilters.bmiCategory) {
+            metricFilter.bmiCategory = newFilters.bmiCategory;
+          }
           
           let yearData;
           if (state.insights.type === "mental-health-prediction") {
@@ -168,9 +183,15 @@ export const useInventoryInsights = () => {
           // Drill down to gender level
           newFilters.yearLevel = selectedValue;
           
-          // Add program and year level filters to API call
+          // Add program, year level, and risk/category level filters to API call
           metricFilter.program = newFilters.program;
           metricFilter.yearLevel = selectedValue;
+          if (newFilters.riskLevel) {
+            metricFilter.riskLevel = newFilters.riskLevel;
+          }
+          if (newFilters.bmiCategory) {
+            metricFilter.bmiCategory = newFilters.bmiCategory;
+          }
           
           let genderData;
           if (state.insights.type === "mental-health-prediction") {
@@ -198,6 +219,12 @@ export const useInventoryInsights = () => {
           metricFilter.program = newFilters.program;
           metricFilter.yearLevel = newFilters.yearLevel;
           metricFilter.gender = selectedValue;
+          if (newFilters.riskLevel) {
+            metricFilter.riskLevel = newFilters.riskLevel;
+          }
+          if (newFilters.bmiCategory) {
+            metricFilter.bmiCategory = newFilters.bmiCategory;
+          }
           
           // Fetch real student list from API
           const studentList = await MetricsService.getInventoryStudentList(metricFilter);
@@ -258,6 +285,8 @@ export const useInventoryInsights = () => {
       delete newFilters.program;
       delete newFilters.yearLevel;
       delete newFilters.gender;
+      delete newFilters.riskLevel; // Clear risk level when going back to overview
+      delete newFilters.bmiCategory; // Clear BMI category when going back to overview
     }
 
     setState(prev => ({

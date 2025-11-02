@@ -9,6 +9,11 @@ export interface MetricFilter {
   program?: string;
   yearLevel?: string;
   gender?: string;
+  assessmentId?: string;
+  assessmentType?: string;
+  riskLevel?: string;
+  severityLevel?: string;
+  bmiCategory?: string;
 }
 
 export interface MetricRequest {

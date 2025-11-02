@@ -10,6 +10,7 @@ import {
   Minus,
   Search,
   ChevronLeft,
+  FileText,
 } from "lucide-react";
 import {
   GuidanceDashboardService,
@@ -17,6 +18,7 @@ import {
   type StudentProgressOverview,
 } from "@/services/guidance-dashboard.service";
 import { Button } from "@/components/ui";
+import { AssessmentHistoryModal } from "./AssessmentHistoryModal";
 
 interface StudentProgressTableProps {
   className?: string;
@@ -33,6 +35,8 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
   const [totalPages, setTotalPages] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
   const [summary, setSummary] = useState<StudentProgressOverview['summary'] | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProgressInsight | null>(null);
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   
   const STUDENTS_PER_PAGE = 10;
 
@@ -143,6 +147,17 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const handleViewAssessmentHistory = (student: StudentProgressInsight, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedStudent(student);
+    setIsHistoryModalOpen(true);
+  };
+
+  const handleCloseHistoryModal = () => {
+    setIsHistoryModalOpen(false);
+    setSelectedStudent(null);
   };
 
   if (loading) {
@@ -279,14 +294,27 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                           : "No assessments"}
                       </td>
                       <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <span className="text-indigo-600 hover:text-indigo-900">
-                          <span className="hidden md:inline">
-                            {expandedRows.has(student.studentId) ? "Hide Details" : "View Details"}
-                          </span>
-                          <span className="md:hidden">
-                            {expandedRows.has(student.studentId) ? "Hide" : "View"}
-                          </span>
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => toggleRowExpansion(student.studentId)}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            <span className="hidden md:inline cursor-pointer">
+                              {expandedRows.has(student.studentId) ? "Hide Details" : "View Details"}
+                            </span>
+                            <span className="md:hidden">
+                              {expandedRows.has(student.studentId) ? "Hide" : "View"}
+                            </span>
+                          </button>
+                          <span className="text-gray-300">|</span>
+                          <button
+                            onClick={(e) => handleViewAssessmentHistory(student, e)}
+                            className="text-purple-600 hover:text-purple-900 flex items-center space-x-1"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden md:inline cursor-pointer">History</span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
@@ -458,6 +486,13 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
           </div>
         </div>
       )}
+
+      {/* Assessment History Modal */}
+      <AssessmentHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={handleCloseHistoryModal}
+        student={selectedStudent}
+      />
     </div>
   );
 };

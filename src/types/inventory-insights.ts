@@ -11,6 +11,9 @@ export interface InventoryChartFilters {
   program?: string;
   yearLevel?: string;
   gender?: string;
+  riskLevel?: string;
+  severityLevel?: string;
+  bmiCategory?: string;
 }
 
 export interface InventoryDrilldownLevel {
@@ -32,7 +35,8 @@ export interface InventoryInsights {
 }
 
 export interface StudentDetails {
-  id: string;
+  id: string; // Inventory ID
+  studentId?: string; // Student ID (when available)
   studentNumber: string;
   firstName: string;
   lastName: string;
