@@ -55,6 +55,55 @@ export interface RegisterRequest {
   year?: string;
 }
 
+export interface FirstYearRegisterRequest {
+  email: string;
+  password: string;
+  userName?: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  suffix?: string;
+  contactNumber?: string;
+  gender?: string;
+  birthDate?: string;
+  birthPlace?: string;
+  age?: number;
+  religion?: string;
+  civilStatus?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    houseNo?: string;
+    province?: string;
+    barangay?: string;
+    zipCode?: string;
+    country?: string;
+    type?: string;
+  };
+  guardian?: {
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    contactNumber?: string;
+    relationship?: string;
+    address?: {
+      street?: string;
+      city?: string;
+      houseNo?: string;
+      province?: string;
+      barangay?: string;
+      zipCode?: string;
+      country?: string;
+      type?: string;
+    };
+  };
+  role?: "user" | "admin";
+  type?: "student" | "employee";
+  studentNumber?: string;
+  program?: string;
+  year?: string;
+}
+
 export interface RegisterAdminRequest {
   email: string;
   password: string;
@@ -219,6 +268,42 @@ export class AuthService {
     }
   }
 
+  static async registerFirstYearStudent(userData: FirstYearRegisterRequest): Promise<AuthResponse> {
+    try {
+      const response = await HttpClient.post<AuthResponse>("/auth/register-regular-email", userData);
+
+      // The API returns the response directly, not wrapped in data property
+      const authData = response as unknown as AuthResponse;
+
+      // For new pending registration flow, we don't expect user data in the response
+      // The response will only have emailVerificationRequired and otpSent flags
+      if (authData.emailVerificationRequired) {
+        // This is the new flow - pending registration created, OTP sent
+        console.log("First-year student registration successful. OTP sent to email for verification.");
+      }
+
+      // Fallback validation for old flow (if emailVerificationRequired is not set)
+      if (!authData.user || !authData.user.id) {
+        // If we got here, assume it's the new flow and that's OK
+        if (!authData.emailVerificationRequired) {
+          throw new Error("Invalid response from registration");
+        }
+      }
+
+      // DON'T store any auth data during registration
+      // User will need to sign in after registration
+      console.log(
+        "First-year student registration successful, but not storing auth data. User needs to verify email and sign in."
+      );
+
+      return authData;
+    } catch (error: any) {
+      // Clear any existing auth data on error
+      TokenManager.removeUser();
+      throw error;
+    }
+  }
+
   static async logout(): Promise<void> {
     try {
       // Call the logout endpoint
@@ -241,24 +326,16 @@ export class AuthService {
 
   static async verifyEmail(verificationData: VerifyEmailRequest): Promise<VerifyEmailResponse> {
     try {
-      const response = await HttpClient.post<VerifyEmailResponse>(
-        "/auth/verify-email",
-        verificationData
-      );
+      const response = await HttpClient.post<VerifyEmailResponse>("/auth/verify-email", verificationData);
       return response as unknown as VerifyEmailResponse;
     } catch (error: any) {
       throw error;
     }
   }
 
-  static async resendOTP(
-    resendData: ResendOTPRequest
-  ): Promise<{ message: string; otpSent: boolean }> {
+  static async resendOTP(resendData: ResendOTPRequest): Promise<{ message: string; otpSent: boolean }> {
     try {
-      const response = await HttpClient.post<{ message: string; otpSent: boolean }>(
-        "/auth/resend-otp",
-        resendData
-      );
+      const response = await HttpClient.post<{ message: string; otpSent: boolean }>("/auth/resend-otp", resendData);
       return response as unknown as { message: string; otpSent: boolean };
     } catch (error: any) {
       throw error;

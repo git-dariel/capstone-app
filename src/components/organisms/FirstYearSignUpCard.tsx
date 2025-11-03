@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo } from "@/components/atoms/Logo";
 import { ToastContainer } from "@/components/atoms";
-import { SignUpForm } from "@/components/molecules/SignUpForm";
+import { FirstYearSignUpForm } from "@/components/molecules/FirstYearSignUpForm";
 import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
-import { FirstYearStudentChoiceModal } from "@/components/molecules/FirstYearStudentChoiceModal";
 import { useAuth, useToast } from "@/hooks";
 import { AuthService } from "@/services/auth.service";
 
-interface SignUpFormData {
+interface FirstYearSignUpFormData {
   firstName: string;
   lastName: string;
   studentNumber: string;
@@ -25,19 +24,21 @@ interface SignUpFormData {
     zipCode: string;
   };
   guardian: {
-    name: string;
+    firstName: string;
+    lastName: string;
     contactNumber: string;
     relationship: string;
   };
 }
 
-export const SignUpCard: React.FC = () => {
-  const { signUp, loading, error, clearError } = useAuth();
+export const FirstYearSignUpCard: React.FC = () => {
+  const { clearError } = useAuth();
   const { success: showSuccessToast, toasts, removeToast } = useToast();
   const navigate = useNavigate();
 
-  // First-Year Student Choice Modal state
-  const [isFirstYearModalOpen, setIsFirstYearModalOpen] = useState(true);
+  // Local error state for first-year registration
+  const [firstYearLoading, setFirstYearLoading] = useState(false);
+  const [firstYearError, setFirstYearError] = useState<string | null>(null);
 
   // OTP Modal state
   const [isOTPModalOpen, setIsOTPModalOpen] = useState(false);
@@ -46,23 +47,22 @@ export const SignUpCard: React.FC = () => {
   const [resendLoading, setResendLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
 
-  // Open first-year choice modal on component mount
-  useEffect(() => {
-    setIsFirstYearModalOpen(true);
-  }, []);
-
-  const handleSignUp = async (data: SignUpFormData) => {
+  const handleSignUp = async (data: FirstYearSignUpFormData) => {
     try {
       // Clear any previous errors
       clearError();
+      setFirstYearError(null);
       setOtpError(null);
+      setFirstYearLoading(true);
 
-      // Attempt registration
-      const response = await signUp(data);
+      // Attempt registration using the first-year endpoint
+      const response = await AuthService.registerFirstYearStudent(data);
+
+      setFirstYearLoading(false);
 
       // Check if email verification is required
       if (response?.emailVerificationRequired && response?.otpSent) {
-        console.log("Registration successful! OTP sent to email for verification.");
+        console.log("First-year registration successful! OTP sent to email for verification.");
         setUserEmail(data.email);
         setIsOTPModalOpen(true);
       } else {
@@ -71,9 +71,16 @@ export const SignUpCard: React.FC = () => {
         navigate("/signin", { replace: true });
       }
     } catch (error: any) {
-      // Error handling is done in the hook (setting error state)
-      console.error("Registration failed:", error.message);
+      setFirstYearLoading(false);
+      const errorMessage = error.message || "Registration failed. Please try again.";
+      setFirstYearError(errorMessage);
+      console.error("First-year registration failed:", errorMessage);
     }
+  };
+
+  // Function to clear first-year errors
+  const clearFirstYearError = () => {
+    setFirstYearError(null);
   };
 
   const handleOTPVerify = async (otp: string) => {
@@ -88,25 +95,24 @@ export const SignUpCard: React.FC = () => {
 
       if (response.verified) {
         console.log("Email verification successful!");
-        
+
         // Show success toast
         showSuccessToast(
-          "Account Verified!", 
+          "Account Verified!",
           "Your account has been successfully verified. You can now sign in.",
           5000 // Show for 5 seconds
         );
-        
+
         // Add 2-second delay before closing modal and navigating
         setTimeout(() => {
           // Close modal
           setIsOTPModalOpen(false);
           setOtpLoading(false);
-          
+
           // Navigate to sign-in page
-          // navigate("/signin", { 
-          //   replace: true,
-          //   state: { message: "Account verified successfully! Please sign in." }
-          // });
+          setTimeout(() => {
+            navigate("/signin", { replace: true });
+          }, 500);
         }, 2000); // 2-second delay
       }
     } catch (error: any) {
@@ -127,6 +133,11 @@ export const SignUpCard: React.FC = () => {
 
       if (response.otpSent) {
         console.log("New OTP sent successfully!");
+        showSuccessToast(
+          "OTP Resent",
+          "A new verification code has been sent to your email.",
+          3000
+        );
       }
     } catch (error: any) {
       console.error("Failed to resend OTP:", error.message);
@@ -158,22 +169,18 @@ export const SignUpCard: React.FC = () => {
       <div className="text-center mb-1.5">
         <Logo className="justify-center mb-1 scale-75 sm:scale-90" />
         <h1 className="text-lg sm:text-xl font-semibold text-gray-900 mb-0.5">
-          Welcome to Office of Guidance and Counseling Services!
+          First-Year Student Registration
         </h1>
-        <p className="text-xs sm:text-sm text-gray-600">Lets create your account.</p>
+        <p className="text-xs sm:text-sm text-gray-600">
+          Register with your student number and non-PUP email
+        </p>
       </div>
 
-      <SignUpForm 
+      <FirstYearSignUpForm 
         onSubmit={handleSignUp} 
-        loading={loading} 
-        error={error}
-        onOpenFirstYearModal={() => setIsFirstYearModalOpen(true)}
-      />
-
-      {/* First-Year Student Choice Modal */}
-      <FirstYearStudentChoiceModal
-        isOpen={isFirstYearModalOpen}
-        onClose={() => setIsFirstYearModalOpen(false)}
+        loading={firstYearLoading} 
+        error={firstYearError}
+        onErrorClear={clearFirstYearError}
       />
 
       {/* OTP Verification Modal */}
