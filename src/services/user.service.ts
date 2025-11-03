@@ -170,9 +170,12 @@ export class UserService {
   static async uploadAvatar(file: File): Promise<AvatarUploadResponse> {
     try {
       const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await HttpClient.postFormData<AvatarUploadResponse>('/user/avatar', formData);
+      formData.append("file", file);
+
+      const response = await HttpClient.postFormData<AvatarUploadResponse>(
+        "/user/avatar",
+        formData
+      );
       return response;
     } catch (error) {
       throw error;
@@ -181,8 +184,55 @@ export class UserService {
 
   static async deleteAvatar(): Promise<{ message: string }> {
     try {
-      const response = await HttpClient.deletePermanent<{ message: string }>('/user/avatar');
+      const response = await HttpClient.deletePermanent<{ message: string }>("/user/avatar");
       return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async exportMentalHealthAssessment(studentId: string): Promise<void> {
+    try {
+      const url = `${API_CONFIG.baseURL}/user/export/mental-health-assessment/${studentId}`;
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${TokenManager.getToken()}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to generate mental health assessment report");
+      }
+
+      // Create blob from response
+      const blob = await response.blob();
+
+      // Get filename from response headers or use default
+      const contentDisposition = response.headers.get("content-disposition");
+      let filename = "Mental_Health_Assessment_Report.docx";
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+
+      // Create download link
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       throw error;
     }
