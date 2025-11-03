@@ -3,6 +3,7 @@ export { LandingPage } from "./LandingPage";
 export { NotFoundPage } from "./NotFoundPage";
 export { SignInPage } from "./SignInPage";
 export { SignUpPage } from "./SignUpPage";
+export { FirstYearSignUpPage } from "./FirstYearSignUpPage";
 export { ConsentPage } from "./ConsentPage";
 export { InventoryPage } from "./InventoryPage";
 export { ConsentRecordsPage } from "./ConsentRecordsPage";

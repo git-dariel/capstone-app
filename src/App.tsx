@@ -10,6 +10,7 @@ import {
   ConsentRecordsPage,
   ConsultantRecordsPage,
   DashboardPage,
+  FirstYearSignUpPage,
   HelpSupportPage,
   HistoryPage,
   HomePage,
@@ -66,6 +67,14 @@ function App() {
             element={
               <PublicRoute>
                 <SignUpPage />
+              </PublicRoute>
+            }
+          />
+          <Route
+            path="/signup/first-year"
+            element={
+              <PublicRoute>
+                <FirstYearSignUpPage />
               </PublicRoute>
             }
           />

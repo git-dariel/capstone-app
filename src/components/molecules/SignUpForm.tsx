@@ -37,6 +37,7 @@ interface SignUpFormProps {
   onSubmit: (data: SignUpFormData) => void;
   loading?: boolean;
   error?: string | null;
+  onOpenFirstYearModal?: () => void;
 }
 
 const STEPS = [
@@ -47,7 +48,7 @@ const STEPS = [
   { id: 5, title: "Guardian", description: "Emergency contact" },
 ];
 
-export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = false, error }) => {
+export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = false, error, onOpenFirstYearModal }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<SignUpFormData>({
     firstName: "",
@@ -274,17 +275,17 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
           </div>
         </form>
 
-        {/* Terms and Sign In Link */}
+        {/* First year Modal and Sign In Link */}
         <div className="space-y-3 pt-4 border-t border-gray-50">
-          <div className="text-xs text-gray-500 text-center">
-            By completing registration you agree to Office of Guidance and Counseling Services{" "}
-            <a href="#" className="text-primary-700 hover:text-primary-800">
-              Terms and Conditions
-            </a>{" "}
-            and{" "}
-            <a href="#" className="text-primary-700 hover:text-primary-800">
-              Privacy Policy
-            </a>
+          <div className="text-sm text-gray-500 text-center">
+            Are you a first-year student and don't have a PUP Iskolar ng Bayan email?{" "}
+            <button
+              type="button"
+              onClick={onOpenFirstYearModal}
+              className="text-primary-700 hover:text-primary-800 font-medium hover:underline transition-colors"
+            >
+              Register here
+            </button>
             .
           </div>
 
