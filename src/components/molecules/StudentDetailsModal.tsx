@@ -18,8 +18,10 @@ import {
   Heart,
   BarChart3,
   Shield,
+  Download,
 } from "lucide-react";
-import { InventoryService, ConsentService } from "@/services";
+import { InventoryService, ConsentService, UserService } from "@/services";
+import { useToast } from "@/hooks";
 
 interface StudentDetailsModalProps {
   isOpen: boolean;
@@ -40,7 +42,13 @@ interface AssessmentHistory {
   totalScore?: number;
 }
 
-export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen, onClose, student }) => {
+export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
+  isOpen,
+  onClose,
+  student,
+}) => {
+  const { addToast } = useToast();
+
   const [expandedSections, setExpandedSections] = useState<ExpandedSections>({
     studentDetails: true,
     personDetails: true,
@@ -56,6 +64,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistory[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   // Fetch inventory and consent data when modal opens and student changes
   useEffect(() => {
@@ -127,7 +136,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
         }
 
         // Sort by date descending
-        assessments.sort((a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime());
+        assessments.sort(
+          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
+        );
         setAssessmentHistory(assessments);
       } catch (err) {
         console.error("Error fetching student data:", err);
@@ -208,6 +219,41 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
     return severity.charAt(0).toUpperCase() + severity.slice(1);
   };
 
+  const handleGenerateReport = async () => {
+    if (!student?.id) {
+      setError("Student ID is required to generate report");
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Student ID is required to generate report",
+      });
+      return;
+    }
+
+    setGeneratingReport(true);
+    setError(null);
+
+    try {
+      await UserService.exportMentalHealthAssessment(student.id);
+      addToast({
+        type: "success",
+        title: "Report Generated",
+        message: "Mental health assessment report has been generated and downloaded successfully",
+      });
+    } catch (error: any) {
+      console.error("Error generating mental health assessment report:", error);
+      const errorMessage = error.message || "Failed to generate mental health assessment report";
+      setError(errorMessage);
+      addToast({
+        type: "error",
+        title: "Generation Failed",
+        message: errorMessage,
+      });
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
   if (!student) return null;
 
   const person = student.person;
@@ -230,32 +276,66 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                 className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 text-xl sm:text-2xl flex-shrink-0"
               />
               <div className="flex-1 min-w-0">
-                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-900 truncate">{studentName}</h2>
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-primary-900 truncate">
+                  {studentName}
+                </h2>
                 <p className="text-primary-600 text-xs sm:text-sm font-medium mt-1 truncate">
                   ID: {student.studentNumber || "N/A"}
                 </p>
               </div>
             </div>
 
-            {/* Right: Quick Stats Grid - Mobile Optimized */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
-              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
-                  Program
-                </p>
-                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900 truncate">{student.program}</p>
+            {/* Right: Quick Stats Grid + Generate Report Button - Mobile Optimized */}
+            <div className="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+                <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                  <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
+                    Program
+                  </p>
+                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900 truncate">
+                    {student.program}
+                  </p>
+                </div>
+                <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                  <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
+                    Year Level
+                  </p>
+                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">
+                    Year {student.year}
+                  </p>
+                </div>
+                <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
+                  <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
+                    Assessments
+                  </p>
+                  <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">
+                    {assessmentHistory.length}
+                  </p>
+                </div>
               </div>
-              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
-                  Year Level
-                </p>
-                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">Year {student.year}</p>
-              </div>
-              <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
-                <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
-                  Assessments
-                </p>
-                <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">{assessmentHistory.length}</p>
+
+              {/* Generate Report Button */}
+              <div className="flex-shrink-0">
+                <button
+                  onClick={handleGenerateReport}
+                  disabled={!student?.id || generatingReport}
+                  className="w-full lg:w-auto flex items-center justify-center px-3 sm:px-4 py-2 sm:py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all duration-200 space-x-2 shadow-sm hover:shadow-md disabled:shadow-none text-xs sm:text-sm"
+                >
+                  {generatingReport ? (
+                    <>
+                      <Loader className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                      <span className="hidden sm:inline">Generating...</span>
+                      <span className="sm:hidden">Gen...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-3 h-3 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">Generate Report</span>
+                      <span className="sm:hidden">Report</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -374,10 +454,12 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         <InfoField
                           label="Relationship"
                           value={
-                            inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.relationship || "N/A"
+                            inventoryData.person_to_be_contacted_in_case_of_accident_or_illness
+                              .relationship || "N/A"
                           }
                         />
-                        {inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address && (
+                        {inventoryData.person_to_be_contacted_in_case_of_accident_or_illness
+                          .address && (
                           <InfoField
                             label="Address"
                             value={`${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.houseNo} ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.street}, ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.barangay}, ${inventoryData.person_to_be_contacted_in_case_of_accident_or_illness.address.city}`}
@@ -394,8 +476,14 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         Educational Background
                       </h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
-                        <InfoField label="Level" value={inventoryData.educational_background.level || "N/A"} />
-                        <InfoField label="Status" value={inventoryData.educational_background.status || "N/A"} />
+                        <InfoField
+                          label="Level"
+                          value={inventoryData.educational_background.level || "N/A"}
+                        />
+                        <InfoField
+                          label="Status"
+                          value={inventoryData.educational_background.status || "N/A"}
+                        />
                         <InfoField
                           label="Graduation"
                           value={inventoryData.educational_background.school_graduation || "N/A"}
@@ -430,7 +518,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         {inventoryData.nature_of_schooling.exaplain_why && (
                           <div className="text-cyan-700 border-t border-cyan-200 pt-2">
                             <p className="text-sm font-medium text-cyan-800 mb-1">Explanation:</p>
-                            <p className="text-sm">{inventoryData.nature_of_schooling.exaplain_why}</p>
+                            <p className="text-sm">
+                              {inventoryData.nature_of_schooling.exaplain_why}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -447,11 +537,16 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <InfoField
                             label="Marital Relationship"
-                            value={inventoryData.home_and_family_background.parents_martial_relationship || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background
+                                .parents_martial_relationship || "N/A"
+                            }
                           />
                           <InfoField
                             label="Ordinal Position"
-                            value={inventoryData.home_and_family_background.ordinal_position || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background.ordinal_position || "N/A"
+                            }
                           />
                           <InfoField
                             label="Children in Family"
@@ -462,11 +557,17 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           />
                           <InfoField
                             label="Brothers"
-                            value={inventoryData.home_and_family_background.number_of_brothers?.toString() || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background.number_of_brothers?.toString() ||
+                              "N/A"
+                            }
                           />
                           <InfoField
                             label="Sisters"
-                            value={inventoryData.home_and_family_background.number_of_sisters?.toString() || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background.number_of_sisters?.toString() ||
+                              "N/A"
+                            }
                           />
                           <InfoField
                             label="Employed Siblings"
@@ -477,7 +578,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           />
                           <InfoField
                             label="Finances Schooling"
-                            value={inventoryData.home_and_family_background.who_finances_your_schooling || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background
+                                .who_finances_your_schooling || "N/A"
+                            }
                           />
                           <InfoField
                             label="Weekly Allowance"
@@ -488,22 +592,26 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           />
                           <InfoField
                             label="Quiet Place to Study"
-                            value={inventoryData.home_and_family_background.do_you_have_quiet_place_to_study || "N/A"}
+                            value={
+                              inventoryData.home_and_family_background
+                                .do_you_have_quiet_place_to_study || "N/A"
+                            }
                           />
                           <InfoField
                             label="Residence Type"
                             value={
-                              inventoryData.home_and_family_background.nature_of_residence_while_attending_school ||
-                              "N/A"
+                              inventoryData.home_and_family_background
+                                .nature_of_residence_while_attending_school || "N/A"
                             }
                           />
                         </div>
-                        {inventoryData.home_and_family_background.do_you_share_your_room_with_anyone && (
+                        {inventoryData.home_and_family_background
+                          .do_you_share_your_room_with_anyone && (
                           <div className="border-t border-amber-200 pt-2">
                             <p className="text-sm font-medium text-amber-800 mb-1">Room Sharing:</p>
                             <p className="text-sm text-amber-900">
-                              {inventoryData.home_and_family_background.do_you_share_your_room_with_anyone.status ===
-                              "yes"
+                              {inventoryData.home_and_family_background
+                                .do_you_share_your_room_with_anyone.status === "yes"
                                 ? `Yes - ${inventoryData.home_and_family_background.do_you_share_your_room_with_anyone.if_yes_with_whom}`
                                 : "No"}
                             </p>
@@ -522,7 +630,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                       <div className="space-y-3 text-sm sm:text-base">
                         {inventoryData.health.physical && (
                           <div>
-                            <p className="text-sm font-medium text-red-800 mb-2">Physical Health:</p>
+                            <p className="text-sm font-medium text-red-800 mb-2">
+                              Physical Health:
+                            </p>
                             <div className="grid grid-cols-2 gap-2 ml-2">
                               <div className="flex justify-between">
                                 <span>Vision:</span>
@@ -606,11 +716,16 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           />
                           <InfoField
                             label="Organization"
-                            value={inventoryData.interest_and_hobbies.organizations_participated || "N/A"}
+                            value={
+                              inventoryData.interest_and_hobbies.organizations_participated || "N/A"
+                            }
                           />
                           <InfoField
                             label="Position"
-                            value={inventoryData.interest_and_hobbies.occupational_position_organization || "N/A"}
+                            value={
+                              inventoryData.interest_and_hobbies
+                                .occupational_position_organization || "N/A"
+                            }
                           />
                           <InfoField
                             label="Favorite Subject"
@@ -618,7 +733,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           />
                           <InfoField
                             label="Least Favorite"
-                            value={inventoryData.interest_and_hobbies.favorite_least_subject || "N/A"}
+                            value={
+                              inventoryData.interest_and_hobbies.favorite_least_subject || "N/A"
+                            }
                           />
                         </div>
                         {inventoryData.interest_and_hobbies.what_are_your_hobbies &&
@@ -626,11 +743,16 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                             <div className="border-t border-green-200 pt-2">
                               <p className="text-sm font-medium text-green-800 mb-2">Hobbies:</p>
                               <div className="flex flex-wrap gap-2">
-                                {inventoryData.interest_and_hobbies.what_are_your_hobbies.map((hobby, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm">
-                                    {hobby}
-                                  </span>
-                                ))}
+                                {inventoryData.interest_and_hobbies.what_are_your_hobbies.map(
+                                  (hobby, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 bg-green-100 text-green-800 rounded text-sm"
+                                    >
+                                      {hobby}
+                                    </span>
+                                  )
+                                )}
                               </div>
                             </div>
                           )}
@@ -641,19 +763,36 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                   {/* Test Results */}
                   {inventoryData.test_results && (
                     <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-rose-900 mb-2 sm:mb-3 text-sm sm:text-base">Test Results</h4>
+                      <h4 className="font-semibold text-rose-900 mb-2 sm:mb-3 text-sm sm:text-base">
+                        Test Results
+                      </h4>
                       <div className="space-y-2 text-sm sm:text-base">
-                        <InfoField label="Test Name" value={inventoryData.test_results.name_of_test || "N/A"} />
+                        <InfoField
+                          label="Test Name"
+                          value={inventoryData.test_results.name_of_test || "N/A"}
+                        />
                         <InfoField
                           label="Date"
-                          value={inventoryData.test_results.date ? formatDate(inventoryData.test_results.date) : "N/A"}
+                          value={
+                            inventoryData.test_results.date
+                              ? formatDate(inventoryData.test_results.date)
+                              : "N/A"
+                          }
                         />
-                        <InfoField label="Raw Score (RS)" value={inventoryData.test_results.rs || "N/A"} />
-                        <InfoField label="Percentile Rank (PR)" value={inventoryData.test_results.pr || "N/A"} />
+                        <InfoField
+                          label="Raw Score (RS)"
+                          value={inventoryData.test_results.rs || "N/A"}
+                        />
+                        <InfoField
+                          label="Percentile Rank (PR)"
+                          value={inventoryData.test_results.pr || "N/A"}
+                        />
                         {inventoryData.test_results.description && (
                           <div className="border-t border-rose-200 pt-2">
                             <p className="text-sm font-medium text-rose-800 mb-1">Description:</p>
-                            <p className="text-sm text-rose-900">{inventoryData.test_results.description}</p>
+                            <p className="text-sm text-rose-900">
+                              {inventoryData.test_results.description}
+                            </p>
                           </div>
                         )}
                       </div>
@@ -675,9 +814,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                             className={`font-semibold px-3 py-1 rounded-full text-sm ${
                               inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "low"
                                 ? "bg-green-100 text-green-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "moderate"
+                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
+                                  "moderate"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "high"
+                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
+                                  "high"
                                 ? "bg-orange-100 text-orange-800"
                                 : "bg-red-100 text-red-800"
                             }`}
@@ -697,14 +838,21 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         {/* Description */}
                         <div className="text-blue-700">
                           <p className="text-sm font-medium text-blue-800 mb-1">Description:</p>
-                          <p className="text-sm">{inventoryData.mentalHealthPrediction.mentalHealthRisk.description}</p>
+                          <p className="text-sm">
+                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.description}
+                          </p>
                         </div>
 
                         {/* Assessment Summary */}
                         <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">Assessment Summary:</p>
+                          <p className="text-sm font-medium text-blue-800 mb-1">
+                            Assessment Summary:
+                          </p>
                           <p className="text-sm">
-                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.assessmentSummary}
+                            {
+                              inventoryData.mentalHealthPrediction.mentalHealthRisk
+                                .assessmentSummary
+                            }
                           </p>
                         </div>
 
@@ -719,20 +867,30 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                           <div>
                             <p className="text-sm font-medium text-blue-800">Decision Tree</p>
                             <p className="text-sm text-blue-700">
-                              {(inventoryData.mentalHealthPrediction.modelAccuracy.decisionTree * 100).toFixed(1)}%
+                              {(
+                                inventoryData.mentalHealthPrediction.modelAccuracy.decisionTree *
+                                100
+                              ).toFixed(1)}
+                              %
                             </p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-blue-800">Random Forest</p>
                             <p className="text-sm text-blue-700">
-                              {(inventoryData.mentalHealthPrediction.modelAccuracy.randomForest * 100).toFixed(1)}%
+                              {(
+                                inventoryData.mentalHealthPrediction.modelAccuracy.randomForest *
+                                100
+                              ).toFixed(1)}
+                              %
                             </p>
                           </div>
                         </div>
 
                         {/* Academic Performance Outlook */}
                         <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">Academic Outlook:</p>
+                          <p className="text-sm font-medium text-blue-800 mb-1">
+                            Academic Outlook:
+                          </p>
                           <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium capitalize">
                             {inventoryData.mentalHealthPrediction.academicPerformanceOutlook}
                           </span>
@@ -742,13 +900,20 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         {inventoryData.mentalHealthPrediction.riskFactors &&
                           inventoryData.mentalHealthPrediction.riskFactors.length > 0 && (
                             <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">Risk Factors:</p>
+                              <p className="text-sm font-medium text-blue-800 mb-2">
+                                Risk Factors:
+                              </p>
                               <div className="flex flex-wrap gap-2">
-                                {inventoryData.mentalHealthPrediction.riskFactors.map((factor, idx) => (
-                                  <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm">
-                                    {factor}
-                                  </span>
-                                ))}
+                                {inventoryData.mentalHealthPrediction.riskFactors.map(
+                                  (factor, idx) => (
+                                    <span
+                                      key={idx}
+                                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
+                                    >
+                                      {factor}
+                                    </span>
+                                  )
+                                )}
                               </div>
                             </div>
                           )}
@@ -757,14 +922,18 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         {inventoryData.mentalHealthPrediction.recommendations &&
                           inventoryData.mentalHealthPrediction.recommendations.length > 0 && (
                             <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">Recommendations:</p>
+                              <p className="text-sm font-medium text-blue-800 mb-2">
+                                Recommendations:
+                              </p>
                               <ul className="space-y-1 text-sm">
-                                {inventoryData.mentalHealthPrediction.recommendations.map((rec, idx) => (
-                                  <li key={idx} className="flex items-start space-x-2">
-                                    <span className="text-blue-600 font-bold">•</span>
-                                    <span>{rec}</span>
-                                  </li>
-                                ))}
+                                {inventoryData.mentalHealthPrediction.recommendations.map(
+                                  (rec, idx) => (
+                                    <li key={idx} className="flex items-start space-x-2">
+                                      <span className="text-blue-600 font-bold">•</span>
+                                      <span>{rec}</span>
+                                    </li>
+                                  )
+                                )}
                               </ul>
                             </div>
                           )}
@@ -829,10 +998,15 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                     >
                       <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
-                          <span className="text-base sm:text-xl">{getAssessmentTypeIcon(assessment.type)}</span>
+                          <span className="text-base sm:text-xl">
+                            {getAssessmentTypeIcon(assessment.type)}
+                          </span>
                           <div>
                             <h4 className="font-semibold text-gray-900 capitalize text-sm sm:text-base">
-                              {assessment.type === "checklist" ? "Personal Problems" : assessment.type} Assessment
+                              {assessment.type === "checklist"
+                                ? "Personal Problems"
+                                : assessment.type}{" "}
+                              Assessment
                             </h4>
                             <p className="text-[10px] sm:text-xs text-gray-500">
                               {formatDate(assessment.assessmentDate)}
@@ -853,7 +1027,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                                 assessment.severityLevel || assessment.riskLevel
                               )}`}
                             >
-                              {formatSeverityLabel(assessment.severityLevel || assessment.riskLevel || "Unknown")}
+                              {formatSeverityLabel(
+                                assessment.severityLevel || assessment.riskLevel || "Unknown"
+                              )}
                             </span>
                           ) : null}
                         </div>
@@ -874,7 +1050,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
               {consultationNotes.length > 0 ? (
                 <div className="space-y-3">
                   {consultationNotes.map((note, index) => (
-                    <div key={index} className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4">
+                    <div
+                      key={index}
+                      className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4"
+                    >
                       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                         <h4 className="font-semibold text-primary-900 text-sm sm:text-base">
                           {note.title || `Consultation Record ${index + 1}`}
@@ -884,7 +1063,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                         </span>
                       </div>
                       {note.content && (
-                        <div className="text-xs sm:text-sm text-primary-800 whitespace-pre-wrap">{note.content}</div>
+                        <div className="text-xs sm:text-sm text-primary-800 whitespace-pre-wrap">
+                          {note.content}
+                        </div>
                       )}
                     </div>
                   ))}
@@ -909,15 +1090,26 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({ isOpen
                   {/* Basic Information */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
                     <InfoField label="Referred By" value={consentData.referred || "N/A"} />
-                    <InfoField label="Living With" value={consentData.with_whom_do_you_live || "N/A"} />
-                    <InfoField label="Financial Status" value={consentData.financial_status || "N/A"} />
-                    <InfoField label="Physical Problem" value={consentData.physical_problem === "yes" ? "Yes" : "No"} />
+                    <InfoField
+                      label="Living With"
+                      value={consentData.with_whom_do_you_live || "N/A"}
+                    />
+                    <InfoField
+                      label="Financial Status"
+                      value={consentData.financial_status || "N/A"}
+                    />
+                    <InfoField
+                      label="Physical Problem"
+                      value={consentData.physical_problem === "yes" ? "Yes" : "No"}
+                    />
                   </div>
 
                   {/* Reason for Guidance */}
                   {consentData.what_brings_you_to_guidance && (
                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">Reason for Guidance</h4>
+                      <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">
+                        Reason for Guidance
+                      </h4>
                       <p className="text-sm sm:text-base text-blue-800 whitespace-pre-wrap">
                         {consentData.what_brings_you_to_guidance}
                       </p>
@@ -1023,7 +1215,13 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
 }
 
-const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, isExpanded, onToggle, children }) => {
+const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({
+  title,
+  icon,
+  isExpanded,
+  onToggle,
+  children,
+}) => {
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white hover:shadow-md transition-shadow">
       <button
@@ -1032,7 +1230,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, is
       >
         <div className="flex items-center space-x-2 sm:space-x-3">
           <div className="text-primary-600 flex-shrink-0">{icon}</div>
-          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">{title}</h3>
+          <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-gray-900 truncate">
+            {title}
+          </h3>
         </div>
         <div className="text-gray-400 flex-shrink-0">
           {isExpanded ? (
@@ -1044,7 +1244,9 @@ const CollapsibleSection: React.FC<CollapsibleSectionProps> = ({ title, icon, is
       </button>
 
       {isExpanded && (
-        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">{children}</div>
+        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-gray-200 bg-gray-50">
+          {children}
+        </div>
       )}
     </div>
   );
