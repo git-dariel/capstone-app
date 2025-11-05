@@ -44,7 +44,7 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
   const studentName = consent.student
     ? `${consent.student.person.firstName} ${consent.student.person.lastName}`
     : "Unknown Student";
-    
+
   const studentAvatar = consent.student?.person?.users?.[0]?.avatar;
 
   const renderConcerns = (concerns: any) => {
@@ -58,7 +58,7 @@ export const ViewConsentDrawer: React.FC<ViewConsentDrawerProps> = ({
 
     const concernLevels: Record<string, string> = {
       not_applicable: "N/A",
-      leat_important: "Least Important",
+      least_important: "Least Important",
       somewhat_important: "Somewhat Important",
       important: "Important",
       very_important: "Very Important",

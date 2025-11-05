@@ -10,3 +10,6 @@ export * from "./layout";
 // Route Components
 export * from "./ProtectedRoute";
 export * from "./PublicRoute";
+export * from "./ConsentGuard";
+export * from "./InventoryGuard";
+export * from "./ComprehensiveGuard";

@@ -74,3 +74,14 @@ export const civilStatusOptions = [
   { value: "widow", label: "Widow" },
   { value: "cohabiting", label: "Cohabiting" },
 ];
+
+export const servicesOptions = [
+  { value: "general_information", label: "General Information" },
+  { value: "one_or_two_session_problem_solving", label: "One or Two Session Problem Solving" },
+  { value: "stress_management", label: "Stress Management" },
+  { value: "group_counseling", label: "Group Counseling" },
+  { value: "substance_abuse_services", label: "Substance Abuse Services" },
+  { value: "career_exploration", label: "Career Exploration" },
+  { value: "individual_counseling", label: "Individual Counseling" },
+  { value: "referral_for_university", label: "Referral for University" },
+];

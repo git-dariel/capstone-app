@@ -518,8 +518,17 @@ export class InventoryService {
    */
   static async getInventoryByStudentId(studentId: string): Promise<GetInventoryResponse | null> {
     try {
+      // Include all inventory fields and student/person/user data for comprehensive display
+      const fields =
+        "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction," +
+        "person_to_be_contacted_in_case_of_accident_or_illness,educational_background,nature_of_schooling," +
+        "home_and_family_background,health,interest_and_hobbies,test_results,significant_notes_councilor_only,student_signature," +
+        "student.id,student.studentNumber,student.program,student.year,student.status," +
+        "student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.email," +
+        "student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.users.id,student.person.users.avatar";
+
       const response = await HttpClient.get<GetInventoryResponse>(
-        `/inventory/student/${studentId}`
+        `/inventory/student/${studentId}?fields=${encodeURIComponent(fields)}`
       );
       return response;
     } catch (error: any) {
@@ -540,6 +549,24 @@ export class InventoryService {
     } catch (error) {
       console.error("Error checking inventory:", error);
       return false;
+    }
+  }
+
+  /**
+   * Update inventory data
+   */
+  static async updateInventory(
+    inventoryId: string,
+    data: Partial<InventoryFormData>
+  ): Promise<GetInventoryResponse> {
+    try {
+      const response = await HttpClient.patch<GetInventoryResponse>(
+        `/inventory/${inventoryId}`,
+        data
+      );
+      return response;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.error || error.message || "Failed to update inventory");
     }
   }
 
