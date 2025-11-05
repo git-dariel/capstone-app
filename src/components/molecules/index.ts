@@ -21,6 +21,7 @@ export { InventoryRecordsTable } from "./InventoryRecordsTable";
 export { StudentDrawer } from "./StudentModal";
 export { ViewStudentDrawer } from "./ViewStudentDrawer";
 export { ViewInventoryDrawer } from "./ViewInventoryDrawer";
+export { EditInventoryDrawer } from "./EditInventoryDrawer";
 export { ConsentRecordsTable } from "./ConsentRecordsTable";
 export { ViewConsentDrawer } from "./ViewConsentDrawer";
 export { AssessmentGrid } from "./AssessmentGrid";

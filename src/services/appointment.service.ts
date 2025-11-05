@@ -8,7 +8,15 @@ export interface Appointment {
   scheduleId: string;
   title: string;
   description?: string;
-  appointmentType: "consultation" | "counseling" | "follow_up" | "emergency" | "group_session";
+  appointmentType:
+    | "general_information"
+    | "one_or_two_session_problem_solving"
+    | "stress_management"
+    | "group_counseling"
+    | "substance_abuse_services"
+    | "career_exploration"
+    | "individual_counseling"
+    | "referral_for_university";
   requestedDate: string;
   priority: "low" | "normal" | "high" | "urgent";
   status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show" | "rescheduled";
@@ -63,7 +71,15 @@ export interface CreateAppointmentRequest {
   scheduleId: string;
   title: string;
   description?: string;
-  appointmentType?: "consultation" | "counseling" | "follow_up" | "emergency" | "group_session";
+  appointmentType?:
+    | "general_information"
+    | "one_or_two_session_problem_solving"
+    | "stress_management"
+    | "group_counseling"
+    | "substance_abuse_services"
+    | "career_exploration"
+    | "individual_counseling"
+    | "referral_for_university";
   requestedDate: string;
   priority?: "low" | "normal" | "high" | "urgent";
   location?: string;
@@ -75,7 +91,15 @@ export interface UpdateAppointmentRequest {
   status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show" | "rescheduled";
   title?: string;
   description?: string;
-  appointmentType?: "consultation" | "counseling" | "follow_up" | "emergency" | "group_session";
+  appointmentType?:
+    | "general_information"
+    | "one_or_two_session_problem_solving"
+    | "stress_management"
+    | "group_counseling"
+    | "substance_abuse_services"
+    | "career_exploration"
+    | "individual_counseling"
+    | "referral_for_university";
   requestedDate?: string;
   priority?: "low" | "normal" | "high" | "urgent";
   location?: string;

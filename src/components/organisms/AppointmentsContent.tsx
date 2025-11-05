@@ -589,7 +589,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         scheduleId: schedule.id,
         title: `Appointment: ${schedule.title}`,
         description: schedule.description || "",
-        appointmentType: "consultation" as const,
+        appointmentType: "general_information" as const,
         requestedDate: schedule.startTime,
         status: "confirmed" as const, // Students booking from available schedules get confirmed status
         priority: "normal" as const,

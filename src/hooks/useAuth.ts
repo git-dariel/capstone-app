@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { AuthService, ConsentService } from "@/services";
+import { AuthService, ConsentService, InventoryService } from "@/services";
 import type { LoginRequest, RegisterRequest, AuthResponse, Student } from "@/services";
 
 interface AuthState {
@@ -169,17 +169,25 @@ export const useAuth = () => {
 
       // Small delay to ensure state is set before navigation
       setTimeout(async () => {
-        // Check if user is a student and needs to complete consent
+        // Check if user is a student and needs to complete consent and inventory
         if (response.user?.type === "student" && response.student?.id) {
           try {
+            // Check consent first
             const hasConsent = await ConsentService.hasConsent(response.student.id);
             if (!hasConsent) {
               navigate("/consent", { replace: true });
               return;
             }
+
+            // If consent is complete, check inventory
+            const hasInventory = await InventoryService.hasInventory(response.student.id);
+            if (!hasInventory) {
+              navigate("/inventory", { replace: true });
+              return;
+            }
           } catch (error) {
-            console.error("Error checking consent:", error);
-            // If consent check fails, continue to normal navigation
+            console.error("Error checking consent or inventory:", error);
+            // If checks fail, continue to normal navigation
           }
         }
 
@@ -213,17 +221,25 @@ export const useAuth = () => {
 
     // Small delay to ensure state is set before navigation
     setTimeout(async () => {
-      // Check if user is a student and needs to complete consent
+      // Check if user is a student and needs to complete consent and inventory
       if (userData.user?.type === "student" && userData.student?.id) {
         try {
+          // Check consent first
           const hasConsent = await ConsentService.hasConsent(userData.student.id);
           if (!hasConsent) {
             navigate("/consent", { replace: true });
             return;
           }
+
+          // If consent is complete, check inventory
+          const hasInventory = await InventoryService.hasInventory(userData.student.id);
+          if (!hasInventory) {
+            navigate("/inventory", { replace: true });
+            return;
+          }
         } catch (error) {
-          console.error("Error checking consent:", error);
-          // If consent check fails, continue to normal navigation
+          console.error("Error checking consent or inventory:", error);
+          // If checks fail, continue to normal navigation
         }
       }
 
@@ -272,16 +288,16 @@ export const useAuth = () => {
       // Get current user from localStorage to get the ID
       const currentUser = AuthService.getCurrentUser();
       const currentStudent = AuthService.getCurrentStudent();
-      
+
       if (currentUser?.id) {
         // Fetch fresh user data from server
         const { UserService } = await import("@/services");
         const freshUser = await UserService.getUserById(currentUser.id);
-        
+
         // Update localStorage with fresh data
         const { TokenManager } = await import("@/services");
         TokenManager.setUser(freshUser);
-        
+
         // Update state with fresh data
         setAuthState((prev) => ({
           ...prev,

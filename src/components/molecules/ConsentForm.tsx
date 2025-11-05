@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FormSelect } from "@/components/atoms/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -51,27 +51,21 @@ const physicalSymptomsOptions = [
   { value: "stomach_discomfort", label: "Stomach Discomfort" },
 ];
 
-const servicesOptions = [
-  { value: "general_information", label: "General Information" },
-  { value: "one_or_two_session_problem_solving", label: "One or Two Session Problem Solving" },
-  { value: "stress_management", label: "Stress Management" },
-  { value: "group_counseling", label: "Group Counseling" },
-  { value: "substance_abuse_services", label: "Substance Abuse Services" },
-  { value: "career_exploration", label: "Career Exploration" },
-  { value: "individual_counseling", label: "Individual Counseling" },
-  { value: "referral_for_university", label: "Referral for University" },
-];
-
 const concernLevels = [
   { value: "not_applicable", label: "Not Applicable" },
-  { value: "leat_important", label: "Least Important" },
+  { value: "least_important", label: "Least Important" },
   { value: "somewhat_important", label: "Somewhat Important" },
   { value: "important", label: "Important" },
   { value: "very_important", label: "Very Important" },
   { value: "most_important", label: "Most Important" },
 ];
 
-export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, loading = false, error }) => {
+export const ConsentForm: React.FC<ConsentFormProps> = ({
+  studentId,
+  onSubmit,
+  loading = false,
+  error,
+}) => {
   const [formData, setFormData] = useState<ConsentFormData>({
     studentId,
     referred: "self",
@@ -106,8 +100,90 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // State for validation and scrolling
+  const [concernErrors, setConcernErrors] = useState<string[]>([]);
+  const [showConcernWarning, setShowConcernWarning] = useState(false);
+  const concernsRef = useRef<HTMLDivElement>(null);
+
+  // Define concern categories and their labels
+  const concernCategories = {
+    personal_growth: "Personal Growth",
+    depression: "Depression",
+    suicidal_thoughts: "Suicidal Thoughts",
+    study_skills: "Study Skills",
+    family_concerns: "Family Concerns",
+    sexual_concerns: "Sexual Concerns",
+    educational_concerns: "Educational Concerns",
+    anxiety: "Anxiety",
+    drug_use: "Drug Use",
+    physical_concerns: "Physical Concerns",
+    self_concept: "Self Concept",
+    decision_making_about_leaving_pup: "Decision Making About Leaving PUP",
+    financial_concerns: "Financial Concerns",
+    relationship_with_others: "Relationship with Others",
+    spirituality: "Spirituality",
+    weight_eating_issues: "Weight/Eating Issues",
+    career: "Career",
+  };
+
+  // Validation function for concerns
+  const validateConcerns = () => {
+    const unansweredConcerns: string[] = [];
+
+    Object.entries(concernCategories).forEach(([key, label]) => {
+      if (formData.concerns[key as keyof typeof formData.concerns] === undefined) {
+        unansweredConcerns.push(label);
+      }
+    });
+
+    setConcernErrors(unansweredConcerns);
+    setShowConcernWarning(unansweredConcerns.length > 0);
+
+    return unansweredConcerns.length === 0;
+  };
+
+  // Scroll to concerns section
+  const scrollToConcerns = () => {
+    if (concernsRef.current) {
+      concernsRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+        inline: "nearest",
+      });
+
+      // Optional: Add a slight delay then focus on the first unanswered concern
+      setTimeout(() => {
+        const firstErrorConcern = Object.keys(concernCategories).find(
+          (key) => formData.concerns[key as keyof typeof formData.concerns] === undefined
+        );
+
+        if (firstErrorConcern) {
+          const firstRadio = document.querySelector(
+            `input[name="concern_${firstErrorConcern}"]`
+          ) as HTMLInputElement;
+          if (firstRadio) {
+            firstRadio.focus();
+          }
+        }
+      }, 500);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate concerns before submission
+    const areConcernsValid = validateConcerns();
+
+    if (!areConcernsValid) {
+      scrollToConcerns();
+      return;
+    }
+
+    // Clear any previous warnings
+    setShowConcernWarning(false);
+    setConcernErrors([]);
+
     await onSubmit(formData);
   };
 
@@ -130,8 +206,8 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
     formData.physical_problem &&
     formData.physical_symptoms &&
     formData.services &&
-    // Check that at least some concerns are filled
-    Object.values(formData.concerns).some((value) => value !== undefined) &&
+    // Check that ALL concerns are filled (all fields required)
+    Object.values(formData.concerns).every((value) => value !== undefined) &&
     // Check that terms are accepted
     termsAccepted;
 
@@ -145,7 +221,9 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
 
       {/* Referral Information */}
       <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Referral Information</h3>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
+          Referral Information
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormSelect
@@ -170,7 +248,9 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
 
       {/* Financial and Personal Information */}
       <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
+          Personal Information
+        </h3>
 
         <div className="space-y-4">
           <FormSelect
@@ -184,7 +264,10 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
           />
 
           <div>
-            <Label htmlFor="guidance_reason" className="text-sm font-medium text-gray-700 block mb-1">
+            <Label
+              htmlFor="guidance_reason"
+              className="text-sm font-medium text-gray-700 block mb-1"
+            >
               What brings you to guidance counseling?
             </Label>
             <textarea
@@ -250,55 +333,108 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
       </div>
 
       {/* Concerns Assessment */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      <div ref={concernsRef} className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Level of Concerns</h3>
-        <p className="text-sm text-gray-600 mb-4">Please rate your level of concern in each area:</p>
+        <p className="text-sm text-gray-600 mb-4">
+          Please rate your level of concern in each area (all fields are required):
+        </p>
 
-        <div className="space-y-4">
-          {Object.entries({
-            personal_growth: "Personal Growth",
-            depression: "Depression",
-            suicidal_thoughts: "Suicidal Thoughts",
-            study_skills: "Study Skills",
-            family_concerns: "Family Concerns",
-            sexual_concerns: "Sexual Concerns",
-            educational_concerns: "Educational Concerns",
-            anxiety: "Anxiety",
-            drug_use: "Drug Use",
-            physical_concerns: "Physical Concerns",
-            self_concept: "Self Concept",
-            decision_making_about_leaving_pup: "Decision Making About Leaving PUP",
-            financial_concerns: "Financial Concerns",
-            relationship_with_others: "Relationship with Others",
-            spirituality: "Spirituality",
-            weight_eating_issues: "Weight/Eating Issues",
-            career: "Career",
-          }).map(([key, label]) => (
-            <div key={key}>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">{label}</Label>
-              <div className="flex gap-4 flex-wrap">
-                {concernLevels.map((level) => (
-                  <label key={level.value} className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name={`concern_${key}`}
-                      value={level.value}
-                      checked={formData.concerns[key as keyof typeof formData.concerns] === level.value}
-                      onChange={(e) => handleConcernChange(key, e.target.value)}
-                      disabled={loading}
-                      className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
-                    />
-                    <span className="text-xs text-gray-700">{level.label}</span>
-                  </label>
-                ))}
+        {/* Helpful tip */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <p className="text-xs text-blue-800">
+            <strong>Tip:</strong> If an area doesn't apply to you, please select "Not Applicable".
+            All categories must be completed to proceed with your consent form.
+          </p>
+        </div>
+
+        {/* Warning message for incomplete concerns */}
+        {showConcernWarning && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="flex items-start">
+              <svg
+                className="w-5 h-5 text-red-500 mt-0.5 mr-3 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"
+                />
+              </svg>
+              <div>
+                <h4 className="text-sm font-medium text-red-800 mb-1">
+                  Please complete all concern level ratings
+                </h4>
+                <p className="text-sm text-red-700 mb-2">
+                  The following areas still need your response:
+                </p>
+                <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                  {concernErrors.map((concern, index) => (
+                    <li key={index}>{concern}</li>
+                  ))}
+                </ul>
               </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          {Object.entries(concernCategories).map(([key, label]) => {
+            const isUnanswered =
+              formData.concerns[key as keyof typeof formData.concerns] === undefined;
+            const hasError = showConcernWarning && isUnanswered;
+
+            return (
+              <div
+                key={key}
+                className={`${hasError ? "bg-red-50 border border-red-200 rounded-lg p-3" : ""}`}
+              >
+                <Label
+                  className={`text-sm font-medium mb-2 block ${
+                    hasError ? "text-red-800" : "text-gray-700"
+                  }`}
+                >
+                  {label} {hasError && <span className="text-red-600">*</span>}
+                </Label>
+                <div className="flex gap-4 flex-wrap">
+                  {concernLevels.map((level) => (
+                    <label key={level.value} className="flex items-center space-x-2">
+                      <input
+                        type="radio"
+                        name={`concern_${key}`}
+                        value={level.value}
+                        checked={
+                          formData.concerns[key as keyof typeof formData.concerns] === level.value
+                        }
+                        onChange={(e) => {
+                          handleConcernChange(key, e.target.value);
+                          // Clear the warning when user starts answering
+                          if (showConcernWarning) {
+                            const updatedErrors = concernErrors.filter((error) => error !== label);
+                            setConcernErrors(updatedErrors);
+                            if (updatedErrors.length === 0) {
+                              setShowConcernWarning(false);
+                            }
+                          }
+                        }}
+                        disabled={loading}
+                        className="w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
+                      />
+                      <span className="text-xs text-gray-700">{level.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Services and Support */}
-      <div className="bg-white p-6 rounded-lg border border-gray-200">
+      {/* <div className="bg-white p-6 rounded-lg border border-gray-200">
         <h3 className="text-lg font-medium text-gray-900 mb-4">Services and Support</h3>
 
         <FormSelect
@@ -310,7 +446,7 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
           required
           disabled={loading}
         />
-      </div>
+      </div> */}
 
       {/* Disclaimer */}
       {/* <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
@@ -323,14 +459,17 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
 
       {/* Terms and Conditions */}
       <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200">
-        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Terms and Conditions</h3>
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">
+          Terms and Conditions
+        </h3>
 
         <div className="space-y-4">
           <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
             <p className="text-xs sm:text-sm text-yellow-800">
-              <strong>Data Privacy Notice:</strong> Your personal information will be securely stored and used
-              exclusively for mental health assessments and counseling services. We ensure your privacy through
-              encryption, strict access controls, and adherence to privacy laws.
+              <strong>Data Privacy Notice:</strong> Your personal information will be securely
+              stored and used exclusively for mental health assessments and counseling services. We
+              ensure your privacy through encryption, strict access controls, and adherence to
+              privacy laws.
             </p>
           </div>
 
@@ -361,27 +500,61 @@ export const ConsentForm: React.FC<ConsentFormProps> = ({ studentId, onSubmit, l
               >
                 Terms and Conditions
               </button>{" "}
-              regarding the collection, use, and protection of my personal information for mental health assessment and
-              counseling purposes.
+              regarding the collection, use, and protection of my personal information for mental
+              health assessment and counseling purposes.
             </label>
           </div>
 
           <p className="text-xs text-gray-600">
-            <strong>Note:</strong> Checking the box above will open the Terms and Conditions for you to review. You must
-            read and accept the terms to submit the consent form.
+            <strong>Note:</strong> Checking the box above will open the Terms and Conditions for you
+            to review. You must read and accept the terms to submit the consent form.
           </p>
         </div>
       </div>
 
       {/* Submit Button */}
-      <div className="flex justify-end">
-        <Button
-          type="submit"
-          disabled={!isFormValid || loading}
-          className="w-full sm:w-auto px-6 sm:px-8 py-2 bg-primary-700 hover:bg-primary-800 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "Submitting..." : "Submit Consent Form"}
-        </Button>
+      <div className="space-y-4">
+        {/* Progress indicator for concerns */}
+        {(() => {
+          const totalConcerns = Object.keys(concernCategories).length;
+          const answeredConcerns = Object.values(formData.concerns).filter(
+            (value) => value !== undefined
+          ).length;
+          const progressPercentage = (answeredConcerns / totalConcerns) * 100;
+
+          if (answeredConcerns < totalConcerns) {
+            return (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-800">
+                    Concerns Progress: {answeredConcerns} of {totalConcerns} completed
+                  </span>
+                  <span className="text-sm text-blue-600">{Math.round(progressPercentage)}%</span>
+                </div>
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-blue-700 mt-2">
+                  Please complete all concern level ratings to proceed.
+                </p>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={!isFormValid || loading}
+            className="w-full sm:w-auto px-6 sm:px-8 py-2 bg-primary-700 hover:bg-primary-800 text-white font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? "Submitting..." : "Submit Consent Form"}
+          </Button>
+        </div>
       </div>
 
       {/* Terms and Conditions Modal */}

@@ -130,11 +130,8 @@ export function AssessmentTrendsChart({
   // Transform API trends data for individual assessment charts
   const transformedDataByType = React.useMemo(() => {
     if (!trends) {
-      console.log("❌ No trends data provided");
       return {};
     }
-
-    console.log("📊 Raw trends data:", JSON.stringify(trends, null, 2));
 
     const assessmentTypes = ["anxiety", "depression", "stress", "suicide", "checklist"];
     const dataByType: Record<string, any[]> = {};
@@ -143,19 +140,14 @@ export function AssessmentTrendsChart({
       const assessmentArray = (trends as any)[type];
 
       if (!Array.isArray(assessmentArray) || assessmentArray.length === 0) {
-        console.log(`⚠️ No data for ${type}`);
         dataByType[type] = [];
         return;
       }
-
-      console.log(`\n📈 Processing ${type} (${assessmentArray.length} records):`);
 
       const chartData = assessmentArray.map((item: any) => {
         const level = item.level?.toLowerCase() || "unknown";
         const numericValue = severityLevelMap[level] || 0;
         const barColor = getColorBySeverity(level);
-
-        console.log(`  ✓ Date: ${item.date}, Level: "${level}", Numeric: ${numericValue}, Color: ${barColor}`);
 
         return {
           date: item.date,
@@ -167,10 +159,11 @@ export function AssessmentTrendsChart({
         };
       });
 
-      dataByType[type] = chartData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      dataByType[type] = chartData.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
     });
 
-    console.log("\n✅ Final data by type:", JSON.stringify(dataByType, null, 2));
     return dataByType;
   }, [trends]);
 
@@ -198,7 +191,9 @@ export function AssessmentTrendsChart({
     },
   };
 
-  const renderIndividualChart = (type: "anxiety" | "depression" | "stress" | "suicide" | "checklist") => {
+  const renderIndividualChart = (
+    type: "anxiety" | "depression" | "stress" | "suicide" | "checklist"
+  ) => {
     const chartData = transformedDataByType[type] || [];
     const config = assessmentConfigs[type];
     const currentChartTimeRange = individualTimeRanges[type];
@@ -218,7 +213,10 @@ export function AssessmentTrendsChart({
             value={currentChartTimeRange}
             onValueChange={(newRange) => handleIndividualTimeRangeChange(type, newRange)}
           >
-            <SelectTrigger className="w-full rounded-lg sm:ml-auto sm:w-[140px]" aria-label="Select time range">
+            <SelectTrigger
+              className="w-full rounded-lg sm:ml-auto sm:w-[140px]"
+              aria-label="Select time range"
+            >
               {currentChartTimeRange === "90d"
                 ? "Last 3 months"
                 : currentChartTimeRange === "30d"
@@ -269,7 +267,13 @@ export function AssessmentTrendsChart({
                   });
                 }}
               />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                domain={[0, 5]}
+                ticks={[0, 1, 2, 3, 4, 5]}
+              />
               <ChartTooltip
                 cursor={false}
                 content={({ active, payload, label }) => {
@@ -289,7 +293,9 @@ export function AssessmentTrendsChart({
                         <p>
                           {config.icon} <strong className="capitalize">{item.level}</strong>
                         </p>
-                        {item.score !== null && <p className="text-gray-600">Score: {item.score}</p>}
+                        {item.score !== null && (
+                          <p className="text-gray-600">Score: {item.score}</p>
+                        )}
                         <p className="text-gray-600">Assessment(s): {item.count}</p>
                       </div>
                     </div>
@@ -331,7 +337,9 @@ export function AssessmentTrendsChart({
           <div className="flex items-center justify-center">
             <div className="text-center">
               <p className="text-sm font-medium text-gray-900">No assessment data available</p>
-              <p className="text-xs text-gray-500 mt-1">Take assessments to see your severity trends</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Take assessments to see your severity trends
+              </p>
             </div>
           </div>
         </div>

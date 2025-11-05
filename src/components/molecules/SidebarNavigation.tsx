@@ -185,6 +185,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
     },
     {
       icon: <FileText className="w-5 h-5" />,
+      label: "My Inventory",
+      path: "/student-inventory",
+      studentOnly: true,
+    },
+    {
+      icon: <FileText className="w-5 h-5" />,
       label: "Consultation Records",
       path: "/consultant-records",
       guidanceOnly: true,

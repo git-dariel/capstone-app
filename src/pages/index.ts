@@ -20,6 +20,7 @@ export { InsightsPage } from "./InsightsPage";
 export { AidFunctionPage } from "./AidFunctionPage";
 export { StudentsPage } from "./StudentsPage";
 export { InventoryRecordsPage } from "./InventoryRecordsPage";
+export { StudentInventoryPage } from "./StudentInventoryPage";
 export { MessagesPage } from "./MessagesPage";
 export { default as AppointmentsPage } from "./AppointmentsPage";
 export { ConsultantRecordsPage } from "./ConsultantRecordsPage";

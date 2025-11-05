@@ -30,6 +30,7 @@ import {
   SignUpPage,
   StudentsPage,
   StudentDashboardPage,
+  StudentInventoryPage,
 } from "@/pages";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { useState } from "react";
@@ -163,6 +164,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InventoryRecordsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student-inventory"
+            element={
+              <ProtectedRoute>
+                <StudentInventoryPage />
               </ProtectedRoute>
             }
           />

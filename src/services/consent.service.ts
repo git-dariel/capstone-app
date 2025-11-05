@@ -26,125 +26,125 @@ export interface ConsentFormData {
   concerns: {
     personal_growth?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     depression?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     suicidal_thoughts?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     study_skills?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     family_concerns?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     sexual_concerns?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     educational_concerns?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     anxiety?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     drug_use?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     physical_concerns?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     self_concept?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     decision_making_about_leaving_pup?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     financial_concerns?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     relationship_with_others?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     spirituality?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     weight_eating_issues?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
     career?:
       | "not_applicable"
-      | "leat_important"
+      | "least_important"
       | "somewhat_important"
       | "important"
       | "very_important"
       | "most_important";
   };
-  services:
+  services?:
     | "general_information"
     | "one_or_two_session_problem_solving"
     | "stress_management"

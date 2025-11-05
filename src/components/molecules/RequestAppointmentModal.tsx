@@ -32,12 +32,14 @@ interface RequestAppointmentData {
 }
 
 const appointmentTypes = [
-  { value: "consultation", label: "General Consultation" },
-  { value: "counseling", label: "Personal Counseling" },
-  { value: "academic_guidance", label: "Academic Guidance" },
-  { value: "personal_guidance", label: "Personal Guidance" },
-  { value: "crisis_intervention", label: "Crisis Intervention" },
-  { value: "follow_up", label: "Follow-up Session" },
+  { value: "general_information", label: "General Information" },
+  { value: "one_or_two_session_problem_solving", label: "One or Two Session Problem Solving" },
+  { value: "stress_management", label: "Stress Management" },
+  { value: "group_counseling", label: "Group Counseling" },
+  { value: "substance_abuse_services", label: "Substance Abuse Services" },
+  { value: "career_exploration", label: "Career Exploration" },
+  { value: "individual_counseling", label: "Individual Counseling" },
+  { value: "referral_for_university", label: "Referral for University" },
 ];
 
 const priorities = [
@@ -69,7 +71,7 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
     scheduleId: "",
     title: "",
     description: "",
-    appointmentType: "consultation",
+    appointmentType: "general_information",
     requestedDate: "",
     priority: "normal",
     preferredLocation: "",
