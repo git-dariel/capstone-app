@@ -5,6 +5,7 @@ import { ToastContainer } from "@/components/atoms";
 import { SignUpForm } from "@/components/molecules/SignUpForm";
 import { OTPVerificationModal } from "@/components/molecules/OTPVerificationModal";
 import { FirstYearStudentChoiceModal } from "@/components/molecules/FirstYearStudentChoiceModal";
+import { RegistrationSuccessModal } from "@/components/molecules/RegistrationSuccessModal";
 import { useAuth, useToast } from "@/hooks";
 import { AuthService } from "@/services/auth.service";
 
@@ -45,6 +46,9 @@ export const SignUpCard: React.FC = () => {
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [otpError, setOtpError] = useState<string | null>(null);
+
+  // Registration Success Modal state
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   // Open first-year choice modal on component mount
   useEffect(() => {
@@ -88,25 +92,22 @@ export const SignUpCard: React.FC = () => {
 
       if (response.verified) {
         console.log("Email verification successful!");
-        
+
         // Show success toast
         showSuccessToast(
-          "Account Verified!", 
+          "Account Verified!",
           "Your account has been successfully verified. You can now sign in.",
           5000 // Show for 5 seconds
         );
-        
-        // Add 2-second delay before closing modal and navigating
+
+        // Add 2-second delay before closing OTP modal and showing success modal
         setTimeout(() => {
-          // Close modal
+          // Close OTP modal
           setIsOTPModalOpen(false);
           setOtpLoading(false);
-          
-          // Navigate to sign-in page
-          // navigate("/signin", { 
-          //   replace: true,
-          //   state: { message: "Account verified successfully! Please sign in." }
-          // });
+
+          // Show success modal
+          setIsSuccessModalOpen(true);
         }, 2000); // 2-second delay
       }
     } catch (error: any) {
@@ -163,9 +164,9 @@ export const SignUpCard: React.FC = () => {
         <p className="text-xs sm:text-sm text-gray-600">Lets create your account.</p>
       </div>
 
-      <SignUpForm 
-        onSubmit={handleSignUp} 
-        loading={loading} 
+      <SignUpForm
+        onSubmit={handleSignUp}
+        loading={loading}
         error={error}
         onOpenFirstYearModal={() => setIsFirstYearModalOpen(true)}
       />
@@ -187,6 +188,12 @@ export const SignUpCard: React.FC = () => {
         loading={otpLoading}
         resendLoading={resendLoading}
         error={otpError}
+      />
+
+      {/* Registration Success Modal */}
+      <RegistrationSuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
       />
 
       {/* Toast Container */}
