@@ -59,6 +59,7 @@ export { DateEventsDrawer } from "./DateEventsDrawer";
 export { RequestAppointmentModal } from "./RequestAppointmentModal";
 export { PendingRequestsTable } from "./PendingRequestsTable";
 export { OTPVerificationModal } from "./OTPVerificationModal";
+export { RegistrationSuccessModal } from "./RegistrationSuccessModal";
 export { ExportFilterDropdown } from "./ExportFilterDropdown";
 export { ConsultantRecordCard } from "./ConsultantRecordCard";
 export { ConsultantRecordModal } from "./ConsultantRecordModal";
