@@ -1,5 +1,14 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search, AlertCircle, Loader2, Eye, Brain, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  Search,
+  AlertCircle,
+  Loader2,
+  Eye,
+  Brain,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+} from "lucide-react";
 import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { useInventory } from "@/hooks";
@@ -33,13 +42,23 @@ interface InventoryRecordsTableProps {
   onView?: (inventory: GetInventoryResponse) => void;
 }
 
-export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ inventories: propInventories, loading: propLoading, error: propError, onView }) => {
+export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
+  inventories: propInventories,
+  loading: propLoading,
+  error: propError,
+  onView,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [displayCount, setDisplayCount] = useState(10);
   const tableRef = useRef<HTMLDivElement>(null);
 
   // Use prop data if provided, otherwise fall back to hook
-  const { inventories: hookInventories, loading: hookLoading, error: hookError, fetchInventories } = useInventory();
+  const {
+    inventories: hookInventories,
+    loading: hookLoading,
+    error: hookError,
+    fetchInventories,
+  } = useInventory();
 
   const apiInventories = propInventories || hookInventories;
   const loading = propLoading !== undefined ? propLoading : hookLoading;
@@ -51,7 +70,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
       fetchInventories({
         limit: 100,
         fields:
-          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
+          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
       }).catch(console.error);
     }
   }, [propInventories, fetchInventories]);
@@ -61,7 +80,11 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
     if (!apiInventories) return [];
 
     return apiInventories.map((inventory) => {
-      const studentName = `${inventory.student?.person?.firstName || ""} ${inventory.student?.person?.lastName || ""}`.trim();
+      const studentName = `${inventory.student?.person?.firstName || ""} ${
+        inventory.student?.person?.lastName || ""
+      }`.trim();
+      // Get the latest prediction from the array (first element since they're ordered by createdAt desc)
+      const latestPrediction = inventory.mentalHealthPredictions?.[0];
 
       return {
         id: inventory.id,
@@ -78,10 +101,10 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
         createdAt: inventory.createdAt,
         predictionGenerated: inventory.predictionGenerated || false,
         predictionUpdatedAt: inventory.predictionUpdatedAt,
-        academicPerformanceOutlook: inventory.mentalHealthPrediction?.academicPerformanceOutlook,
-        confidence: inventory.mentalHealthPrediction?.confidence,
-        riskLevel: inventory.mentalHealthPrediction?.mentalHealthRisk?.level,
-        needsAttention: inventory.mentalHealthPrediction?.mentalHealthRisk?.needsAttention,
+        academicPerformanceOutlook: latestPrediction?.academicPerformanceOutlook,
+        confidence: latestPrediction?.confidence,
+        riskLevel: latestPrediction?.mentalHealthRisk?.level,
+        needsAttention: latestPrediction?.mentalHealthRisk?.needsAttention,
       };
     });
   }, [apiInventories]);
@@ -188,10 +211,24 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
       <div className="space-y-1">
         <div className="flex items-center">
           {getPerformanceIcon(inventory.academicPerformanceOutlook)}
-          <span className={`ml-2 text-xs font-medium capitalize ${getPerformanceColor(inventory.academicPerformanceOutlook)}`}>{inventory.academicPerformanceOutlook || "N/A"}</span>
+          <span
+            className={`ml-2 text-xs font-medium capitalize ${getPerformanceColor(
+              inventory.academicPerformanceOutlook
+            )}`}
+          >
+            {inventory.academicPerformanceOutlook || "N/A"}
+          </span>
         </div>
-        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(inventory.riskLevel)}`}>{inventory.riskLevel || "N/A"}</span>
-        {inventory.needsAttention && <div className="text-xs text-orange-600 font-medium">⚠️ Needs Attention</div>}
+        <span
+          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
+            inventory.riskLevel
+          )}`}
+        >
+          {inventory.riskLevel || "N/A"}
+        </span>
+        {inventory.needsAttention && (
+          <div className="text-xs text-orange-600 font-medium">⚠️ Needs Attention</div>
+        )}
       </div>
     );
   };
@@ -203,7 +240,11 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
             <div>
               <h2 className="text-lg font-medium text-gray-900">Inventory Records</h2>
-              <p className="text-sm text-gray-500">{loading ? "Loading inventory records..." : `Showing ${paginatedData.length} of ${filteredData.length} inventory records`}</p>
+              <p className="text-sm text-gray-500">
+                {loading
+                  ? "Loading inventory records..."
+                  : `Showing ${paginatedData.length} of ${filteredData.length} inventory records`}
+              </p>
             </div>
           </div>
 
@@ -221,7 +262,11 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
           </div>
         </div>
 
-        <div ref={tableRef} className="overflow-x-auto max-h-96 overflow-y-auto" onScroll={handleScroll}>
+        <div
+          ref={tableRef}
+          className="overflow-x-auto max-h-96 overflow-y-auto"
+          onScroll={handleScroll}
+        >
           {error ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center space-x-2 text-red-600">
@@ -249,13 +294,23 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
               {/* Mobile Card Layout - visible on small screens */}
               <div className="block md:hidden divide-y divide-gray-200">
                 {paginatedData.map((inventory) => (
-                  <div key={inventory.id} className="p-4 hover:bg-[#fdf2f6] transition-colors touch-manipulation" onClick={() => handleView(inventory)}>
+                  <div
+                    key={inventory.id}
+                    className="p-4 hover:bg-[#fdf2f6] transition-colors touch-manipulation"
+                    onClick={() => handleView(inventory)}
+                  >
                     {/* Card Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start space-x-3 flex-1 min-w-0">
-                        <Avatar src={inventory.avatar} fallback={inventory.studentName.charAt(0)} className="w-10 h-10 flex-shrink-0" />
+                        <Avatar
+                          src={inventory.avatar}
+                          fallback={inventory.studentName.charAt(0)}
+                          className="w-10 h-10 flex-shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">{inventory.studentName}</h3>
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {inventory.studentName}
+                          </h3>
                           <p className="text-sm text-gray-500">{inventory.program}</p>
                           <p className="text-xs text-gray-400">Year {inventory.year}</p>
                         </div>
@@ -272,19 +327,26 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                           {inventory.studentNumber}
                         </div>
                         <div className="text-xs text-gray-400">
-                          {inventory.height} / {inventory.weight} • {inventory.complexion} • {inventory.gender} • Added: {formatDate(inventory.createdAt)}
+                          {inventory.height} / {inventory.weight} • {inventory.complexion} •{" "}
+                          {inventory.gender} • Added: {formatDate(inventory.createdAt)}
                         </div>
                       </div>
 
                       {/* Prediction Status */}
                       <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="text-xs font-medium text-gray-600 mb-2">Mental Health Prediction</div>
+                        <div className="text-xs font-medium text-gray-600 mb-2">
+                          Mental Health Prediction
+                        </div>
                         {inventory.predictionGenerated ? (
                           <div className="space-y-2">
                             <div className="flex items-center">
                               <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
                               <span className="text-xs text-green-700 font-medium">Generated</span>
-                              {inventory.predictionUpdatedAt && <span className="text-xs text-gray-500 ml-2">{formatDate(inventory.predictionUpdatedAt)}</span>}
+                              {inventory.predictionUpdatedAt && (
+                                <span className="text-xs text-gray-500 ml-2">
+                                  {formatDate(inventory.predictionUpdatedAt)}
+                                </span>
+                              )}
                             </div>
                             {renderPredictionInfo(inventory)}
                           </div>
@@ -305,13 +367,27 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                 <table className="w-full min-w-[1200px] text-sm antialiased">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">Student</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Program & Year</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Physical Info</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Prediction Status</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Risk Level</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Created</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Actions</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-64">
+                        Student
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">
+                        Program & Year
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Physical Info
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Prediction Status
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                        Risk Level
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
+                        Created
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -324,9 +400,15 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                       >
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <Avatar src={inventory.avatar} fallback={inventory.studentName.charAt(0)} className="w-8 h-8 mr-3" />
+                            <Avatar
+                              src={inventory.avatar}
+                              fallback={inventory.studentName.charAt(0)}
+                              className="w-8 h-8 mr-3"
+                            />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{inventory.studentName}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {inventory.studentName}
+                              </div>
 
                               <div className="text-xs text-gray-400">{inventory.email}</div>
                             </div>
@@ -340,7 +422,9 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                           <div className="text-sm text-gray-900">
                             {inventory.height} / {inventory.weight}
                           </div>
-                          <div className="text-sm text-gray-500 capitalize">{inventory.complexion}</div>
+                          <div className="text-sm text-gray-500 capitalize">
+                            {inventory.complexion}
+                          </div>
                           <div className="text-xs text-gray-400 capitalize">{inventory.gender}</div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
@@ -348,7 +432,9 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                             {inventory.predictionGenerated ? (
                               <div className="flex items-center">
                                 <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                                <span className="text-sm text-green-700 font-medium">Generated</span>
+                                <span className="text-sm text-green-700 font-medium">
+                                  Generated
+                                </span>
                               </div>
                             ) : (
                               <div className="flex items-center">
@@ -357,13 +443,29 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({ in
                               </div>
                             )}
                           </div>
-                          {inventory.predictionUpdatedAt && <div className="text-xs text-gray-400 mt-1">{formatDate(inventory.predictionUpdatedAt)}</div>}
+                          {inventory.predictionUpdatedAt && (
+                            <div className="text-xs text-gray-400 mt-1">
+                              {formatDate(inventory.predictionUpdatedAt)}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(inventory.riskLevel)}`}>{inventory.riskLevel || "N/A"}</span>
-                          {inventory.needsAttention && <div className="text-xs text-orange-600 mt-1 font-medium">⚠️ Needs Attention</div>}
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
+                              inventory.riskLevel
+                            )}`}
+                          >
+                            {inventory.riskLevel || "N/A"}
+                          </span>
+                          {inventory.needsAttention && (
+                            <div className="text-xs text-orange-600 mt-1 font-medium">
+                              ⚠️ Needs Attention
+                            </div>
+                          )}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(inventory.createdAt)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(inventory.createdAt)}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
                             <Button

@@ -29,6 +29,7 @@ import {
   SignInPage,
   SignUpPage,
   StudentsPage,
+  StudentConsultationRecordsPage,
   StudentDashboardPage,
   StudentInventoryPage,
 } from "@/pages";
@@ -172,6 +173,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <StudentInventoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student-consultation-records"
+            element={
+              <ProtectedRoute>
+                <StudentConsultationRecordsPage />
               </ProtectedRoute>
             }
           />

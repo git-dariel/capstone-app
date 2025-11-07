@@ -140,10 +140,10 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
               >
                 <SelectTrigger className="w-full">
                   <span>
-                    {filters.program 
-                      ? programOptions.find(p => p.value === filters.program)?.label || filters.program
-                      : "All Programs"
-                    }
+                    {filters.program
+                      ? programOptions.find((p) => p.value === filters.program)?.label ||
+                        filters.program
+                      : "All Programs"}
                   </span>
                 </SelectTrigger>
                 <SelectContent className="max-h-60 overflow-y-auto">
@@ -159,9 +159,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
 
             {/* Year Level Filter */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Year Level
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Year Level</label>
               <Select
                 value={filters.year || "all"}
                 onValueChange={(value: string) => handleFilterChange("year", value)}
@@ -175,7 +173,7 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
                   <SelectItem value="2nd">2nd Year</SelectItem>
                   <SelectItem value="3rd">3rd Year</SelectItem>
                   <SelectItem value="4th">4th Year</SelectItem>
-                  <SelectItem value="5th">5th Year</SelectItem>
+                  <SelectItem value="graduated">Graduated</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -223,7 +221,6 @@ export const ExportFilterDropdown: React.FC<ExportFilterDropdownProps> = ({
                 />
               </div>
             </div>
-
           </div>
 
           {/* Action Buttons */}

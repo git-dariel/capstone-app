@@ -172,4 +172,29 @@ export class StudentService {
       throw error;
     }
   }
+
+  static async updateYearLevels(): Promise<{
+    message: string;
+    success: boolean;
+    total: number;
+    updated: number;
+    skipped: number;
+    errors: number;
+    duration: number;
+  }> {
+    try {
+      const response = await HttpClient.post<{
+        message: string;
+        success: boolean;
+        total: number;
+        updated: number;
+        skipped: number;
+        errors: number;
+        duration: number;
+      }>("/student/update-year-levels", {});
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 }

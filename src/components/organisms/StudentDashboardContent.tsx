@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "@/hooks";
+import { useNavigate } from "react-router-dom";
+import { useAuth, useInventoryReminder } from "@/hooks";
 import { StudentDashboardService } from "@/services/student-dashboard.service";
 import { UserService } from "@/services";
 import type {
@@ -14,13 +15,21 @@ import {
   AssessmentTrendsChart,
   WarningCard,
   RecommendationsPanel,
+  InventoryReminderModal,
 } from "@/components/molecules";
 import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
-import { RefreshCw, Calendar, TrendingUp, AlertTriangle } from "lucide-react";
+import { RefreshCw, Calendar, TrendingUp, AlertTriangle, FileText, Clock } from "lucide-react";
+import {
+  getReminderMessage,
+  getReminderSeverity,
+  formatTimeRemaining,
+} from "@/utils/inventoryReminder";
 
 export const StudentDashboardContent: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { reminderInfo, showReminder, dismissReminder, forceShowReminder } = useInventoryReminder();
   const [personalSummary, setPersonalSummary] = useState<PersonalSummary | null>(null);
   const [assessmentHistory, setAssessmentHistory] = useState<AssessmentHistoryItem[]>([]);
   const [assessmentTrends, setAssessmentTrends] = useState<AssessmentTrends | null>(null);
@@ -111,11 +120,11 @@ export const StudentDashboardContent: React.FC = () => {
     try {
       setRefreshing(true);
       const updatedTrends = await StudentDashboardService.getAssessmentTrends(newTimeRange);
-      
+
       // Only update the specific assessment's data, keep others unchanged
       setAssessmentTrends((prevTrends) => {
         if (!prevTrends) return updatedTrends;
-        
+
         return {
           ...prevTrends,
           [assessmentType]: updatedTrends[assessmentType as keyof typeof updatedTrends],
@@ -255,8 +264,8 @@ export const StudentDashboardContent: React.FC = () => {
         {personalSummary && (
           <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-lg p-6 border border-primary-200">
             <div className="flex items-center space-x-3">
-              <Avatar 
-                src={userAvatar} 
+              <Avatar
+                src={userAvatar}
                 fallback={personalSummary.userProfile.person?.firstName?.charAt(0) || "S"}
                 className="w-12 h-12"
               />
@@ -272,6 +281,106 @@ export const StudentDashboardContent: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Inventory Reminder Banner */}
+        {reminderInfo &&
+          reminderInfo.needsUpdate &&
+          (() => {
+            const message = getReminderMessage(reminderInfo);
+            const severity = getReminderSeverity(reminderInfo);
+            const timeRemaining = formatTimeRemaining(reminderInfo);
+
+            return (
+              <div
+                className={`rounded-lg p-4 border ${
+                  severity === "critical"
+                    ? "bg-red-50 border-red-200"
+                    : severity === "high"
+                    ? "bg-orange-50 border-orange-200"
+                    : severity === "medium"
+                    ? "bg-yellow-50 border-yellow-200"
+                    : "bg-blue-50 border-blue-200"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`p-2 rounded-full ${
+                        severity === "critical"
+                          ? "bg-red-100"
+                          : severity === "high"
+                          ? "bg-orange-100"
+                          : severity === "medium"
+                          ? "bg-yellow-100"
+                          : "bg-blue-100"
+                      }`}
+                    >
+                      <FileText
+                        className={`w-5 h-5 ${
+                          severity === "critical"
+                            ? "text-red-600"
+                            : severity === "high"
+                            ? "text-orange-600"
+                            : severity === "medium"
+                            ? "text-yellow-600"
+                            : "text-blue-600"
+                        }`}
+                      />
+                    </div>
+                    <div>
+                      <h3
+                        className={`font-medium ${
+                          severity === "critical"
+                            ? "text-red-900"
+                            : severity === "high"
+                            ? "text-orange-900"
+                            : severity === "medium"
+                            ? "text-yellow-900"
+                            : "text-blue-900"
+                        }`}
+                      >
+                        Inventory Update {reminderInfo.isOverdue ? "Overdue" : "Due Soon"}
+                      </h3>
+                      <p
+                        className={`text-sm ${
+                          severity === "critical"
+                            ? "text-red-700"
+                            : severity === "high"
+                            ? "text-orange-700"
+                            : severity === "medium"
+                            ? "text-yellow-700"
+                            : "text-blue-700"
+                        }`}
+                      >
+                        {message}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-1 text-sm text-gray-600">
+                      <Clock className="w-4 h-4" />
+                      <span>{timeRemaining}</span>
+                    </div>
+                    <Button
+                      onClick={forceShowReminder}
+                      size="sm"
+                      className={`${
+                        severity === "critical"
+                          ? "bg-red-600 hover:bg-red-700"
+                          : severity === "high"
+                          ? "bg-orange-600 hover:bg-orange-700"
+                          : severity === "medium"
+                          ? "bg-yellow-600 hover:bg-yellow-700"
+                          : "bg-blue-600 hover:bg-blue-700"
+                      } text-white`}
+                    >
+                      Update Inventory
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
         {/* Progress Insights & Warnings */}
         {progressInsights.length > 0 && (
@@ -360,7 +469,9 @@ export const StudentDashboardContent: React.FC = () => {
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 capitalize">
-                        {assessment.type === "checklist" ? "Personal Problems Checklist" : `${assessment.type} Assessment`}
+                        {assessment.type === "checklist"
+                          ? "Personal Problems Checklist"
+                          : `${assessment.type} Assessment`}
                       </p>
                       <p className="text-sm text-gray-600">
                         {formatDate(assessment.assessmentDate)}
@@ -371,8 +482,10 @@ export const StudentDashboardContent: React.FC = () => {
                     <p className="font-medium text-gray-900">{assessment.severityLevel}</p>
                     {assessment.totalScore !== null && (
                       <p className="text-sm text-gray-600">
-                        {assessment.type === "checklist" 
-                          ? `${assessment.totalScore} Problem${assessment.totalScore !== 1 ? 's' : ''}` 
+                        {assessment.type === "checklist"
+                          ? `${assessment.totalScore} Problem${
+                              assessment.totalScore !== 1 ? "s" : ""
+                            }`
                           : `Score: ${assessment.totalScore}`}
                       </p>
                     )}
@@ -404,6 +517,22 @@ export const StudentDashboardContent: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Inventory Reminder Modal */}
+      {showReminder && reminderInfo && (
+        <InventoryReminderModal
+          isOpen={showReminder}
+          onClose={dismissReminder}
+          reminderInfo={reminderInfo}
+          onUpdateNow={() => {
+            navigate("/inventory");
+            dismissReminder();
+          }}
+          onDismiss={() => {
+            dismissReminder();
+          }}
+        />
+      )}
     </main>
   );
 };

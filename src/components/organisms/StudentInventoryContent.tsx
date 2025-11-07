@@ -1,6 +1,7 @@
 import { Avatar, FormField, FormSelect, FullScreenLoading } from "@/components/atoms";
 import { Button } from "@/components/ui";
-import { useAuth } from "@/hooks";
+import { InventoryReminderModal } from "@/components/molecules";
+import { useAuth, useInventoryReminder } from "@/hooks";
 import { InventoryService, type GetInventoryResponse } from "@/services";
 import {
   Activity,
@@ -9,10 +10,15 @@ import {
   Brain,
   Calendar,
   Check,
+  ChevronDown,
+  ChevronUp,
+  ClipboardList,
   Edit2,
+  FileText,
   Heart,
   Home,
   Loader2,
+  Plus,
   Save,
   X,
   Zap,
@@ -27,6 +33,11 @@ export const StudentInventoryContent: React.FC = () => {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState<any>({});
+  const [selectedPredictionIndex, setSelectedPredictionIndex] = useState<number>(0);
+  const [isPredictionDropdownOpen, setIsPredictionDropdownOpen] = useState(false);
+
+  // Inventory reminder hook
+  const { reminderInfo, showReminder, dismissReminder, refreshReminder } = useInventoryReminder();
 
   // Fetch student's inventory
   useEffect(() => {
@@ -62,6 +73,23 @@ export const StudentInventoryContent: React.FC = () => {
 
     fetchInventory();
   }, [student?.id]);
+
+  // Always reset to show the latest prediction when inventory changes
+  useEffect(() => {
+    if (inventory?.mentalHealthPredictions && inventory.mentalHealthPredictions.length > 0) {
+      setSelectedPredictionIndex(0); // Always show the latest (first after sorting) prediction
+      setIsPredictionDropdownOpen(false); // Close dropdown
+    }
+  }, [inventory?.mentalHealthPredictions]);
+
+  // Helper function to get sorted predictions (latest first by timestamp)
+  const getSortedPredictions = () => {
+    if (!inventory?.mentalHealthPredictions) return [];
+
+    return [...inventory.mentalHealthPredictions].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  };
 
   const handleEditClick = (section: string) => {
     setEditingSection(section);
@@ -127,6 +155,8 @@ export const StudentInventoryContent: React.FC = () => {
         setInventory(updated);
         setEditingSection(null);
         setEditData({});
+        // Refresh reminder after update
+        refreshReminder();
       }
     } catch (err: any) {
       setError(err.message || "Failed to update inventory");
@@ -229,6 +259,18 @@ export const StudentInventoryContent: React.FC = () => {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">My Inventory</h1>
           <p className="text-gray-600 mt-1">View and update your personal inventory information</p>
         </div>
+
+        {/* Update Reminder Info */}
+        {reminderInfo && (
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
+            {reminderInfo.needsUpdate && (
+              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-sm">
+                <Calendar className="w-4 h-4" />
+                <span>{reminderInfo.isOverdue ? "Update Overdue" : "Update Due Soon"}</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Error Alert */}
@@ -2164,153 +2206,499 @@ export const StudentInventoryContent: React.FC = () => {
       )}
 
       {/* Test Results */}
-      {inventory.test_results && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Test Results</h3>
-            {(() => {
-              const tests = inventory.test_results;
-              return (
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+              <ClipboardList className="w-5 h-5 text-purple-600" />
+              <span>Test Results</span>
+            </h3>
+            {editingSection !== "testresults" && (
+              <Button
+                onClick={() => handleEditClick("testresults")}
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-2"
+              >
+                <Edit2 className="h-4 w-4" />
+                <span>Edit</span>
+              </Button>
+            )}
+          </div>
+
+          {editingSection === "testresults" ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  id="test-name"
+                  label="Test Name"
+                  value={editData.test_results?.name_of_test || ""}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      test_results: {
+                        ...editData.test_results,
+                        name_of_test: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter test name"
+                />
+                <FormField
+                  id="test-date"
+                  label="Date"
+                  type="date"
+                  value={
+                    editData.test_results?.date
+                      ? new Date(editData.test_results.date).toISOString().split("T")[0]
+                      : ""
+                  }
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      test_results: {
+                        ...editData.test_results,
+                        date: e.target.value ? e.target.value : null,
+                      },
+                    })
+                  }
+                />
+                <FormField
+                  id="test-rs-score"
+                  label="RS Score"
+                  value={editData.test_results?.rs || ""}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      test_results: {
+                        ...editData.test_results,
+                        rs: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter RS score"
+                />
+                <FormField
+                  id="test-pr-score"
+                  label="PR Score"
+                  value={editData.test_results?.pr || ""}
+                  onChange={(e) =>
+                    setEditData({
+                      ...editData,
+                      test_results: {
+                        ...editData.test_results,
+                        pr: e.target.value,
+                      },
+                    })
+                  }
+                  placeholder="Enter PR score"
+                />
+              </div>
+              <FormField
+                id="test-description"
+                label="Description"
+                type="textarea"
+                value={editData.test_results?.description || ""}
+                onChange={(e) =>
+                  setEditData({
+                    ...editData,
+                    test_results: {
+                      ...editData.test_results,
+                      description: e.target.value,
+                    },
+                  })
+                }
+                placeholder="Enter test description or additional notes"
+              />
+
+              <div className="flex gap-3 justify-end pt-4 border-t">
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  disabled={isSaving}
+                  className="flex items-center space-x-2"
+                >
+                  <X className="h-4 w-4" />
+                  <span>Cancel</span>
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  variant="primary"
+                  loading={isSaving}
+                  disabled={isSaving}
+                  className="flex items-center space-x-2"
+                >
+                  {!isSaving && <Check className="h-4 w-4" />}
+                  <span>{isSaving ? "Saving..." : "Save"}</span>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              {inventory.test_results ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-gray-700">Test Name</label>
                     <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md mt-1">
-                      {tests.name_of_test || "N/A"}
+                      {inventory.test_results.name_of_test || "N/A"}
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">Date</label>
                     <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md mt-1">
-                      {tests.date ? formatDate(tests.date) : "N/A"}
+                      {inventory.test_results.date
+                        ? formatDate(inventory.test_results.date)
+                        : "N/A"}
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">RS Score</label>
                     <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md mt-1">
-                      {tests.rs || "N/A"}
+                      {inventory.test_results.rs || "N/A"}
                     </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-700">PR Score</label>
                     <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md mt-1">
-                      {tests.pr || "N/A"}
+                      {inventory.test_results.pr || "N/A"}
                     </div>
                   </div>
-                  {tests.description && (
+                  {inventory.test_results.description && (
                     <div className="md:col-span-2">
                       <label className="text-sm font-medium text-gray-700">Description</label>
                       <div className="text-sm text-gray-900 py-2 px-3 bg-gray-50 rounded-md mt-1">
-                        {tests.description}
+                        {inventory.test_results.description}
                       </div>
                     </div>
                   )}
                 </div>
-              );
-            })()}
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-gray-400 text-sm mb-2">No test results available yet</div>
+                  <div className="text-xs text-gray-500 mb-4">
+                    Test results will appear here once administered and recorded.
+                  </div>
+                  <Button
+                    onClick={() => handleEditClick("testresults")}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-2 mx-auto"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Test Results</span>
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Significant Notes Section */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+            <FileText className="w-5 h-5 text-amber-600" />
+            <span>Counselor Notes ({inventory.significantNotes?.length || 0})</span>
+          </h3>
+
+          {inventory.significantNotes && inventory.significantNotes.length > 0 ? (
+            <div className="space-y-4">
+              {inventory.significantNotes.map((note, index) => (
+                <div key={note.id} className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                        Note #{index + 1}
+                      </span>
+                      {note.date && (
+                        <span className="text-sm text-amber-600">{formatDate(note.date)}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-amber-500">
+                      Added: {formatDate(note.createdAt)}
+                    </span>
+                  </div>
+
+                  {note.incident && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-amber-800 mb-1">
+                        Incident/Observation
+                      </label>
+                      <div className="text-sm text-amber-900 bg-amber-100 rounded-md p-3">
+                        {note.incident}
+                      </div>
+                    </div>
+                  )}
+
+                  {note.remarks && (
+                    <div>
+                      <label className="block text-sm font-medium text-amber-800 mb-1">
+                        Counselor Remarks
+                      </label>
+                      <div className="text-sm text-amber-900 bg-amber-100 rounded-md p-3">
+                        {note.remarks}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-amber-600 text-sm mb-2">No counselor notes recorded yet</div>
+              <div className="text-xs text-amber-500">
+                Notes and observations from counselors and mental health professionals will appear
+                here when available.
+              </div>
+            </div>
+          )}
+
+          <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-xs text-amber-700">
+              <strong>Note:</strong> These records are maintained by counselors and mental health
+              professionals for tracking your progress and providing appropriate support.
+            </p>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Mental Health Prediction Card */}
-      {inventory.predictionGenerated && inventory.mentalHealthPrediction && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
-              <Brain className="w-5 h-5 text-primary-600" />
-              <span>Mental Health Assessment</span>
-            </h3>
+      {/* Mental Health Predictions Card */}
+      {inventory.predictionGenerated &&
+        inventory.mentalHealthPredictions &&
+        inventory.mentalHealthPredictions.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div className="p-6">
+              {(() => {
+                const sortedPredictions = getSortedPredictions();
+                return (
+                  <>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                        <Brain className="w-5 h-5 text-primary-600" />
+                        <span>Mental Health Assessments ({sortedPredictions.length})</span>
+                      </h3>
 
-            {/* Assessment Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              <div className="bg-gray-50 rounded-lg p-4">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">Risk Level</label>
-                <span
-                  className={`inline-flex px-3 py-1 text-sm font-semibold rounded-lg capitalize ${getRiskLevelColor(
-                    inventory.mentalHealthPrediction.mentalHealthRisk.level
-                  )}`}
-                >
-                  {inventory.mentalHealthPrediction.mentalHealthRisk.level}
-                </span>
-              </div>
+                      {/* Prediction Dropdown */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setIsPredictionDropdownOpen(!isPredictionDropdownOpen)}
+                          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <span>
+                            {selectedPredictionIndex === 0
+                              ? "Latest Prediction"
+                              : `Prediction #${selectedPredictionIndex + 1}`}
+                          </span>
+                          {isPredictionDropdownOpen ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          )}
+                        </button>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Needs Attention
-                </label>
-                {inventory.mentalHealthPrediction.mentalHealthRisk.needsAttention ? (
-                  <span className="text-orange-600 font-medium text-lg">⚠️ Yes</span>
-                ) : (
-                  <span className="text-green-600 font-medium text-lg">✓ No</span>
-                )}
-              </div>
-            </div>
+                        {isPredictionDropdownOpen && (
+                          <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                            <div className="py-1">
+                              {sortedPredictions.map((prediction, index) => (
+                                <button
+                                  key={prediction.id}
+                                  onClick={() => {
+                                    setSelectedPredictionIndex(index);
+                                    setIsPredictionDropdownOpen(false);
+                                  }}
+                                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 transition-colors ${
+                                    selectedPredictionIndex === index
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "text-gray-700"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span>
+                                      {index === 0
+                                        ? "🟢 Latest Prediction"
+                                        : `Prediction #${index + 1}`}
+                                    </span>
+                                    <div className="text-right">
+                                      <div className="text-xs text-gray-500">
+                                        {formatDate(prediction.createdAt)}
+                                      </div>
+                                      {index === 0 && (
+                                        <div className="text-xs text-green-600 font-medium">
+                                          Most Recent
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-xs mt-1">
+                                    <span
+                                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getRiskLevelColor(
+                                        prediction.mentalHealthRisk.level
+                                      )}`}
+                                    >
+                                      {prediction.mentalHealthRisk.level}
+                                    </span>
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-            {/* Risk Description */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Risk Description
-              </label>
-              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
-                {inventory.mentalHealthPrediction.mentalHealthRisk.description}
-              </div>
-            </div>
+                    {/* Display Selected Prediction (sorted by timestamp, latest first) */}
+                    {(() => {
+                      const selectedPrediction = sortedPredictions[selectedPredictionIndex];
+                      if (!selectedPrediction) return null;
 
-            {/* Assessment Summary */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assessment Summary
-              </label>
-              <div className="bg-primary-50 rounded-lg p-4 text-sm text-primary-800 leading-relaxed border border-primary-200">
-                {inventory.mentalHealthPrediction.mentalHealthRisk.assessmentSummary}
-              </div>
-            </div>
+                      return (
+                        <>
+                          {/* Prediction Metadata */}
+                          <div
+                            className={`rounded-lg p-4 mb-6 border ${
+                              selectedPredictionIndex === 0
+                                ? "bg-green-50 border-green-200"
+                                : "bg-blue-50 border-blue-200"
+                            }`}
+                          >
+                            {selectedPredictionIndex === 0 && (
+                              <div className="flex items-center space-x-2 mb-3">
+                                <span className="text-green-700 font-semibold text-sm">
+                                  🟢 Latest Assessment
+                                </span>
+                                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                                  Most Recent
+                                </span>
+                              </div>
+                            )}
+                            <div className="grid grid-cols-1 gap-4">
+                              <div>
+                                <label
+                                  className={`text-sm font-medium block mb-1 ${
+                                    selectedPredictionIndex === 0
+                                      ? "text-green-700"
+                                      : "text-blue-700"
+                                  }`}
+                                >
+                                  Generated On
+                                </label>
+                                <p
+                                  className={`text-sm ${
+                                    selectedPredictionIndex === 0
+                                      ? "text-green-900"
+                                      : "text-blue-900"
+                                  }`}
+                                >
+                                  {formatDate(selectedPrediction.createdAt)}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
 
-            {/* Risk Factors */}
-            {inventory.mentalHealthPrediction.riskFactors.length > 0 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Risk Factors</label>
-                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-                  <ul className="list-disc list-inside space-y-1">
-                    {inventory.mentalHealthPrediction.riskFactors.map((factor, index) => (
-                      <li key={index} className="text-sm text-yellow-900">
-                        {factor}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
+                          {/* Assessment Overview */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="bg-gray-50 rounded-lg p-4">
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Risk Level
+                              </label>
+                              <span
+                                className={`inline-flex px-3 py-1 text-sm font-semibold rounded-lg capitalize ${getRiskLevelColor(
+                                  selectedPrediction.mentalHealthRisk.level
+                                )}`}
+                              >
+                                {selectedPrediction.mentalHealthRisk.level}
+                              </span>
+                            </div>
 
-            {/* Recommendations */}
-            {inventory.mentalHealthPrediction.recommendations.length > 0 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Recommendations
-                </label>
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                  <ul className="list-disc list-inside space-y-1">
-                    {inventory.mentalHealthPrediction.recommendations.map(
-                      (recommendation, index) => (
-                        <li key={index} className="text-sm text-green-900">
-                          {recommendation}
-                        </li>
-                      )
-                    )}
-                  </ul>
-                </div>
-              </div>
-            )}
+                            <div className="bg-gray-50 rounded-lg p-4">
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                Needs Attention
+                              </label>
+                              {selectedPrediction.mentalHealthRisk.needsAttention ? (
+                                <span className="text-orange-600 font-medium text-lg">⚠️ Yes</span>
+                              ) : (
+                                <span className="text-green-600 font-medium text-lg">✓ No</span>
+                              )}
+                            </div>
+                          </div>
 
-            {/* Disclaimer */}
-            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-              <p className="text-xs text-orange-800">
-                <span className="font-semibold">⚠️ Disclaimer:</span>{" "}
-                {inventory.mentalHealthPrediction.mentalHealthRisk.disclaimer}
-              </p>
+                          {/* Risk Description */}
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Risk Description
+                            </label>
+                            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
+                              {selectedPrediction.mentalHealthRisk.description}
+                            </div>
+                          </div>
+
+                          {/* Assessment Summary */}
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Assessment Summary
+                            </label>
+                            <div className="bg-primary-50 rounded-lg p-4 text-sm text-primary-800 leading-relaxed border border-primary-200">
+                              {selectedPrediction.mentalHealthRisk.assessmentSummary}
+                            </div>
+                          </div>
+
+                          {/* Risk Factors */}
+                          {selectedPrediction.riskFactors &&
+                            selectedPrediction.riskFactors.length > 0 && (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Risk Factors ({selectedPrediction.riskFactors.length})
+                                </label>
+                                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {selectedPrediction.riskFactors.map((factor, index) => (
+                                      <li key={index} className="text-sm text-yellow-900">
+                                        {factor}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Recommendations */}
+                          {selectedPrediction.recommendations &&
+                            selectedPrediction.recommendations.length > 0 && (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Recommendations ({selectedPrediction.recommendations.length})
+                                </label>
+                                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {selectedPrediction.recommendations.map(
+                                      (recommendation, index) => (
+                                        <li key={index} className="text-sm text-green-900">
+                                          {recommendation}
+                                        </li>
+                                      )
+                                    )}
+                                  </ul>
+                                </div>
+                              </div>
+                            )}
+
+                          {/* Disclaimer */}
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <p className="text-xs text-orange-800">
+                              <span className="font-semibold">⚠️ Disclaimer:</span>{" "}
+                              {selectedPrediction.mentalHealthRisk.disclaimer}
+                            </p>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </>
+                );
+              })()}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Student Signature */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -2357,6 +2745,20 @@ export const StudentInventoryContent: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Inventory Reminder Modal */}
+      {reminderInfo && (
+        <InventoryReminderModal
+          isOpen={showReminder}
+          onClose={() => {}} // Empty function since we want to handle dismissal through other actions
+          reminderInfo={reminderInfo}
+          onUpdateNow={() => {
+            // Modal will navigate to inventory page and refresh
+            refreshReminder();
+          }}
+          onDismiss={dismissReminder}
+        />
+      )}
     </div>
   );
 };

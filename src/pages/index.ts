@@ -28,3 +28,4 @@ export { StudentDashboardPage } from "./StudentDashboardPage";
 export { ProfilePage } from "./ProfilePage";
 export { NotificationsPage } from "./NotificationsPage";
 export { InventoryInsightsPage } from "./InventoryInsightsPage";
+export { StudentConsultationRecordsPage } from "./StudentConsultationRecordsPage";

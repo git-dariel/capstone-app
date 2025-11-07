@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/atoms";
 import { Avatar } from "@/components/atoms";
 import type { Student } from "@/services/student.service";
+import { StudentService } from "@/services/student.service";
 import type { GetInventoryResponse } from "@/services/inventory.service";
 import type { GetConsentResponse } from "@/services/consent.service";
 import {
@@ -19,9 +20,18 @@ import {
   BarChart3,
   Shield,
   Download,
+  Brain,
+  StickyNote,
+  Plus,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  Calendar,
 } from "lucide-react";
 import { InventoryService, ConsentService, UserService } from "@/services";
 import { useToast } from "@/hooks";
+import { Button } from "@/components/ui";
 
 interface StudentDetailsModalProps {
   isOpen: boolean;
@@ -55,8 +65,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     userDetails: true,
     inventoryDetails: false,
     assessmentHistory: false,
+    mentalHealthPredictions: false,
     consultationDetails: false,
     consentDetails: false,
+    significantNotes: false,
   });
 
   const [inventoryData, setInventoryData] = useState<GetInventoryResponse | null>(null);
@@ -65,6 +77,33 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+
+  // Local student state for real-time updates
+  const [currentStudentData, setCurrentStudentData] = useState<Student | null>(student || null);
+
+  // Significant notes management
+  const [isAddingNote, setIsAddingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [newNoteData, setNewNoteData] = useState({
+    date: new Date().toISOString().split("T")[0],
+    incident: "",
+    remarks: "",
+  });
+
+  // Consultation notes management
+  const [isAddingConsultationNote, setIsAddingConsultationNote] = useState(false);
+  const [editingConsultationNoteIndex, setEditingConsultationNoteIndex] = useState<number | null>(
+    null
+  );
+  const [newConsultationNoteData, setNewConsultationNoteData] = useState({
+    title: "",
+    content: "",
+  });
+
+  // Sync current student data when student prop changes
+  useEffect(() => {
+    setCurrentStudentData(student || null);
+  }, [student]);
 
   // Fetch inventory and consent data when modal opens and student changes
   useEffect(() => {
@@ -197,6 +236,23 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     return "text-gray-700 bg-gray-100 border-gray-300";
   };
 
+  const getRiskLevelColor = (level?: string) => {
+    if (!level) return "text-gray-700 bg-gray-100 border-gray-300";
+    const lower = level.toLowerCase();
+    switch (lower) {
+      case "low":
+        return "text-green-700 bg-green-100 border-green-300";
+      case "moderate":
+        return "text-yellow-700 bg-yellow-100 border-yellow-300";
+      case "high":
+        return "text-orange-700 bg-orange-100 border-orange-300";
+      case "critical":
+        return "text-red-700 bg-red-100 border-red-300";
+      default:
+        return "text-gray-700 bg-gray-100 border-gray-300";
+    }
+  };
+
   const getAssessmentTypeIcon = (type: string) => {
     switch (type) {
       case "anxiety":
@@ -254,13 +310,351 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     }
   };
 
+  // Significant Notes Management Functions
+  const handleAddNote = async () => {
+    if (!inventoryData?.id || !newNoteData.incident.trim()) {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Incident description is required",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const newNote = {
+        date: newNoteData.date,
+        incident: newNoteData.incident.trim(),
+        remarks: newNoteData.remarks.trim(),
+      };
+
+      const updatedNotesArray = [...(inventoryData.significantNotes || []), newNote];
+
+      // Update inventory with new significant note
+      const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
+        significantNotes: updatedNotesArray,
+      });
+
+      // Fetch fresh inventory data to get the latest notes with proper IDs and timestamps
+      if (student?.id) {
+        const freshInventory = await InventoryService.getInventoryByStudentId(student.id);
+        if (freshInventory) {
+          setInventoryData(freshInventory);
+        } else {
+          // Fallback to the updated inventory from the update call
+          setInventoryData(updatedInventory);
+        }
+      } else {
+        setInventoryData(updatedInventory);
+      }
+
+      setNewNoteData({
+        date: new Date().toISOString().split("T")[0],
+        incident: "",
+        remarks: "",
+      });
+      setIsAddingNote(false);
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Note added successfully",
+      });
+    } catch (error: any) {
+      console.error("Error adding note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to add note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditNote = async (
+    noteId: string,
+    updatedData: { date?: string; incident?: string; remarks?: string }
+  ) => {
+    if (!inventoryData?.id || !updatedData.incident?.trim()) {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Incident description is required",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const updatedNotes =
+        inventoryData.significantNotes?.map((note) =>
+          note.id === noteId ? { ...note, ...updatedData } : note
+        ) || [];
+
+      const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
+        significantNotes: updatedNotes,
+      });
+
+      // Fetch fresh inventory data to get the latest notes with proper IDs and timestamps
+      if (student?.id) {
+        const freshInventory = await InventoryService.getInventoryByStudentId(student.id);
+        if (freshInventory) {
+          setInventoryData(freshInventory);
+        } else {
+          setInventoryData(updatedInventory);
+        }
+      } else {
+        setInventoryData(updatedInventory);
+      }
+
+      setEditingNoteId(null);
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Note updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to update note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!inventoryData?.id) return;
+
+    if (!confirm("Are you sure you want to delete this note?")) return;
+
+    try {
+      setLoading(true);
+
+      const updatedNotes =
+        inventoryData.significantNotes?.filter((note) => note.id !== noteId) || [];
+
+      const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
+        significantNotes: updatedNotes,
+      });
+
+      // Fetch fresh inventory data to get the latest notes
+      if (student?.id) {
+        const freshInventory = await InventoryService.getInventoryByStudentId(student.id);
+        if (freshInventory) {
+          setInventoryData(freshInventory);
+        } else {
+          setInventoryData(updatedInventory);
+        }
+      } else {
+        setInventoryData(updatedInventory);
+      }
+
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Note deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("Error deleting note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to delete note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh student data for real-time updates
+  const refreshStudentData = async () => {
+    if (!student?.id) return;
+
+    try {
+      const freshStudent = await StudentService.getStudentById(student.id, {
+        fields:
+          "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus",
+      });
+
+      if (freshStudent) {
+        setCurrentStudentData(freshStudent);
+      }
+    } catch (error) {
+      console.error("Error refreshing student data:", error);
+    }
+  };
+
+  // Consultation Notes Management Functions
+  const handleAddConsultationNote = async () => {
+    if (!currentStudentData?.id || !newConsultationNoteData.title.trim()) {
+      addToast({
+        type: "error",
+        title: "Error",
+        message: "Please provide a title for the consultation note",
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const currentNotes = currentStudentData.notes || [];
+      const newNote = {
+        title: newConsultationNoteData.title.trim(),
+        content: newConsultationNoteData.content.trim(),
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedNotes = [...currentNotes, newNote];
+
+      await StudentService.updateStudent(currentStudentData.id, {
+        notes: updatedNotes,
+      });
+
+      // Reset form and close
+      setNewConsultationNoteData({ title: "", content: "" });
+      setIsAddingConsultationNote(false);
+
+      // Refresh student data to get real-time updates
+      await refreshStudentData();
+
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Consultation note added successfully",
+      });
+    } catch (error: any) {
+      console.error("Error adding consultation note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to add consultation note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditConsultationNote = async (
+    noteIndex: number,
+    updatedData: { title?: string; content?: string }
+  ) => {
+    if (!currentStudentData?.id) return;
+
+    setLoading(true);
+
+    try {
+      const currentNotes = [...(currentStudentData.notes || [])];
+
+      if (noteIndex < 0 || noteIndex >= currentNotes.length) {
+        throw new Error("Invalid note index");
+      }
+
+      // Update the specific note
+      currentNotes[noteIndex] = {
+        ...currentNotes[noteIndex],
+        ...updatedData,
+      };
+
+      await StudentService.updateStudent(currentStudentData.id, {
+        notes: currentNotes,
+      });
+
+      setEditingConsultationNoteIndex(null);
+
+      // Refresh student data to get real-time updates
+      await refreshStudentData();
+
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Consultation note updated successfully",
+      });
+    } catch (error: any) {
+      console.error("Error updating consultation note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to update consultation note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteConsultationNote = async (noteIndex: number) => {
+    if (!currentStudentData?.id) return;
+
+    setLoading(true);
+
+    try {
+      const currentNotes = [...(currentStudentData.notes || [])];
+
+      if (noteIndex < 0 || noteIndex >= currentNotes.length) {
+        throw new Error("Invalid note index");
+      }
+
+      // Remove the note at the specified index
+      currentNotes.splice(noteIndex, 1);
+
+      await StudentService.updateStudent(currentStudentData.id, {
+        notes: currentNotes,
+      });
+
+      // Refresh student data to get real-time updates
+      await refreshStudentData();
+
+      addToast({
+        type: "success",
+        title: "Success",
+        message: "Consultation note deleted successfully",
+      });
+    } catch (error: any) {
+      console.error("Error deleting consultation note:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to delete consultation note",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!student) return null;
 
-  const person = student.person;
+  // Use current student data for real-time updates, fallback to original student prop
+  const activeStudent = currentStudentData || student;
+  const person = activeStudent.person;
   const studentName = person ? `${person.firstName} ${person.lastName}` : "Unknown Student";
   const studentAvatar = person?.users?.[0]?.avatar;
 
-  const consultationNotes = student.notes || [];
+  const consultationNotes = activeStudent.notes || [];
+
+  // Get latest mental health prediction
+  const getLatestMentalHealthPrediction = () => {
+    if (
+      !inventoryData?.mentalHealthPredictions ||
+      inventoryData.mentalHealthPredictions.length === 0
+    ) {
+      return null;
+    }
+
+    // Sort by createdAt date (most recent first) and return the first one
+    const sortedPredictions = [...inventoryData.mentalHealthPredictions].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+
+    return sortedPredictions[0];
+  };
+
+  const latestPrediction = getLatestMentalHealthPrediction();
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="full">
@@ -280,7 +674,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   {studentName}
                 </h2>
                 <p className="text-primary-600 text-xs sm:text-sm font-medium mt-1 truncate">
-                  ID: {student.studentNumber || "N/A"}
+                  ID: {activeStudent.studentNumber || "N/A"}
                 </p>
               </div>
             </div>
@@ -288,13 +682,13 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
             {/* Right: Quick Stats Grid + Generate Report Button - Mobile Optimized */}
             <div className="flex flex-col space-y-3 lg:space-y-0 lg:flex-row lg:items-center lg:space-x-4">
               {/* Stats Grid */}
-              <div className="grid grid-cols-3 gap-2 sm:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
                 <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
                   <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                     Program
                   </p>
                   <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900 truncate">
-                    {student.program}
+                    {activeStudent.program}
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
@@ -302,7 +696,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                     Year Level
                   </p>
                   <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">
-                    Year {student.year}
+                    Year {activeStudent.year}
                   </p>
                 </div>
                 <div className="bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-primary-200 border-opacity-50">
@@ -311,6 +705,31 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   </p>
                   <p className="text-sm sm:text-lg lg:text-xl font-bold text-primary-900">
                     {assessmentHistory.length}
+                  </p>
+                </div>
+                <div
+                  className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${
+                    latestPrediction?.mentalHealthRisk?.level
+                      ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level)
+                          .replace("text-", "border-")
+                          .replace("bg-", "border-")
+                          .split(" ")[2]
+                      : "border-gray-300"
+                  }`}
+                >
+                  <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
+                    Mental Health Risk Level
+                  </p>
+                  <p
+                    className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${
+                      latestPrediction?.mentalHealthRisk?.level
+                        ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level).split(" ")[0]
+                        : "text-gray-900"
+                    }`}
+                  >
+                    {latestPrediction?.mentalHealthRisk?.level
+                      ? latestPrediction.mentalHealthRisk.level.toUpperCase()
+                      : "N/A"}
                   </p>
                 </div>
               </div>
@@ -371,11 +790,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
               onToggle={() => toggleSection("studentDetails")}
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                <InfoField label="Student Number" value={student.studentNumber || "N/A"} />
-                <InfoField label="Program" value={student.program || "N/A"} />
-                <InfoField label="Year Level" value={student.year || "N/A"} />
-                <InfoField label="Date Created" value={formatDate(student.createdAt)} />
-                <InfoField label="Last Updated" value={formatDate(student.updatedAt)} />
+                <InfoField label="Student Number" value={activeStudent.studentNumber || "N/A"} />
+                <InfoField label="Program" value={activeStudent.program || "N/A"} />
+                <InfoField label="Year Level" value={activeStudent.year || "N/A"} />
+                <InfoField label="Date Created" value={formatDate(activeStudent.createdAt)} />
+                <InfoField label="Last Updated" value={formatDate(activeStudent.updatedAt)} />
               </div>
             </CollapsibleSection>
 
@@ -799,159 +1218,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                     </div>
                   )}
 
-                  {/* Mental Health Prediction */}
-                  {inventoryData.mentalHealthPrediction && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-blue-900 mb-2 sm:mb-3 text-sm sm:text-base flex items-center space-x-2">
-                        <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>Mental Health Prediction</span>
-                      </h4>
-                      <div className="space-y-3 text-sm sm:text-base">
-                        {/* Risk Level */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-blue-800 font-medium">Risk Level:</span>
-                          <span
-                            className={`font-semibold px-3 py-1 rounded-full text-sm ${
-                              inventoryData.mentalHealthPrediction.mentalHealthRisk.level === "low"
-                                ? "bg-green-100 text-green-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
-                                  "moderate"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : inventoryData.mentalHealthPrediction.mentalHealthRisk.level ===
-                                  "high"
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.level.toUpperCase()}
-                          </span>
-                        </div>
-
-                        {/* Urgency */}
-                        <div className="flex justify-between items-center">
-                          <span className="text-blue-800 font-medium">Urgency:</span>
-                          <span className="text-blue-700 capitalize">
-                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.urgency}
-                          </span>
-                        </div>
-
-                        {/* Description */}
-                        <div className="text-blue-700">
-                          <p className="text-sm font-medium text-blue-800 mb-1">Description:</p>
-                          <p className="text-sm">
-                            {inventoryData.mentalHealthPrediction.mentalHealthRisk.description}
-                          </p>
-                        </div>
-
-                        {/* Assessment Summary */}
-                        <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">
-                            Assessment Summary:
-                          </p>
-                          <p className="text-sm">
-                            {
-                              inventoryData.mentalHealthPrediction.mentalHealthRisk
-                                .assessmentSummary
-                            }
-                          </p>
-                        </div>
-
-                        {/* Confidence & Accuracy */}
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-blue-200">
-                          <div>
-                            <p className="text-sm font-medium text-blue-800">Confidence</p>
-                            <p className="text-sm text-blue-700">
-                              {(inventoryData.mentalHealthPrediction.confidence * 100).toFixed(1)}%
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-blue-800">Decision Tree</p>
-                            <p className="text-sm text-blue-700">
-                              {(
-                                inventoryData.mentalHealthPrediction.modelAccuracy.decisionTree *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-blue-800">Random Forest</p>
-                            <p className="text-sm text-blue-700">
-                              {(
-                                inventoryData.mentalHealthPrediction.modelAccuracy.randomForest *
-                                100
-                              ).toFixed(1)}
-                              %
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Academic Performance Outlook */}
-                        <div className="text-blue-700 border-t border-blue-200 pt-2">
-                          <p className="text-sm font-medium text-blue-800 mb-1">
-                            Academic Outlook:
-                          </p>
-                          <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium capitalize">
-                            {inventoryData.mentalHealthPrediction.academicPerformanceOutlook}
-                          </span>
-                        </div>
-
-                        {/* Risk Factors */}
-                        {inventoryData.mentalHealthPrediction.riskFactors &&
-                          inventoryData.mentalHealthPrediction.riskFactors.length > 0 && (
-                            <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">
-                                Risk Factors:
-                              </p>
-                              <div className="flex flex-wrap gap-2">
-                                {inventoryData.mentalHealthPrediction.riskFactors.map(
-                                  (factor, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-sm"
-                                    >
-                                      {factor}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                        {/* Recommendations */}
-                        {inventoryData.mentalHealthPrediction.recommendations &&
-                          inventoryData.mentalHealthPrediction.recommendations.length > 0 && (
-                            <div className="text-blue-700 border-t border-blue-200 pt-2">
-                              <p className="text-sm font-medium text-blue-800 mb-2">
-                                Recommendations:
-                              </p>
-                              <ul className="space-y-1 text-sm">
-                                {inventoryData.mentalHealthPrediction.recommendations.map(
-                                  (rec, idx) => (
-                                    <li key={idx} className="flex items-start space-x-2">
-                                      <span className="text-blue-600 font-bold">•</span>
-                                      <span>{rec}</span>
-                                    </li>
-                                  )
-                                )}
-                              </ul>
-                            </div>
-                          )}
-
-                        {/* Prediction Date */}
-                        <div className="text-blue-700 border-t border-blue-200 pt-2 text-sm">
-                          <span className="font-medium text-blue-800">Prediction Date:</span>{" "}
-                          {formatDate(inventoryData.mentalHealthPrediction.predictionDate)}
-                        </div>
-
-                        {/* Disclaimer */}
-                        <div className="text-blue-700 border-t border-blue-200 pt-2 italic text-sm bg-blue-100 p-2 rounded">
-                          <p>{inventoryData.mentalHealthPrediction.mentalHealthRisk.disclaimer}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Timestamps */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
                     <InfoField label="Created" value={formatDate(inventoryData.createdAt)} />
@@ -978,105 +1244,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                 </div>
               </CollapsibleSection>
             )}
-          </div>
-
-          {/* RIGHT COLUMN - 3 Sections */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Assessment History Section */}
-            {assessmentHistory.length > 0 && (
-              <CollapsibleSection
-                title={`Assessment History (${assessmentHistory.length})`}
-                icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
-                isExpanded={expandedSections.assessmentHistory}
-                onToggle={() => toggleSection("assessmentHistory")}
-              >
-                <div className="space-y-3">
-                  {assessmentHistory.map((assessment) => (
-                    <div
-                      key={assessment.id}
-                      className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-base sm:text-xl">
-                            {getAssessmentTypeIcon(assessment.type)}
-                          </span>
-                          <div>
-                            <h4 className="font-semibold text-gray-900 capitalize text-sm sm:text-base">
-                              {assessment.type === "checklist"
-                                ? "Personal Problems"
-                                : assessment.type}{" "}
-                              Assessment
-                            </h4>
-                            <p className="text-[10px] sm:text-xs text-gray-500">
-                              {formatDate(assessment.assessmentDate)}
-                              {" at "}
-                              {formatTime(assessment.assessmentDate)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2 flex-wrap gap-2">
-                          {assessment.totalScore !== undefined && (
-                            <div className="text-xs sm:text-sm font-semibold text-gray-900 bg-gray-100 px-2 sm:px-3 py-1 rounded-full border border-gray-300">
-                              Score: {assessment.totalScore}
-                            </div>
-                          )}
-                          {assessment.severityLevel || assessment.riskLevel ? (
-                            <span
-                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getSeverityColor(
-                                assessment.severityLevel || assessment.riskLevel
-                              )}`}
-                            >
-                              {formatSeverityLabel(
-                                assessment.severityLevel || assessment.riskLevel || "Unknown"
-                              )}
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            {/* Consultation Details Section */}
-            <CollapsibleSection
-              title={`Consultation Details (${consultationNotes.length})`}
-              icon={<FileText className="w-4 h-4 sm:w-5 sm:h-5" />}
-              isExpanded={expandedSections.consultationDetails}
-              onToggle={() => toggleSection("consultationDetails")}
-            >
-              {consultationNotes.length > 0 ? (
-                <div className="space-y-3">
-                  {consultationNotes.map((note, index) => (
-                    <div
-                      key={index}
-                      className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-                        <h4 className="font-semibold text-primary-900 text-sm sm:text-base">
-                          {note.title || `Consultation Record ${index + 1}`}
-                        </h4>
-                        <span className="text-[10px] sm:text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
-                          Record #{index + 1}
-                        </span>
-                      </div>
-                      {note.content && (
-                        <div className="text-xs sm:text-sm text-primary-800 whitespace-pre-wrap">
-                          {note.content}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-4 sm:py-6 text-gray-500">
-                  <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-2" />
-                  <p className="text-xs sm:text-sm">No consultation records available</p>
-                </div>
-              )}
-            </CollapsibleSection>
 
             {/* Consent Details Section */}
             {consentData && (
@@ -1200,6 +1367,571 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
               </CollapsibleSection>
             )}
           </div>
+
+          {/* RIGHT COLUMN - 3 Sections */}
+          <div className="space-y-3 sm:space-y-4">
+            {/* Assessment History Section */}
+            {assessmentHistory.length > 0 && (
+              <CollapsibleSection
+                title={`Assessment History (${assessmentHistory.length})`}
+                icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
+                isExpanded={expandedSections.assessmentHistory}
+                onToggle={() => toggleSection("assessmentHistory")}
+              >
+                <div className="space-y-3">
+                  {assessmentHistory.map((assessment) => (
+                    <div
+                      key={assessment.id}
+                      className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between mb-2 flex-wrap gap-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-base sm:text-xl">
+                            {getAssessmentTypeIcon(assessment.type)}
+                          </span>
+                          <div>
+                            <h4 className="font-semibold text-gray-900 capitalize text-sm sm:text-base">
+                              {assessment.type === "checklist"
+                                ? "Personal Problems"
+                                : assessment.type}{" "}
+                              Assessment
+                            </h4>
+                            <p className="text-[10px] sm:text-xs text-gray-500">
+                              {formatDate(assessment.assessmentDate)}
+                              {" at "}
+                              {formatTime(assessment.assessmentDate)}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-wrap gap-2">
+                          {assessment.totalScore !== undefined && (
+                            <div className="text-xs sm:text-sm font-semibold text-gray-900 bg-gray-100 px-2 sm:px-3 py-1 rounded-full border border-gray-300">
+                              Score: {assessment.totalScore}
+                            </div>
+                          )}
+                          {assessment.severityLevel || assessment.riskLevel ? (
+                            <span
+                              className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getSeverityColor(
+                                assessment.severityLevel || assessment.riskLevel
+                              )}`}
+                            >
+                              {formatSeverityLabel(
+                                assessment.severityLevel || assessment.riskLevel || "Unknown"
+                              )}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Mental Health Predictions Section */}
+            {inventoryData?.mentalHealthPredictions &&
+              inventoryData.mentalHealthPredictions.length > 0 && (
+                <CollapsibleSection
+                  title={`Mental Health Predictions (${inventoryData.mentalHealthPredictions.length})`}
+                  icon={<Brain className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  isExpanded={expandedSections.mentalHealthPredictions}
+                  onToggle={() => toggleSection("mentalHealthPredictions")}
+                >
+                  <div className="space-y-4">
+                    {[...inventoryData.mentalHealthPredictions]
+                      .sort(
+                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                      )
+                      .map((prediction, index) => (
+                        <div
+                          key={prediction.id}
+                          className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4"
+                        >
+                          <div className="flex items-start justify-between mb-3 flex-wrap gap-2">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-semibold text-blue-900 text-sm sm:text-base">
+                                  Prediction #{index + 1}
+                                </h4>
+                                {index === 0 && (
+                                  <span className="inline-flex items-center px-2 py-1 rounded-full text-[10px] font-semibold bg-green-100 text-green-800 border border-green-300">
+                                    Latest
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] sm:text-xs text-blue-600">
+                                Generated: {formatDate(prediction.createdAt)}
+                                {" at "}
+                                {formatTime(prediction.createdAt)}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-2 flex-wrap gap-2">
+                              <span
+                                className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getRiskLevelColor(
+                                  prediction.mentalHealthRisk?.level
+                                )}`}
+                              >
+                                {prediction.mentalHealthRisk?.level?.toUpperCase() || "UNKNOWN"}
+                              </span>
+                              {prediction.mentalHealthRisk?.needsAttention && (
+                                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-300">
+                                  ⚠️ Needs Attention
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Academic Performance Outlook */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div>
+                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
+                                Confidence Level
+                              </label>
+                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900 font-medium">
+                                {prediction.confidence
+                                  ? `${(prediction.confidence * 100).toFixed(1)}%`
+                                  : "N/A"}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Risk Description */}
+                          {prediction.mentalHealthRisk?.description && (
+                            <div className="mb-3">
+                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
+                                Risk Assessment
+                              </label>
+                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900">
+                                {prediction.mentalHealthRisk.description}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Risk Factors */}
+                          {prediction.riskFactors && prediction.riskFactors.length > 0 && (
+                            <div className="mb-3">
+                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                Risk Factors ({prediction.riskFactors.length})
+                              </label>
+                              <div className="flex flex-wrap gap-1">
+                                {prediction.riskFactors.map((factor, factorIndex) => (
+                                  <span
+                                    key={factorIndex}
+                                    className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
+                                  >
+                                    {factor}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Recommendations */}
+                          {prediction.recommendations && prediction.recommendations.length > 0 && (
+                            <div className="mb-3">
+                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                Recommendations ({prediction.recommendations.length})
+                              </label>
+                              <div className="bg-green-50 border border-green-200 rounded-md p-2">
+                                <ul className="space-y-1">
+                                  {prediction.recommendations.map((rec, recIndex) => (
+                                    <li
+                                      key={recIndex}
+                                      className="text-[10px] sm:text-xs text-green-800 flex items-start"
+                                    >
+                                      <span className="text-green-600 mr-1 flex-shrink-0">•</span>
+                                      {rec}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Assessment Summary */}
+                          {prediction.mentalHealthRisk?.assessmentSummary && (
+                            <div className="mt-3 p-2 bg-blue-100 border-l-4 border-blue-500 rounded">
+                              <p className="text-[10px] sm:text-xs text-blue-900 font-medium">
+                                <strong>Summary:</strong>{" "}
+                                {prediction.mentalHealthRisk.assessmentSummary}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+
+                    {/* Disclaimer */}
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                      <p className="text-[10px] sm:text-xs text-orange-800">
+                        <strong>Disclaimer:</strong> These predictions are machine learning
+                        assessments based on available data and should not replace professional
+                        medical advice. Always consult with qualified mental health professionals
+                        for accurate diagnosis and treatment.
+                      </p>
+                    </div>
+                  </div>
+                </CollapsibleSection>
+              )}
+
+            {/* Consultation Details Section */}
+            <CollapsibleSection
+              title={`Consultation Details (${consultationNotes.length})`}
+              icon={<FileText className="w-4 h-4 sm:w-5 sm:h-5" />}
+              isExpanded={expandedSections.consultationDetails}
+              onToggle={() => toggleSection("consultationDetails")}
+            >
+              <div className="space-y-3">
+                {/* Add New Consultation Note Form */}
+                {isAddingConsultationNote && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                    <h4 className="font-semibold text-blue-900 mb-3 text-sm sm:text-base">
+                      Add New Consultation Note
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-xs font-medium text-blue-700 mb-1">
+                          Title *
+                        </label>
+                        <input
+                          type="text"
+                          value={newConsultationNoteData.title}
+                          onChange={(e) =>
+                            setNewConsultationNoteData((prev) => ({
+                              ...prev,
+                              title: e.target.value,
+                            }))
+                          }
+                          className="w-full p-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter consultation title"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-blue-700 mb-1">
+                          Content
+                        </label>
+                        <textarea
+                          value={newConsultationNoteData.content}
+                          onChange={(e) =>
+                            setNewConsultationNoteData((prev) => ({
+                              ...prev,
+                              content: e.target.value,
+                            }))
+                          }
+                          rows={3}
+                          className="w-full p-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter consultation details..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 justify-end">
+                        <Button
+                          onClick={() => setIsAddingConsultationNote(false)}
+                          variant="ghost"
+                          size="sm"
+                          className="px-3 py-2 text-primary-700 hover:bg-primary-100"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleAddConsultationNote}
+                          disabled={loading || !newConsultationNoteData.title.trim()}
+                          className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 disabled:opacity-50"
+                        >
+                          {loading ? (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Plus className="w-4 h-4" />
+                          )}
+                          Add Note
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Note Button */}
+                {!isAddingConsultationNote && (
+                  <Button
+                    onClick={() => setIsAddingConsultationNote(true)}
+                    className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Consultation Note
+                  </Button>
+                )}
+
+                {/* Notes List */}
+                {consultationNotes.length > 0 ? (
+                  <div className="space-y-3">
+                    {consultationNotes.map((note, index) => (
+                      <div
+                        key={index}
+                        className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4"
+                      >
+                        {editingConsultationNoteIndex === index ? (
+                          <EditConsultationNoteForm
+                            note={note}
+                            onSave={(updatedData) => handleEditConsultationNote(index, updatedData)}
+                            onCancel={() => setEditingConsultationNoteIndex(null)}
+                            loading={loading}
+                          />
+                        ) : (
+                          <div>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="w-4 h-4 text-primary-600" />
+                                <h4 className="font-semibold text-primary-900 text-sm sm:text-base">
+                                  {note.title || `Consultation Record ${index + 1}`}
+                                </h4>
+                                <span className="text-[10px] sm:text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded">
+                                  Record #{index + 1}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  onClick={() => setEditingConsultationNoteIndex(index)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-6 w-6 text-primary-600 hover:bg-primary-100"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                </Button>
+                                <Button
+                                  onClick={() => handleDeleteConsultationNote(index)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="p-1 h-6 w-6 text-red-600 hover:bg-red-100"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {note.content && (
+                              <div className="mb-2">
+                                <p className="text-xs font-medium text-primary-800 mb-1">
+                                  Details:
+                                </p>
+                                <div className="text-xs sm:text-sm text-primary-800 whitespace-pre-wrap">
+                                  {note.content}
+                                </div>
+                              </div>
+                            )}
+
+                            {note.createdAt && (
+                              <div className="text-xs text-primary-600 pt-2 border-t border-primary-200">
+                                Created: {formatDate(note.createdAt)} at{" "}
+                                {formatTime(note.createdAt)}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  !isAddingConsultationNote && (
+                    <div className="text-center py-4 sm:py-6 text-gray-500">
+                      <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-xs sm:text-sm">No consultation records available</p>
+                    </div>
+                  )
+                )}
+              </div>
+            </CollapsibleSection>
+
+            {/* Significant Notes Section */}
+            {inventoryData && (
+              <CollapsibleSection
+                title={`Significant Notes for IIF Results (${
+                  inventoryData.significantNotes?.length || 0
+                })`}
+                icon={<StickyNote className="w-4 h-4 sm:w-5 sm:h-5" />}
+                isExpanded={expandedSections.significantNotes}
+                onToggle={() => toggleSection("significantNotes")}
+              >
+                <div className="space-y-3">
+                  {/* Add New Note Form */}
+                  {isAddingNote && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-3 text-sm">Add New Note</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            value={newNoteData.date}
+                            onChange={(e) =>
+                              setNewNoteData((prev) => ({ ...prev, date: e.target.value }))
+                            }
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Incident Description *
+                          </label>
+                          <textarea
+                            value={newNoteData.incident}
+                            onChange={(e) =>
+                              setNewNoteData((prev) => ({ ...prev, incident: e.target.value }))
+                            }
+                            placeholder="Describe the incident or observation..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Remarks
+                          </label>
+                          <textarea
+                            value={newNoteData.remarks}
+                            onChange={(e) =>
+                              setNewNoteData((prev) => ({ ...prev, remarks: e.target.value }))
+                            }
+                            placeholder="Additional remarks or follow-up actions..."
+                            rows={2}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={handleAddNote}
+                            disabled={loading || !newNoteData.incident.trim()}
+                            className="flex items-center gap-1 px-3 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700 disabled:opacity-50"
+                          >
+                            <Save className="w-3 h-3" />
+                            Save Note
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setIsAddingNote(false);
+                              setNewNoteData({
+                                date: new Date().toISOString().split("T")[0],
+                                incident: "",
+                                remarks: "",
+                              });
+                            }}
+                            variant="ghost"
+                            className="flex items-center gap-1 px-3 py-1 text-gray-600 text-xs rounded hover:bg-gray-100"
+                          >
+                            <X className="w-3 h-3" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add Note Button */}
+                  {!isAddingNote && (
+                    <Button
+                      onClick={() => setIsAddingNote(true)}
+                      className="flex items-center gap-2 px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add Significant Note
+                    </Button>
+                  )}
+
+                  {/* Notes List */}
+                  {inventoryData.significantNotes && inventoryData.significantNotes.length > 0 ? (
+                    <div className="space-y-3">
+                      {inventoryData.significantNotes.map((note, index) => (
+                        <div
+                          key={note.id}
+                          className="bg-yellow-50 border border-yellow-200 rounded-lg p-3"
+                        >
+                          {editingNoteId === note.id ? (
+                            <EditNoteForm
+                              note={note}
+                              onSave={(updatedData) => handleEditNote(note.id, updatedData)}
+                              onCancel={() => setEditingNoteId(null)}
+                              loading={loading}
+                            />
+                          ) : (
+                            <div>
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Calendar className="w-4 h-4 text-yellow-600" />
+                                  <span className="text-xs text-yellow-700 font-medium">
+                                    {note.date ? formatDate(note.date) : "No date specified"}
+                                  </span>
+                                  <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded">
+                                    Note #{inventoryData.significantNotes!.length - index}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    onClick={() => setEditingNoteId(note.id)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-1 h-6 w-6 text-yellow-600 hover:bg-yellow-100"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    onClick={() => handleDeleteNote(note.id)}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="p-1 h-6 w-6 text-red-600 hover:bg-red-100"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {note.incident && (
+                                <div className="mb-2">
+                                  <p className="text-xs font-medium text-yellow-800 mb-1">
+                                    Incident:
+                                  </p>
+                                  <p className="text-sm text-yellow-900 whitespace-pre-wrap">
+                                    {note.incident}
+                                  </p>
+                                </div>
+                              )}
+
+                              {note.remarks && (
+                                <div className="border-t border-yellow-200 pt-2">
+                                  <p className="text-xs font-medium text-yellow-800 mb-1">
+                                    Remarks:
+                                  </p>
+                                  <p className="text-sm text-yellow-900 whitespace-pre-wrap">
+                                    {note.remarks}
+                                  </p>
+                                </div>
+                              )}
+
+                              <div className="text-xs text-yellow-600 mt-2 pt-2 border-t border-yellow-200">
+                                Created: {formatDate(note.createdAt)} at{" "}
+                                {formatTime(note.createdAt)}
+                                {note.updatedAt !== note.createdAt && (
+                                  <span className="ml-2">
+                                    • Updated: {formatDate(note.updatedAt)} at{" "}
+                                    {formatTime(note.updatedAt)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    !isAddingNote && (
+                      <div className="text-center py-6 text-gray-500">
+                        <StickyNote className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-sm">No significant notes recorded</p>
+                      </div>
+                    )
+                  )}
+                </div>
+              </CollapsibleSection>
+            )}
+          </div>
         </div>
       </div>
     </Modal>
@@ -1266,6 +1998,156 @@ const InfoField: React.FC<InfoFieldProps> = ({ label, value, icon }) => {
       <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-900 py-1.5 sm:py-2 px-2 sm:px-3 bg-white rounded-md border border-gray-200">
         {icon}
         <span className="truncate">{value}</span>
+      </div>
+    </div>
+  );
+};
+
+// Helper component for editing notes
+interface EditNoteFormProps {
+  note: {
+    id: string;
+    date?: string;
+    incident?: string;
+    remarks?: string;
+  };
+  onSave: (updatedData: { date?: string; incident?: string; remarks?: string }) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+const EditNoteForm: React.FC<EditNoteFormProps> = ({ note, onSave, onCancel, loading }) => {
+  const [editData, setEditData] = useState({
+    date: note.date || new Date().toISOString().split("T")[0],
+    incident: note.incident || "",
+    remarks: note.remarks || "",
+  });
+
+  const handleSave = () => {
+    if (!editData.incident.trim()) return;
+    onSave(editData);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Date</label>
+        <input
+          type="date"
+          value={editData.date}
+          onChange={(e) => setEditData((prev) => ({ ...prev, date: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">
+          Incident Description *
+        </label>
+        <textarea
+          value={editData.incident}
+          onChange={(e) => setEditData((prev) => ({ ...prev, incident: e.target.value }))}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Remarks</label>
+        <textarea
+          value={editData.remarks}
+          onChange={(e) => setEditData((prev) => ({ ...prev, remarks: e.target.value }))}
+          rows={2}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleSave}
+          disabled={loading || !editData.incident.trim()}
+          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          <Save className="w-3 h-3" />
+          Save Changes
+        </Button>
+        <Button
+          onClick={onCancel}
+          variant="ghost"
+          className="flex items-center gap-1 px-3 py-1 text-gray-600 text-xs rounded hover:bg-gray-100"
+        >
+          <X className="w-3 h-3" />
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+// Helper component for editing consultation notes
+interface EditConsultationNoteFormProps {
+  note: {
+    title?: string;
+    content?: string;
+    createdAt?: string;
+  };
+  onSave: (updatedData: { title?: string; content?: string }) => void;
+  onCancel: () => void;
+  loading: boolean;
+}
+
+const EditConsultationNoteForm: React.FC<EditConsultationNoteFormProps> = ({
+  note,
+  onSave,
+  onCancel,
+  loading,
+}) => {
+  const [editData, setEditData] = useState({
+    title: note.title || "",
+    content: note.content || "",
+  });
+
+  const handleSave = () => {
+    if (!editData.title.trim()) return;
+    onSave(editData);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Title *</label>
+        <input
+          type="text"
+          value={editData.title}
+          onChange={(e) => setEditData((prev) => ({ ...prev, title: e.target.value }))}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Enter consultation title"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-1">Content</label>
+        <textarea
+          value={editData.content}
+          onChange={(e) => setEditData((prev) => ({ ...prev, content: e.target.value }))}
+          rows={3}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Enter consultation details..."
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button
+          onClick={handleSave}
+          disabled={loading || !editData.title.trim()}
+          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          <Save className="w-3 h-3" />
+          Save Changes
+        </Button>
+        <Button
+          onClick={onCancel}
+          variant="ghost"
+          className="flex items-center gap-1 px-3 py-1 text-gray-600 text-xs rounded hover:bg-gray-100"
+        >
+          <X className="w-3 h-3" />
+          Cancel
+        </Button>
       </div>
     </div>
   );
