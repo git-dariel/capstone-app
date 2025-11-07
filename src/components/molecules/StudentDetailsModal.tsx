@@ -718,7 +718,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   }`}
                 >
                   <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
-                    Risk Level
+                    Mental Health Risk Level
                   </p>
                   <p
                     className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${
@@ -1240,6 +1240,128 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         </p>
                       </div>
                     )}
+                  </div>
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* Consent Details Section */}
+            {consentData && (
+              <CollapsibleSection
+                title="Consent Details"
+                icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
+                isExpanded={expandedSections.consentDetails}
+                onToggle={() => toggleSection("consentDetails")}
+              >
+                <div className="space-y-3 sm:space-y-4">
+                  {/* Basic Information */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
+                    <InfoField label="Referred By" value={consentData.referred || "N/A"} />
+                    <InfoField
+                      label="Living With"
+                      value={consentData.with_whom_do_you_live || "N/A"}
+                    />
+                    <InfoField
+                      label="Financial Status"
+                      value={consentData.financial_status || "N/A"}
+                    />
+                    <InfoField
+                      label="Physical Problem"
+                      value={consentData.physical_problem === "yes" ? "Yes" : "No"}
+                    />
+                  </div>
+
+                  {/* Reason for Guidance */}
+                  {consentData.what_brings_you_to_guidance && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">
+                        Reason for Guidance
+                      </h4>
+                      <p className="text-sm sm:text-base text-blue-800 whitespace-pre-wrap">
+                        {consentData.what_brings_you_to_guidance}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Physical Symptoms */}
+                  {consentData.physical_symptoms && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm sm:text-base flex items-center space-x-2">
+                        <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                        <span>Physical Symptoms</span>
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(consentData.physical_symptoms) ? (
+                          consentData.physical_symptoms.map((symptom: string) => (
+                            <span
+                              key={symptom}
+                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-red-100 text-red-700 rounded-full"
+                            >
+                              {String(symptom).replace(/_/g, " ")}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs sm:text-base text-red-700 bg-red-100 px-2 sm:px-3 py-1 rounded-full">
+                            {String(consentData.physical_symptoms).replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Present Concerns */}
+                  {consentData.concerns && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-indigo-900 mb-2 sm:mb-3 text-sm sm:text-base">
+                        Present Concerns
+                      </h4>
+                      <div className="space-y-2 text-xs sm:text-sm">
+                        {Object.entries(consentData.concerns).map(([key, value]: [string, any]) => {
+                          const displayKey = String(key)
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (char) => char.toUpperCase());
+                          return (
+                            <div key={key} className="flex justify-between items-center">
+                              <span className="text-indigo-800 font-medium">{displayKey}:</span>
+                              <span className="text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full text-xs font-semibold capitalize">
+                                {String(value).replace(/_/g, " ")}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Services */}
+                  {consentData.services && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                      <h4 className="font-semibold text-green-900 mb-2 sm:mb-3 text-sm sm:text-base">
+                        Services Interested
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {Array.isArray(consentData.services) ? (
+                          consentData.services.map((service: string) => (
+                            <span
+                              key={service}
+                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full"
+                            >
+                              {String(service).replace(/_/g, " ")}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full">
+                            {String(consentData.services).replace(/_/g, " ")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Timestamps */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
+                    <InfoField label="Created" value={formatDate(consentData.createdAt)} />
+                    <InfoField label="Last Updated" value={formatDate(consentData.updatedAt)} />
                   </div>
                 </div>
               </CollapsibleSection>
@@ -1806,128 +1928,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                       </div>
                     )
                   )}
-                </div>
-              </CollapsibleSection>
-            )}
-
-            {/* Consent Details Section */}
-            {consentData && (
-              <CollapsibleSection
-                title="Consent Details"
-                icon={<Shield className="w-4 h-4 sm:w-5 sm:h-5" />}
-                isExpanded={expandedSections.consentDetails}
-                onToggle={() => toggleSection("consentDetails")}
-              >
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 bg-gray-50 p-3 sm:p-4 rounded-lg">
-                    <InfoField label="Referred By" value={consentData.referred || "N/A"} />
-                    <InfoField
-                      label="Living With"
-                      value={consentData.with_whom_do_you_live || "N/A"}
-                    />
-                    <InfoField
-                      label="Financial Status"
-                      value={consentData.financial_status || "N/A"}
-                    />
-                    <InfoField
-                      label="Physical Problem"
-                      value={consentData.physical_problem === "yes" ? "Yes" : "No"}
-                    />
-                  </div>
-
-                  {/* Reason for Guidance */}
-                  {consentData.what_brings_you_to_guidance && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-blue-900 mb-2 text-sm sm:text-base">
-                        Reason for Guidance
-                      </h4>
-                      <p className="text-sm sm:text-base text-blue-800 whitespace-pre-wrap">
-                        {consentData.what_brings_you_to_guidance}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Physical Symptoms */}
-                  {consentData.physical_symptoms && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-red-900 mb-2 sm:mb-3 text-sm sm:text-base flex items-center space-x-2">
-                        <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
-                        <span>Physical Symptoms</span>
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(consentData.physical_symptoms) ? (
-                          consentData.physical_symptoms.map((symptom: string) => (
-                            <span
-                              key={symptom}
-                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-red-100 text-red-700 rounded-full"
-                            >
-                              {String(symptom).replace(/_/g, " ")}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs sm:text-base text-red-700 bg-red-100 px-2 sm:px-3 py-1 rounded-full">
-                            {String(consentData.physical_symptoms).replace(/_/g, " ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Present Concerns */}
-                  {consentData.concerns && (
-                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-indigo-900 mb-2 sm:mb-3 text-sm sm:text-base">
-                        Present Concerns
-                      </h4>
-                      <div className="space-y-2 text-xs sm:text-sm">
-                        {Object.entries(consentData.concerns).map(([key, value]: [string, any]) => {
-                          const displayKey = String(key)
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (char) => char.toUpperCase());
-                          return (
-                            <div key={key} className="flex justify-between items-center">
-                              <span className="text-indigo-800 font-medium">{displayKey}:</span>
-                              <span className="text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full text-xs font-semibold capitalize">
-                                {String(value).replace(/_/g, " ")}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Services */}
-                  {consentData.services && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
-                      <h4 className="font-semibold text-green-900 mb-2 sm:mb-3 text-sm sm:text-base">
-                        Services Interested
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {Array.isArray(consentData.services) ? (
-                          consentData.services.map((service: string) => (
-                            <span
-                              key={service}
-                              className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full"
-                            >
-                              {String(service).replace(/_/g, " ")}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="inline-flex items-center px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium bg-green-100 text-green-700 rounded-full">
-                            {String(consentData.services).replace(/_/g, " ")}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Timestamps */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200">
-                    <InfoField label="Created" value={formatDate(consentData.createdAt)} />
-                    <InfoField label="Last Updated" value={formatDate(consentData.updatedAt)} />
-                  </div>
                 </div>
               </CollapsibleSection>
             )}
