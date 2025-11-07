@@ -190,6 +190,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       studentOnly: true,
     },
     {
+      icon: <MessageSquare className="w-5 h-5" />,
+      label: "My Consultation Records",
+      path: "/student-consultation-records",
+      studentOnly: true,
+    },
+    {
       icon: <FileText className="w-5 h-5" />,
       label: "Consultation Records",
       path: "/consultant-records",

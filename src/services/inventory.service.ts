@@ -222,11 +222,11 @@ export interface InventoryFormData {
     pr?: string; // Optional in schema
     description?: string; // Optional in schema
   };
-  significant_notes_councilor_only?: {
+  significantNotes?: Array<{
     date?: string; // ISO DateTime string, optional in schema
     incident?: string; // Optional in schema
     remarks?: string; // Optional in schema
-  };
+  }>;
   student_signature: string;
 }
 
@@ -411,13 +411,43 @@ export interface GetInventoryResponse {
     pr?: string;
     description?: string;
   };
-  // Significant notes
-  significant_notes_councilor_only?: {
+  // Significant notes - now an array for history tracking
+  significantNotes?: Array<{
+    id: string;
     date?: string;
     incident?: string;
     remarks?: string;
-  };
+    isDeleted?: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
   student_signature?: string;
+  // Mental health predictions - now an array for history tracking
+  mentalHealthPredictions?: Array<{
+    id: string;
+    academicPerformanceOutlook: "improved" | "same" | "declined";
+    confidence: number;
+    modelAccuracy: {
+      decisionTree: number;
+      randomForest: number;
+    };
+    riskFactors: string[];
+    mentalHealthRisk: {
+      level: "low" | "moderate" | "high" | "critical";
+      description: string;
+      needsAttention: boolean;
+      urgency: "none" | "monitor" | "schedule" | "immediate";
+      assessmentSummary: string;
+      disclaimer: string;
+    };
+    inputData: any;
+    recommendations: string[];
+    predictionDate: string;
+    isDeleted?: boolean;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  // Deprecated: use mentalHealthPredictions array instead
   mentalHealthPrediction?: {
     academicPerformanceOutlook: "improved" | "same" | "declined";
     confidence: number;
@@ -520,9 +550,9 @@ export class InventoryService {
     try {
       // Include all inventory fields and student/person/user data for comprehensive display
       const fields =
-        "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction," +
+        "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,significantNotes," +
         "person_to_be_contacted_in_case_of_accident_or_illness,educational_background,nature_of_schooling," +
-        "home_and_family_background,health,interest_and_hobbies,test_results,significant_notes_councilor_only,student_signature," +
+        "home_and_family_background,health,interest_and_hobbies,test_results,student_signature," +
         "student.id,student.studentNumber,student.program,student.year,student.status," +
         "student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.email," +
         "student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.users.id,student.person.users.avatar";

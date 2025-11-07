@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { InventoryRecordsTable, StudentDetailsModal, InventoryStatsGrid } from "@/components/molecules";
+import {
+  InventoryRecordsTable,
+  StudentDetailsModal,
+  InventoryStatsGrid,
+} from "@/components/molecules";
 import { useInventory } from "@/hooks";
 import { Brain, Activity, Heart } from "lucide-react";
 import type { GetInventoryResponse } from "@/services/inventory.service";
@@ -8,7 +12,7 @@ import type { Student } from "@/services/student.service";
 
 // Constants for consistent data fetching - Include comprehensive student data for modal
 const INVENTORY_FIELDS =
-  "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPrediction,student.id,student.studentNumber,student.program,student.year,student.status,student.notes,student.createdAt,student.updatedAt,student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.suffix,student.person.email,student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.birthPlace,student.person.age,student.person.religion,student.person.civilStatus,student.person.users.id,student.person.users.avatar,student.person.users.anxietyAssessments.id,student.person.users.anxietyAssessments.severityLevel,student.person.users.anxietyAssessments.assessmentDate,student.person.users.anxietyAssessments.totalScore,student.person.users.depressionAssessments.id,student.person.users.depressionAssessments.severityLevel,student.person.users.depressionAssessments.assessmentDate,student.person.users.depressionAssessments.totalScore,student.person.users.stressAssessments.id,student.person.users.stressAssessments.severityLevel,student.person.users.stressAssessments.assessmentDate,student.person.users.stressAssessments.totalScore,student.person.users.suicideAssessments.id,student.person.users.suicideAssessments.riskLevel,student.person.users.suicideAssessments.assessmentDate";
+  "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,significantNotes,student.id,student.studentNumber,student.program,student.year,student.status,student.notes,student.createdAt,student.updatedAt,student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.suffix,student.person.email,student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.birthPlace,student.person.age,student.person.religion,student.person.civilStatus,student.person.users.id,student.person.users.avatar,student.person.users.anxietyAssessments.id,student.person.users.anxietyAssessments.severityLevel,student.person.users.anxietyAssessments.assessmentDate,student.person.users.anxietyAssessments.totalScore,student.person.users.depressionAssessments.id,student.person.users.depressionAssessments.severityLevel,student.person.users.depressionAssessments.assessmentDate,student.person.users.depressionAssessments.totalScore,student.person.users.stressAssessments.id,student.person.users.stressAssessments.severityLevel,student.person.users.stressAssessments.assessmentDate,student.person.users.stressAssessments.totalScore,student.person.users.suicideAssessments.id,student.person.users.suicideAssessments.riskLevel,student.person.users.suicideAssessments.assessmentDate";
 
 export const InventoryRecordsContent: React.FC = () => {
   const navigate = useNavigate();
@@ -125,10 +129,19 @@ export const InventoryRecordsContent: React.FC = () => {
       <InventoryStatsGrid />
 
       <div className="bg-white rounded-lg shadow-sm">
-        <InventoryRecordsTable inventories={inventories} loading={loading} error={error} onView={handleViewInventory} />
+        <InventoryRecordsTable
+          inventories={inventories}
+          loading={loading}
+          error={error}
+          onView={handleViewInventory}
+        />
       </div>
 
-      <StudentDetailsModal isOpen={isStudentModalOpen} onClose={handleCloseStudentModal} student={viewingStudent} />
+      <StudentDetailsModal
+        isOpen={isStudentModalOpen}
+        onClose={handleCloseStudentModal}
+        student={viewingStudent}
+      />
     </div>
   );
 };
