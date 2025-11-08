@@ -75,8 +75,8 @@ export class MetricsService {
 
   // Method to fetch dashboard metrics for authenticated users
   static async fetchDashboardMetrics(
-    data: string[], 
-    filter?: MetricFilter, 
+    data: string[],
+    filter?: MetricFilter,
     methodParams?: Record<string, any>
   ): Promise<MetricResponse> {
     try {
@@ -93,7 +93,10 @@ export class MetricsService {
   }
 
   // Method to fetch guidance dashboard metrics
-  static async fetchGuidanceDashboardMetrics(data: string[], filter?: MetricFilter): Promise<MetricResponse> {
+  static async fetchGuidanceDashboardMetrics(
+    data: string[],
+    filter?: MetricFilter
+  ): Promise<MetricResponse> {
     try {
       const response = await HttpClient.post<MetricResponse>("/metrics/guidance/dashboard", {
         data,
@@ -141,6 +144,34 @@ export class MetricsService {
     return response.data[0]?.totalStudent || 0;
   }
 
+  // Get students by program
+  static async getStudentsByProgram(
+    filter?: MetricFilter
+  ): Promise<{ program: string; count: number }[]> {
+    const request: MetricRequest = {
+      model: "Student",
+      data: ["totalStudentByProgram"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    return response.data[0]?.totalStudentByProgram || [];
+  }
+
+  // Get students by year level
+  static async getStudentsByYear(
+    filter?: MetricFilter
+  ): Promise<{ year: string; count: number }[]> {
+    const request: MetricRequest = {
+      model: "Student",
+      data: ["totalStudentByYear"],
+      filter,
+    };
+
+    const response = await this.fetchMetrics(request);
+    return response.data[0]?.totalStudentByYear || [];
+  }
+
   // Get total count for a specific assessment type
   static async getTotalCount(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
@@ -148,7 +179,7 @@ export class MetricsService {
   ): Promise<number> {
     let model: string;
     let metricKey: string;
-    
+
     // Handle special cases for suicide and checklist
     if (assessmentType === "suicide") {
       model = "Suicide";
@@ -178,7 +209,7 @@ export class MetricsService {
   ): Promise<ProgramMetric[]> {
     let model: string;
     let metricKey: string;
-    
+
     // Handle special cases for suicide and checklist
     if (assessmentType === "suicide") {
       model = "Suicide";
@@ -208,7 +239,7 @@ export class MetricsService {
   ): Promise<YearMetric[]> {
     let model: string;
     let metricKey: string;
-    
+
     // Handle special cases for suicide and checklist
     if (assessmentType === "suicide") {
       model = "Suicide";
@@ -238,7 +269,7 @@ export class MetricsService {
   ): Promise<GenderMetric[]> {
     let model: string;
     let metricKey: string;
-    
+
     // Handle special cases for suicide and checklist
     if (assessmentType === "suicide") {
       model = "Suicide";
@@ -258,7 +289,7 @@ export class MetricsService {
     };
 
     const response = await this.fetchMetrics(request);
-    
+
     // Try to access the data directly if it's in the response.data array
     let result;
     if (Array.isArray(response.data) && response.data[0]?.[metricKey]) {
@@ -269,7 +300,7 @@ export class MetricsService {
     } else {
       result = [];
     }
-    
+
     return result;
   }
 
@@ -360,7 +391,7 @@ export class MetricsService {
   ) {
     let model: string;
     let metricKey: string;
-    
+
     // Handle special cases for suicide and checklist
     if (assessmentType === "suicide") {
       model = "Suicide";
@@ -540,10 +571,10 @@ export class MetricsService {
     const data = response.data[0]?.bmiCategoryDistribution || [];
 
     const colors: Record<string, string> = {
-      "Underweight": "#3B82F6",
-      "Normal": "#10B981",
-      "Overweight": "#F59E0B",
-      "Obese": "#EF4444",
+      Underweight: "#3B82F6",
+      Normal: "#10B981",
+      Overweight: "#F59E0B",
+      Obese: "#EF4444",
     };
 
     const total = data.reduce((sum: number, item: any) => sum + item.count, 0);

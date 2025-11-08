@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { StudentsTable, StudentDrawer } from "@/components/molecules";
+import {
+  StudentsTable,
+  StudentDrawer,
+  StudentStatsCards,
+  StudentDistributionCharts,
+} from "@/components/molecules";
 import { useStudents, useAuth, useToast } from "@/hooks";
 import { StudentService } from "@/services/student.service";
 import { Button } from "@/components/ui/button";
@@ -207,6 +212,13 @@ export const StudentsContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Student Statistics Cards */}
+      <StudentStatsCards />
+
+      {/* Student Distribution Charts */}
+      <StudentDistributionCharts className="mb-6" />
+
       <div className="bg-white rounded-lg shadow-sm">
         <StudentsTable
           students={students}
