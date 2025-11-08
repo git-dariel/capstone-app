@@ -39,6 +39,7 @@ const financialStatusOptions = [
 ];
 
 const physicalSymptomsOptions = [
+  { value: "none", label: "None" },
   { value: "shortness_of_breath", label: "Shortness of Breath" },
   { value: "racing_heart", label: "Racing Heart" },
   { value: "headaches", label: "Headaches" },
