@@ -17,6 +17,8 @@ export { StressAssessmentTable } from "./StressAssessmentTable";
 export { SuicideAssessmentTable } from "./SuicideAssessmentTable";
 export { ChecklistAssessmentTable } from "./ChecklistAssessmentTable";
 export { StudentsTable } from "./StudentsTable";
+export { StudentStatsCards } from "./StudentStatsCards";
+export { StudentDistributionCharts } from "./StudentDistributionCharts";
 export { InventoryRecordsTable } from "./InventoryRecordsTable";
 export { StudentDrawer } from "./StudentModal";
 export { ViewStudentDrawer } from "./ViewStudentDrawer";
