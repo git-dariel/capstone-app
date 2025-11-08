@@ -534,7 +534,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Educational Background */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Educational Background</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Educational Background of Student</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <FormSelect
