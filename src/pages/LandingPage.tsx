@@ -16,6 +16,12 @@ import {
   Bell,
   FileText,
   Download,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  RotateCcw,
 } from "lucide-react";
 import pupLogo from "@/assets/PUPLogo.png";
 import iskoImage from "@/assets/isko.png";
@@ -25,8 +31,15 @@ import { useAnnouncement } from "@/hooks";
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "announcements">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "announcements" | "tutorial">("home");
   const { announcements, loading, fetchAnnouncements } = useAnnouncement();
+
+  // Video player state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Animation refs
   const mainRef = useRef<HTMLDivElement>(null);
@@ -37,6 +50,72 @@ export const LandingPage: React.FC = () => {
       fetchAnnouncements({ limit: 50 });
     }
   }, [activeTab]); // Remove fetchAnnouncements from dependencies to prevent infinite loop
+
+  // Video control functions
+  const togglePlay = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (videoRef.current) {
+      const newTime = parseFloat(e.target.value);
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const resetVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      setCurrentTime(0);
+      if (isPlaying) {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
+  const toggleFullscreen = () => {
+    if (videoRef.current) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        videoRef.current.requestFullscreen();
+      }
+    }
+  };
 
   // Helper function to format date
   const formatDate = (dateString: string) => {
@@ -306,6 +385,384 @@ export const LandingPage: React.FC = () => {
     return () => observer.disconnect();
   }, [activeTab]); // Add activeTab as dependency
 
+  // Render tutorial content
+  const renderTutorial = () => (
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo and Title */}
+            <div className="flex items-center space-x-3">
+              <img src={pupLogo} alt="PUP Logo" className="h-8 w-8 sm:h-10 sm:w-10" />
+              <div>
+                <h1 className="text-sm sm:text-lg lg:text-xl font-bold text-primary-700 leading-tight">
+                  Office of Guidance and Counseling Services
+                </h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Mental Health Platform</p>
+              </div>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-4">
+              {/* Tab Navigation */}
+              <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab("home")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 ${
+                    activeTab === "home"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Home
+                </button>
+                <button
+                  onClick={() => setActiveTab("announcements")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "announcements"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Bell className="w-4 h-4" />
+                  <span>Announcements</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("tutorial")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "tutorial"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Tutorial</span>
+                </button>
+              </div>
+
+              {/* Auth Buttons */}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => navigate("/signin")}
+                  className="px-4 py-2 text-primary-700 font-medium hover:bg-primary-50 rounded-lg transition-colors duration-200 cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => navigate("/signup")}
+                  className="px-4 py-2 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="p-2 text-primary-700 hover:bg-primary-50 rounded-lg transition-colors duration-200"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <div className="md:hidden border-t border-gray-200 bg-white">
+              <div className="px-4 py-3 space-y-3">
+                {/* Mobile Tab Navigation */}
+                <div className="grid grid-cols-3 gap-1 bg-gray-100 rounded-lg p-1 mb-4">
+                  <button
+                    onClick={() => {
+                      setActiveTab("home");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs ${
+                      activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
+                    }`}
+                  >
+                    Home
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("announcements");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
+                      activeTab === "announcements"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Bell className="w-3 h-3" />
+                    <span className="hidden sm:inline">Announcements</span>
+                    <span className="sm:hidden">News</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("tutorial");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
+                      activeTab === "tutorial"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>Tutorial</span>
+                  </button>
+                </div>
+
+                {/* Auth Buttons */}
+                <button
+                  onClick={() => {
+                    navigate("/signin");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 bg-white text-primary-700 border-2 border-primary-700 font-medium rounded-lg hover:bg-primary-50 transition-colors duration-200 text-center cursor-pointer"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/signup");
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 bg-primary-700 text-white font-medium rounded-lg hover:bg-primary-800 transition-colors duration-200 shadow-sm text-center"
+                >
+                  Get Started
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Header Section */}
+      <section className="bg-white border-b border-gray-200 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center space-y-3">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary-100 rounded-full mb-2">
+              <Play className="w-6 h-6 text-primary-700" />
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Platform Tutorial</h1>
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+              Learn how to use the Mental Health Assessment Platform with our comprehensive video
+              guide.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Video Tutorial Section */}
+      <section className="py-12">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div
+            className="bg-white rounded-3xl p-6 lg:p-8 border border-gray-200"
+            style={{
+              boxShadow: `30px 30px 60px rgba(163, 18, 97, 0.1), 
+                          -30px -30px 60px rgba(255, 255, 255, 0.9),
+                          inset 10px 10px 20px rgba(255, 255, 255, 0.8),
+                          inset -10px -10px 20px rgba(163, 18, 97, 0.05)`,
+            }}
+          >
+            {/* Video Player */}
+            <div className="relative">
+              <div
+                className="relative bg-gray-900 rounded-2xl overflow-hidden"
+                style={{
+                  boxShadow: `inset 10px 10px 20px rgba(0, 0, 0, 0.3),
+                              inset -10px -10px 20px rgba(255, 255, 255, 0.05)`,
+                }}
+              >
+                <video
+                  ref={videoRef}
+                  className="w-full h-auto max-h-[70vh] object-contain"
+                  onTimeUpdate={handleTimeUpdate}
+                  onLoadedMetadata={handleLoadedMetadata}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  controls={false}
+                >
+                  <source
+                    src="https://res.cloudinary.com/mental-health-dev/video/upload/v1762613908/Student_Tutorial_Video_ljmykj.mp4"
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+
+                {/* Video Controls Overlay */}
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                  <div className="space-y-3">
+                    {/* Progress Bar */}
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0"
+                        max={duration || 0}
+                        value={currentTime}
+                        onChange={handleSeek}
+                        className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: `linear-gradient(to right, #a3125b 0%, #a3125b ${
+                            duration > 0 ? (currentTime / duration) * 100 : 0
+                          }%, rgba(255,255,255,0.2) ${
+                            duration > 0 ? (currentTime / duration) * 100 : 0
+                          }%, rgba(255,255,255,0.2) 100%)`,
+                        }}
+                      />
+                    </div>
+
+                    {/* Control Buttons */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <button
+                          onClick={togglePlay}
+                          className="flex items-center justify-center w-12 h-12 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 backdrop-blur-sm"
+                        >
+                          {isPlaying ? (
+                            <Pause className="w-6 h-6 text-white" />
+                          ) : (
+                            <Play className="w-6 h-6 text-white ml-1" />
+                          )}
+                        </button>
+
+                        <button
+                          onClick={resetVideo}
+                          className="flex items-center justify-center w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 backdrop-blur-sm"
+                        >
+                          <RotateCcw className="w-5 h-5 text-white" />
+                        </button>
+
+                        <button
+                          onClick={toggleMute}
+                          className="flex items-center justify-center w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 backdrop-blur-sm"
+                        >
+                          {isMuted ? (
+                            <VolumeX className="w-5 h-5 text-white" />
+                          ) : (
+                            <Volume2 className="w-5 h-5 text-white" />
+                          )}
+                        </button>
+
+                        <div className="text-white text-sm font-medium">
+                          {formatTime(currentTime)} / {formatTime(duration)}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={toggleFullscreen}
+                        className="flex items-center justify-center w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full transition-all duration-200 backdrop-blur-sm"
+                      >
+                        <Maximize className="w-5 h-5 text-white" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Tutorial Information */}
+            <div className="mt-8 space-y-6">
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                  How to Use the Mental Health Platform
+                </h2>
+                <p className="text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                  This comprehensive tutorial covers all the features and functions of our platform,
+                  from taking assessments to booking appointments with counselors.
+                </p>
+              </div>
+
+              {/* Tutorial Topics */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[
+                  { icon: TrendingUp, title: "Registration", time: "0:16" },
+                  { icon: Brain, title: "Mental Health Assessments", time: "5:20" },
+                  { icon: Calendar, title: "Booking Appointments", time: "9:15" },
+                  { icon: MessageCircle, title: "Messaging System", time: "7:50" },
+                  { icon: Activity, title: "Wellness Activities", time: "7:28" },
+                ].map((topic, index) => (
+                  <div
+                    key={index}
+                    className="bg-gray-50 rounded-2xl p-4 border border-gray-100 hover:border-primary-200 transition-all duration-200 cursor-pointer"
+                    style={{
+                      boxShadow: `10px 10px 20px rgba(163, 18, 97, 0.05), 
+                                  -10px -10px 20px rgba(255, 255, 255, 0.8),
+                                  inset 3px 3px 6px rgba(255, 255, 255, 0.7),
+                                  inset -3px -3px 6px rgba(163, 18, 97, 0.03)`,
+                    }}
+                    onClick={() => {
+                      if (videoRef.current) {
+                        const times: Record<string, number> = {
+                          "0:16": 16, // Registration
+                          "5:20": 320, // Mental Health Assessments
+                          "9:15": 555, // Booking Appointments - updated time (9*60 + 15 = 555)
+                          "7:50": 470, // Messaging System - updated time (7*60 + 50 = 470)
+                          "7:28": 448, // Wellness Activities - updated time (7*60 + 28 = 448)
+                        };
+                        videoRef.current.currentTime = times[topic.time] || 0;
+                      }
+                    }}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div
+                        className="flex items-center justify-center w-10 h-10 bg-primary-100 rounded-full"
+                        style={{
+                          boxShadow: `inset 3px 3px 6px rgba(255, 255, 255, 0.8),
+                                      inset -3px -3px 6px rgba(163, 18, 97, 0.05)`,
+                        }}
+                      >
+                        <topic.icon className="w-5 h-5 text-primary-700" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-900 text-sm">{topic.title}</h3>
+                        <p className="text-primary-600 text-xs font-medium">{topic.time}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-12 bg-white border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Ready to Get Started?</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Now that you've learned how to use the platform, create your account to access
+              personalized mental health assessments and counseling services.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => navigate("/signup")}
+                className="inline-flex items-center px-6 py-3 bg-primary-700 text-white font-semibold rounded-xl hover:bg-primary-800 transition-all duration-300 shadow-lg hover:shadow-xl"
+              >
+                Create Account
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </button>
+              <button
+                onClick={() => navigate("/signin")}
+                className="inline-flex items-center px-6 py-3 bg-white text-primary-700 font-semibold rounded-xl border-2 border-primary-200 hover:border-primary-300 transition-all duration-300"
+              >
+                Sign In to Portal
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+
   // Render announcements content
   const renderAnnouncements = () => (
     <div className="min-h-screen bg-gray-50">
@@ -349,6 +806,17 @@ export const LandingPage: React.FC = () => {
                   <Bell className="w-4 h-4" />
                   <span>Announcements</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab("tutorial")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "tutorial"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Tutorial</span>
+                </button>
               </div>
 
               {/* Auth Buttons */}
@@ -385,13 +853,13 @@ export const LandingPage: React.FC = () => {
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-3 space-y-3">
                 {/* Mobile Tab Navigation */}
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+                <div className="grid grid-cols-3 gap-1 bg-gray-100 rounded-lg p-1 mb-4">
                   <button
                     onClick={() => {
                       setActiveTab("home");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs ${
                       activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
                     }`}
                   >
@@ -402,14 +870,29 @@ export const LandingPage: React.FC = () => {
                       setActiveTab("announcements");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
                       activeTab === "announcements"
                         ? "bg-white text-primary-700 shadow-sm"
                         : "text-gray-600"
                     }`}
                   >
                     <Bell className="w-3 h-3" />
-                    <span>Announcements</span>
+                    <span className="hidden sm:inline">Announcements</span>
+                    <span className="sm:hidden">News</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("tutorial");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
+                      activeTab === "tutorial"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>Tutorial</span>
                   </button>
                 </div>
 
@@ -689,6 +1172,17 @@ export const LandingPage: React.FC = () => {
                   <Bell className="w-4 h-4" />
                   <span>Announcements</span>
                 </button>
+                <button
+                  onClick={() => setActiveTab("tutorial")}
+                  className={`px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center space-x-2 ${
+                    activeTab === "tutorial"
+                      ? "bg-white text-primary-700 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
+                  <span>Tutorial</span>
+                </button>
               </div>
 
               {/* Auth Buttons */}
@@ -725,13 +1219,13 @@ export const LandingPage: React.FC = () => {
             <div className="md:hidden border-t border-gray-200 bg-white">
               <div className="px-4 py-3 space-y-3">
                 {/* Mobile Tab Navigation */}
-                <div className="flex items-center space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+                <div className="grid grid-cols-3 gap-1 bg-gray-100 rounded-lg p-1 mb-4">
                   <button
                     onClick={() => {
                       setActiveTab("home");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm ${
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs ${
                       activeTab === "home" ? "bg-white text-primary-700 shadow-sm" : "text-gray-600"
                     }`}
                   >
@@ -742,14 +1236,29 @@ export const LandingPage: React.FC = () => {
                       setActiveTab("announcements");
                       setIsMenuOpen(false);
                     }}
-                    className={`flex-1 px-3 py-2 rounded-md font-medium transition-all duration-200 text-sm flex items-center justify-center space-x-1 ${
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
                       activeTab === "announcements"
                         ? "bg-white text-primary-700 shadow-sm"
                         : "text-gray-600"
                     }`}
                   >
                     <Bell className="w-3 h-3" />
-                    <span>Announcements</span>
+                    <span className="hidden sm:inline">Announcements</span>
+                    <span className="sm:hidden">News</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setActiveTab("tutorial");
+                      setIsMenuOpen(false);
+                    }}
+                    className={`px-2 py-2 rounded-md font-medium transition-all duration-200 text-xs flex items-center justify-center space-x-1 ${
+                      activeTab === "tutorial"
+                        ? "bg-white text-primary-700 shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>Tutorial</span>
                   </button>
                 </div>
 
@@ -1094,5 +1603,11 @@ export const LandingPage: React.FC = () => {
   );
 
   // Main render function
-  return <>{activeTab === "home" ? renderHome() : renderAnnouncements()}</>;
+  return (
+    <>
+      {activeTab === "home" && renderHome()}
+      {activeTab === "announcements" && renderAnnouncements()}
+      {activeTab === "tutorial" && renderTutorial()}
+    </>
+  );
 };
