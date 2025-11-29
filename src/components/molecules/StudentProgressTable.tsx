@@ -34,16 +34,19 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
-  const [summary, setSummary] = useState<StudentProgressOverview['summary'] | null>(null);
+  const [summary, setSummary] = useState<StudentProgressOverview["summary"] | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<StudentProgressInsight | null>(null);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
-  
+
   const STUDENTS_PER_PAGE = 10;
 
   const loadStudentProgress = async (page: number = 1) => {
     try {
       setLoading(true);
-      const overview = await GuidanceDashboardService.getStudentProgressOverview(page, STUDENTS_PER_PAGE);
+      const overview = await GuidanceDashboardService.getStudentProgressOverview(
+        page,
+        STUDENTS_PER_PAGE
+      );
       setStudents(overview.students);
       setFilteredStudents(overview.students);
       setSummary(overview.summary);
@@ -276,7 +279,9 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                         </div>
                         <div className="text-xs text-gray-500">
                           A:{student.totalAssessments.anxiety} S:{student.totalAssessments.stress}{" "}
-                          D:{student.totalAssessments.depression} SU:{student.totalAssessments.suicide} PC:{student.totalAssessments.checklist || 0}
+                          D:{student.totalAssessments.depression} SU:
+                          {student.totalAssessments.suicide} PC:
+                          {student.totalAssessments.checklist || 0}
                         </div>
                       </td>
                       <td className="px-3 md:px-6 py-4 whitespace-nowrap">
@@ -300,7 +305,9 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                             className="text-indigo-600 hover:text-indigo-900"
                           >
                             <span className="hidden md:inline cursor-pointer">
-                              {expandedRows.has(student.studentId) ? "Hide Details" : "View Details"}
+                              {expandedRows.has(student.studentId)
+                                ? "Hide Details"
+                                : "View Details"}
                             </span>
                             <span className="md:hidden">
                               {expandedRows.has(student.studentId) ? "Hide" : "View"}
@@ -365,7 +372,10 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                                   <div className="text-xs text-gray-500">Personal Checklist</div>
                                   <div className="text-sm font-medium">
                                     {student.latestAssessments.checklist
-                                      ? `${student.latestAssessments.checklist.riskLevel?.toUpperCase() || 'Unknown'}`
+                                      ? `${
+                                          student.latestAssessments.checklist.riskLevel?.toUpperCase() ||
+                                          "Unknown"
+                                        }`
                                       : "No assessment"}
                                   </div>
                                 </div>

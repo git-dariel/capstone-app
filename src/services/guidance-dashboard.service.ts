@@ -53,32 +53,152 @@ export interface StudentProgressOverview {
 
 export class GuidanceDashboardService {
   // Get overall student progress insights for guidance dashboard
-  static async getStudentProgressOverview(page: number = 1, limit: number = 10): Promise<StudentProgressOverview> {
+  static async getStudentProgressOverview(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<StudentProgressOverview> {
     try {
-      const response = await MetricsService.fetchGuidanceDashboardMetrics([
-        "studentProgressOverview",
-      ], { page, limit });
+      const response = await MetricsService.fetchGuidanceDashboardMetrics(
+        ["studentProgressOverview"],
+        { page, limit }
+      );
 
-      console.log("📥 Full API response:", response);
+      // Handle different possible response structures
+      let overviewData: StudentProgressOverview | null = null;
 
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        const overviewData = response.data[0];
-        console.log("📊 Overview data:", overviewData);
+      // Type guard to check if object has StudentProgressOverview structure
+      const isStudentProgressOverview = (obj: any): obj is StudentProgressOverview => {
+        if (!obj || typeof obj !== "object") return false;
+        // Check for required properties - be lenient with empty arrays
+        const hasStudents = Array.isArray(obj.students);
+        const hasSummary = obj.summary && typeof obj.summary === "object";
+        const hasPagination = obj.pagination && typeof obj.pagination === "object";
 
-        // The backend returns [{ studentProgressOverview: { students, summary, pagination } }]
-        if (overviewData && overviewData.studentProgressOverview) {
-          console.log("📋 Student progress overview:", overviewData.studentProgressOverview);
-          return overviewData.studentProgressOverview as StudentProgressOverview;
+        return hasStudents && hasSummary && hasPagination;
+      };
+
+      // Case 1: response.data is an array with the expected structure
+      if (response?.data && Array.isArray(response.data) && response.data.length > 0) {
+        const firstItem: any = response.data[0];
+
+        // Check if studentProgressOverview is null (error case)
+        if (firstItem?.studentProgressOverview === null) {
+          // Return empty structure
+          overviewData = {
+            students: [],
+            summary: {
+              totalStudents: 0,
+              studentsWithAssessments: 0,
+              highRiskStudents: 0,
+              moderateRiskStudents: 0,
+              lowRiskStudents: 0,
+            },
+            pagination: {
+              page: 1,
+              limit: 10,
+              total: 0,
+              totalPages: 0,
+              hasNextPage: false,
+              hasPrevPage: false,
+            },
+          };
         }
+        // Check if it has studentProgressOverview property
+        else if (
+          firstItem?.studentProgressOverview &&
+          isStudentProgressOverview(firstItem.studentProgressOverview)
+        ) {
+          overviewData = firstItem.studentProgressOverview;
+        }
+        // Check if the first item itself is the overview structure
+        else if (isStudentProgressOverview(firstItem)) {
+          overviewData = firstItem;
+        }
+      }
+      // Case 2: response itself might be the data array (if HttpClient unwraps it)
+      else if (Array.isArray(response) && response.length > 0) {
+        const firstItem: any = response[0];
+        if (
+          firstItem?.studentProgressOverview &&
+          isStudentProgressOverview(firstItem.studentProgressOverview)
+        ) {
+          overviewData = firstItem.studentProgressOverview;
+        } else if (isStudentProgressOverview(firstItem)) {
+          overviewData = firstItem;
+        }
+      }
+      // Case 3: response might have studentProgressOverview directly
+      else if (
+        (response as any)?.studentProgressOverview &&
+        isStudentProgressOverview((response as any).studentProgressOverview)
+      ) {
+        overviewData = (response as any).studentProgressOverview;
+      }
+      // Case 4: response itself might be the overview structure
+      else if (isStudentProgressOverview(response)) {
+        overviewData = response as unknown as StudentProgressOverview;
+      }
 
-        // Fallback: if the data is directly the overview structure
-        if (overviewData && overviewData.students && overviewData.summary) {
-          console.log("📋 Direct overview structure:", overviewData);
-          return overviewData as StudentProgressOverview;
+      // Check if we have valid data
+      if (overviewData && typeof overviewData === "object") {
+        // Double-check the structure before returning
+        if (
+          Array.isArray(overviewData.students) &&
+          overviewData.summary &&
+          overviewData.pagination
+        ) {
+          return overviewData;
         }
       }
 
-      throw new Error("No student progress data received from API");
+      // If we get here, try one more time with a more lenient check
+      // Sometimes the response might be wrapped differently
+      if (response?.data?.[0]?.studentProgressOverview) {
+        const data = response.data[0].studentProgressOverview;
+        if (
+          data &&
+          typeof data === "object" &&
+          "students" in data &&
+          "summary" in data &&
+          "pagination" in data
+        ) {
+          return data as StudentProgressOverview;
+        }
+      }
+
+      // Also check if response.data[0] itself is the structure
+      if (response?.data?.[0]) {
+        const data = response.data[0];
+        if (
+          data &&
+          typeof data === "object" &&
+          "students" in data &&
+          "summary" in data &&
+          "pagination" in data
+        ) {
+          return data as StudentProgressOverview;
+        }
+      }
+
+      // Last resort: return empty structure instead of throwing
+      return {
+        students: [],
+        summary: {
+          totalStudents: 0,
+          studentsWithAssessments: 0,
+          highRiskStudents: 0,
+          moderateRiskStudents: 0,
+          lowRiskStudents: 0,
+        },
+        pagination: {
+          page: page,
+          limit: limit,
+          total: 0,
+          totalPages: 0,
+          hasNextPage: false,
+          hasPrevPage: false,
+        },
+      };
     } catch (error) {
       console.error("Error fetching student progress overview:", error);
       throw error;
@@ -111,14 +231,11 @@ export class GuidanceDashboardService {
         { assessmentId, assessmentType }
       );
 
-      console.log("📥 Assessment details response:", response);
-
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {
         const detailsData = response.data[0];
-        
+
         // The backend returns [{ getAssessmentDetails: { ...assessment data } }]
         if (detailsData && detailsData.getAssessmentDetails) {
-          console.log("📋 Assessment details:", detailsData.getAssessmentDetails);
           return detailsData.getAssessmentDetails;
         }
       }

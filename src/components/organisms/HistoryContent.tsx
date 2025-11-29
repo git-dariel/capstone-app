@@ -117,28 +117,29 @@ export const HistoryContent: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [anxietyData, depressionData, stressData, suicideData, checklistData] = await Promise.all([
-        fetchAnxietyAssessments({
-          limit: 100,
-          fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
-        }),
-        fetchDepressionAssessments({
-          limit: 100,
-          fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
-        }),
-        fetchStressAssessments({
-          limit: 100,
-          fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
-        }),
-        fetchSuicideAssessments({
-          limit: 100,
-          fields: "id,riskLevel,assessmentDate,createdAt",
-        }),
-        fetchChecklistAssessments({
-          limit: 100,
-          fields: "id,checklist_analysis,date_completed,createdAt",
-        }),
-      ]);
+      const [anxietyData, depressionData, stressData, suicideData, checklistData] =
+        await Promise.all([
+          fetchAnxietyAssessments({
+            limit: 100,
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+          }),
+          fetchDepressionAssessments({
+            limit: 100,
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+          }),
+          fetchStressAssessments({
+            limit: 100,
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+          }),
+          fetchSuicideAssessments({
+            limit: 100,
+            fields: "id,riskLevel,assessmentDate,createdAt",
+          }),
+          fetchChecklistAssessments({
+            limit: 100,
+            fields: "id,userId,checklist_analysis,date_completed,createdAt",
+          }),
+        ]);
 
       const combinedHistory: AssessmentHistoryItem[] = [
         ...(anxietyData?.data || []).map((item: any) => ({
@@ -173,19 +174,22 @@ export const HistoryContent: React.FC = () => {
           date: item.assessmentDate,
           createdAt: item.createdAt,
         })),
-        ...(checklistData?.data || []).map((item: any) => ({
-          id: item.id,
-          type: "checklist" as const,
-          score: item.checklist_analysis?.totalProblemsChecked || 0,
-          severityLevel: item.checklist_analysis?.riskLevel || "unknown",
-          date: item.date_completed,
-          createdAt: item.createdAt,
-        })),
+        ...(checklistData?.data || [])
+          .filter((item: any) => item.userId === user?.id) // Only include checklists for the current user
+          .map((item: any) => ({
+            id: item.id,
+            type: "checklist" as const,
+            score: item.checklist_analysis?.totalProblemsChecked || 0,
+            severityLevel: item.checklist_analysis?.riskLevel || "unknown",
+            date: item.date_completed,
+            createdAt: item.createdAt,
+          })),
       ];
 
       // Sort by date (most recent first)
       combinedHistory.sort(
-        (a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
+        (a, b) =>
+          new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
       );
 
       setAssessmentHistory(combinedHistory);
@@ -287,7 +291,9 @@ export const HistoryContent: React.FC = () => {
               const latestLevel = typeAssessments[0]?.severityLevel;
               const averageScore =
                 typeAssessments.length > 0 && type !== "suicide" && type !== "checklist"
-                  ? Math.round(typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length)
+                  ? Math.round(
+                      typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length
+                    )
                   : 0;
 
               return (
@@ -304,7 +310,9 @@ export const HistoryContent: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-600">Total:</span>
-                      <span className="text-sm font-medium text-primary-700">{typeAssessments.length}</span>
+                      <span className="text-sm font-medium text-primary-700">
+                        {typeAssessments.length}
+                      </span>
                     </div>
                     {type === "suicide" || type === "checklist" ? (
                       latestLevel && (
@@ -324,13 +332,17 @@ export const HistoryContent: React.FC = () => {
                         {latestScore !== undefined && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Latest:</span>
-                            <span className="text-sm font-semibold text-gray-900">{latestScore}</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {latestScore}
+                            </span>
                           </div>
                         )}
                         {typeAssessments.length > 0 && (
                           <div className="flex justify-between items-center">
                             <span className="text-sm text-gray-600">Average:</span>
-                            <span className="text-sm font-medium text-gray-700">{averageScore}</span>
+                            <span className="text-sm font-medium text-gray-700">
+                              {averageScore}
+                            </span>
                           </div>
                         )}
                       </>
@@ -428,8 +440,8 @@ export const HistoryContent: React.FC = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {displayedHistory.map((assessment, _index) => {
                       return (
-                        <tr 
-                          key={assessment.id} 
+                        <tr
+                          key={assessment.id}
                           className="hover:bg-primary-50 transition-colors cursor-pointer"
                           onClick={() => handleRowClick(assessment)}
                         >
@@ -451,13 +463,17 @@ export const HistoryContent: React.FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {assessment.type === "suicide" ? (
-                              <span className="text-sm font-medium text-gray-900">Risk Assessment</span>
+                              <span className="text-sm font-medium text-gray-900">
+                                Risk Assessment
+                              </span>
                             ) : assessment.type === "checklist" ? (
                               <span className="text-sm font-medium text-gray-900">
                                 {assessment.score} Problem{assessment.score !== 1 ? "s" : ""}
                               </span>
                             ) : (
-                              <span className="text-lg font-semibold text-gray-900">{assessment.score}</span>
+                              <span className="text-lg font-semibold text-gray-900">
+                                {assessment.score}
+                              </span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -521,7 +537,9 @@ export const HistoryContent: React.FC = () => {
                             {assessment.score} Problem{assessment.score !== 1 ? "s" : ""}
                           </span>
                         ) : (
-                          <span className="text-xl font-bold text-gray-900">{assessment.score}</span>
+                          <span className="text-xl font-bold text-gray-900">
+                            {assessment.score}
+                          </span>
                         )}
                       </div>
 
