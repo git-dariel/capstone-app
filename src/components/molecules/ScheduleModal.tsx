@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Modal, DateTimePicker } from "@/components/atoms";
+import { Modal } from "@/components/atoms";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Schedule } from "@/services";
 
 interface ScheduleModalProps {
@@ -13,7 +20,9 @@ interface ScheduleModalProps {
 interface FormData {
   title: string;
   description: string;
+  startDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
   isRecurring: boolean;
   recurringType: "none" | "daily" | "weekly" | "monthly";
@@ -26,8 +35,10 @@ interface FormData {
 const initialFormData: FormData = {
   title: "",
   description: "",
-  startTime: "",
-  endTime: "",
+  startDate: "",
+  startTime: "09:00",
+  endDate: "",
+  endTime: "10:00",
   isRecurring: false,
   recurringType: "none",
   maxSlots: 1,
@@ -54,10 +65,16 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
         setFormData({
           title: schedule.title || "",
           description: schedule.description || "",
-          startTime: schedule.startTime
-            ? new Date(schedule.startTime).toISOString().slice(0, 16)
+          startDate: schedule.startTime
+            ? new Date(schedule.startTime).toISOString().slice(0, 10)
             : "",
-          endTime: schedule.endTime ? new Date(schedule.endTime).toISOString().slice(0, 16) : "",
+          startTime: schedule.startTime
+            ? new Date(schedule.startTime).toTimeString().slice(0, 5)
+            : "09:00",
+          endDate: schedule.endTime ? new Date(schedule.endTime).toISOString().slice(0, 10) : "",
+          endTime: schedule.endTime
+            ? new Date(schedule.endTime).toTimeString().slice(0, 5)
+            : "10:00",
           isRecurring: schedule.isRecurring || false,
           recurringType: schedule.recurringType || "none",
           maxSlots: schedule.maxSlots || 1,
@@ -79,18 +96,26 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       newErrors.title = "Schedule title is required";
     }
 
+    if (!formData.startDate) {
+      newErrors.startDate = "Start date is required";
+    }
+
     if (!formData.startTime) {
       newErrors.startTime = "Start time is required";
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = "End date is required";
     }
 
     if (!formData.endTime) {
       newErrors.endTime = "End time is required";
     }
 
-    if (formData.startTime && formData.endTime) {
-      const start = new Date(formData.startTime);
-      const end = new Date(formData.endTime);
-      if (start >= end) {
+    if (formData.startDate && formData.startTime && formData.endDate && formData.endTime) {
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+      if (startDateTime >= endDateTime) {
         newErrors.endTime = "End time must be after start time";
       }
     }
@@ -110,10 +135,20 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const startDateTime = new Date(`${formData.startDate}T${formData.startTime}`);
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+
       const scheduleData: Partial<Schedule> = {
-        ...formData,
-        startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString(),
+        title: formData.title,
+        description: formData.description,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        isRecurring: formData.isRecurring,
+        recurringType: formData.recurringType,
+        maxSlots: formData.maxSlots,
+        status: formData.status,
+        location: formData.location,
+        notes: formData.notes,
       };
 
       await onSave(scheduleData);
@@ -172,38 +207,131 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
         </div>
 
-        {/* Time Range */}
+        {/* Start Date & Time */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <DateTimePicker
-              id="startTime"
-              label="Start Time"
-              value={formData.startTime}
-              onChange={(value) => handleInputChange("startTime", value)}
-              required
-              minDate={new Date().toISOString().slice(0, 16)}
-              error={errors.startTime}
-              placeholder="Select start date and time"
-              restrictTimeRange={true}
-              minTime="08:00"
-              maxTime="20:00"
-            />
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Start Date <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.startDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.startDate ? (
+                    format(new Date(formData.startDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.startDate ? new Date(formData.startDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("startDate", `${year}-${month}-${day}`);
+                    }
+                  }}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.startDate && <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>}
           </div>
 
           <div>
-            <DateTimePicker
-              id="endTime"
-              label="End Time"
-              value={formData.endTime}
-              onChange={(value) => handleInputChange("endTime", value)}
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Start Time <span className="text-red-500">*</span>
+            </Label>
+            <input
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => handleInputChange("startTime", e.target.value)}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading}
               required
-              minDate={formData.startTime || new Date().toISOString().slice(0, 16)}
-              error={errors.endTime}
-              placeholder="Select end date and time"
-              restrictTimeRange={true}
-              minTime="08:00"
-              maxTime="20:00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
             />
+            {errors.startTime && <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>}
+          </div>
+        </div>
+
+        {/* End Date & Time */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              End Date <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.endDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.endDate ? (
+                    format(new Date(formData.endDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={formData.endDate ? new Date(formData.endDate) : undefined}
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("endDate", `${year}-${month}-${day}`);
+                    }
+                  }}
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.endDate && <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>}
+          </div>
+
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              End Time <span className="text-red-500">*</span>
+            </Label>
+            <input
+              type="time"
+              value={formData.endTime}
+              onChange={(e) => handleInputChange("endTime", e.target.value)}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+            />
+            {errors.endTime && <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>}
           </div>
         </div>
 

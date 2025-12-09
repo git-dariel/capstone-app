@@ -15,7 +15,7 @@ interface ComposeMessageModalProps {
 
 // TODO: This should be fetched dynamically from a service
 // For now using the known guidance counselor ID from the API response
-const GUIDANCE_COUNSELOR_ID = "685e864714bf575592f5bb34";
+const GUIDANCE_COUNSELOR_ID = "68f6101e40a5d3e29cab0c15";
 const GUIDANCE_COUNSELOR_NAME = "Dr. Conchita Dotado";
 
 export const ComposeMessageModal: React.FC<ComposeMessageModalProps> = ({

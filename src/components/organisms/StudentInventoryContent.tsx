@@ -2258,7 +2258,9 @@ export const StudentInventoryContent: React.FC = () => {
                       ...editData,
                       test_results: {
                         ...editData.test_results,
-                        date: e.target.value ? e.target.value : null,
+                        date: e.target.value
+                          ? new Date(e.target.value + "T00:00:00.000Z").toISOString()
+                          : null,
                       },
                     })
                   }

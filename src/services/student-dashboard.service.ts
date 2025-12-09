@@ -6,7 +6,7 @@ export interface PersonalSummary {
     stress: number;
     depression: number;
     suicide: number;
-    checklist: number;    
+    checklist: number;
     overall: number;
   };
   latestAssessments: {
@@ -211,6 +211,11 @@ export class StudentDashboardService {
 
       const insights: ProgressInsight[] = [];
 
+      // Check if we have valid data
+      if (!summary || !summary.latestAssessments) {
+        return insights; // Return empty insights if no assessments
+      }
+
       // Analyze each assessment type
       const assessmentTypes = ["anxiety", "stress", "depression", "suicide", "checklist"] as const;
 
@@ -278,7 +283,8 @@ export class StudentDashboardService {
               assessmentType: type,
               message: `Your latest ${type} assessment shows critical levels.`,
               severity: "high",
-              recommendation: "Please contact your guidance counselor or emergency services immediately.",
+              recommendation:
+                "Please contact your guidance counselor or emergency services immediately.",
             });
           } else if (severityLevel === "severe" || severityLevel === "Severe") {
             insights.push({
@@ -490,7 +496,8 @@ export class StudentDashboardService {
                 assessmentType: type,
                 message: `Your ${type} assessment shows critical levels.`,
                 severity: "high",
-                recommendation: "Please contact your guidance counselor or emergency services immediately.",
+                recommendation:
+                  "Please contact your guidance counselor or emergency services immediately.",
               });
             } else if (severityLevel === "severe" || severityLevel === "Severe") {
               insights.push({

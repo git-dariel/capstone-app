@@ -1,4 +1,5 @@
 import { HttpClient } from "./api.config";
+import type { InventoryReminderInfo } from "@/utils/inventoryReminder";
 
 // Types for inventory
 export interface InventoryFormData {
@@ -657,6 +658,32 @@ export class InventoryService {
     } catch (error: any) {
       throw new Error(
         error.response?.data?.error || error.message || "Failed to get stored prediction"
+      );
+    }
+  }
+
+  /**
+   * Get inventory reminder information for a student
+   */
+  static async getReminderInfo(studentId: string): Promise<{
+    reminderInfo: InventoryReminderInfo;
+    message: string;
+    severity: "low" | "medium" | "high" | "critical";
+    timeRemaining: string;
+    studentId: string;
+  }> {
+    try {
+      const response = await HttpClient.get<{
+        reminderInfo: InventoryReminderInfo;
+        message: string;
+        severity: "low" | "medium" | "high" | "critical";
+        timeRemaining: string;
+        studentId: string;
+      }>(`/inventory/student/${studentId}/reminder`);
+      return response;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || error.message || "Failed to get reminder information"
       );
     }
   }

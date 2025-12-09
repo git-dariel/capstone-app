@@ -79,7 +79,7 @@ export const InventoryReminderModal: React.FC<InventoryReminderModalProps> = ({
     onUpdateNow();
     onClose();
     // Navigate to inventory page
-    navigate("/inventory/my-inventory");
+    navigate("/student-inventory");
   };
 
   const handleDismiss = () => {
@@ -148,7 +148,7 @@ export const InventoryReminderModal: React.FC<InventoryReminderModalProps> = ({
                 <div className="text-xs text-gray-600 mb-1">Last Updated</div>
                 <div className="text-sm font-medium text-gray-900">
                   {reminderInfo.lastUpdated
-                    ? reminderInfo.lastUpdated.toLocaleDateString("en-US", {
+                    ? new Date(reminderInfo.lastUpdated).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
                         year: "numeric",
