@@ -48,6 +48,7 @@ export { ConversationList } from "./ConversationList";
 export { MessageThread } from "./MessageThread";
 export { TrendsLineChart } from "./TrendsLineChart";
 export { AssessmentDonutChart } from "./AssessmentDonutChart";
+export { StudentCSVUpload } from "./StudentCSVUpload";
 export { ProgramDistributionChart } from "./ProgramDistributionChart";
 export { AppointmentsTable } from "./AppointmentsTable";
 export { AppointmentModal } from "./AppointmentModal";

@@ -4,6 +4,7 @@ import {
   StudentDrawer,
   StudentStatsCards,
   StudentDistributionCharts,
+  StudentCSVUpload,
 } from "@/components/molecules";
 import { useStudents, useAuth, useToast } from "@/hooks";
 import { StudentService } from "@/services/student.service";
@@ -179,6 +180,26 @@ export const StudentsContent: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* CSV Upload Section - Only for guidance users */}
+      {isGuidance && (
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Upload Students</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Upload first-year student records from a CSV file. This will create new student accounts
+            for guidance management.
+          </p>
+          <StudentCSVUpload
+            onUploadSuccess={() => {
+              // Refresh students list after successful upload
+              fetchStudents({
+                limit: 100,
+                fields: STUDENT_FIELDS,
+              }).catch(console.error);
+            }}
+          />
+        </div>
+      )}
 
       {/* Confirmation Dialog */}
       {showConfirmDialog && (

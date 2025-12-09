@@ -197,4 +197,41 @@ export class StudentService {
       throw error;
     }
   }
+
+  static async uploadStudentsCSV(file: File): Promise<{
+    message: string;
+    results: {
+      total: number;
+      successful: number;
+      skipped: number;
+      errors: Array<{
+        studentNumber: string;
+        fullName: string;
+        error: string;
+      }>;
+    };
+  }> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await HttpClient.postFormData<{
+        message: string;
+        results: {
+          total: number;
+          successful: number;
+          skipped: number;
+          errors: Array<{
+            studentNumber: string;
+            fullName: string;
+            error: string;
+          }>;
+        };
+      }>("/student/upload-csv", formData);
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
