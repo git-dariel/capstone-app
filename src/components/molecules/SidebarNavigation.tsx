@@ -19,6 +19,7 @@ import {
   ClipboardList,
   Heart,
   Bell,
+  Archive,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -175,6 +176,12 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       icon: <School className="w-5 h-5" />,
       label: "Student Records",
       path: "/students",
+      guidanceOnly: true,
+    },
+    {
+      icon: <Archive className="w-5 h-5" />,
+      label: "Archive Students",
+      path: "/archive-students",
       guidanceOnly: true,
     },
     {

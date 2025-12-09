@@ -234,4 +234,43 @@ export class StudentService {
       throw error;
     }
   }
+
+  // Graduate a single student
+  static async graduateStudent(id: string): Promise<{ message: string; student: Student }> {
+    const response = await HttpClient.patch<{
+      message: string;
+      student: Student;
+    }>(`/student/${id}/graduate`);
+
+    if (response.message) {
+      return response;
+    }
+
+    throw new Error("Failed to graduate student");
+  }
+
+  // Graduate multiple students
+  static async graduateMultipleStudents(studentIds: string[]): Promise<{
+    message: string;
+    results: {
+      successful: number;
+      failed: number;
+      errors: string[];
+    };
+  }> {
+    const response = await HttpClient.post<{
+      message: string;
+      results: {
+        successful: number;
+        failed: number;
+        errors: string[];
+      };
+    }>("/student/graduate-batch", { studentIds });
+
+    if (response.message) {
+      return response;
+    }
+
+    throw new Error("Failed to graduate students");
+  }
 }

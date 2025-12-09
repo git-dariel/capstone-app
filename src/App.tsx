@@ -32,6 +32,7 @@ import {
   StudentConsultationRecordsPage,
   StudentDashboardPage,
   StudentInventoryPage,
+  ArchiveStudentsPage,
 } from "@/pages";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { useState } from "react";
@@ -245,6 +246,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <AccountsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/archive-students"
+            element={
+              <ProtectedRoute>
+                <ArchiveStudentsPage />
               </ProtectedRoute>
             }
           />

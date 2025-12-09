@@ -87,3 +87,4 @@ export { AssessmentStudentList } from "./AssessmentStudentList";
 export { StudentDetailsModal } from "./StudentDetailsModal";
 export { AssessmentHistoryModal } from "./AssessmentHistoryModal";
 export { InventoryReminderModal } from "./InventoryReminderModal";
+export { ArchiveStudentsTable } from "./ArchiveStudentsTable";
