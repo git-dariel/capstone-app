@@ -195,7 +195,7 @@ export interface InventoryFormData {
       if_yes_please_specify?: string; // Optional in schema
     };
     psychological: {
-      consulted: "psychiatrist" | "psychologist" | "councelor";
+      consulted: "none" | "psychiatrist" | "psychologist" | "councelor";
       status: "yes" | "no";
       when?: string | null; // ISO DateTime string, optional in schema
       for_what?: string; // Optional in schema
@@ -275,6 +275,42 @@ export interface SpecificMentalHealthRisk {
   recommendations: string[];
   warningSignsToWatch: string[];
   immediateAction?: string;
+}
+
+export interface MLPredictionResult {
+  riskLevel: string;
+  riskScore?: number;
+  riskPercentage?: string;
+  confidence?: number;
+  prediction: string;
+  explanation: string;
+  modelBasis: string;
+  riskFactors: string[];
+  recommendations: string[];
+  immediateAction?: string;
+}
+
+export interface MLPredictions {
+  // Standard structure when individual conditions are present
+  anxiety?: MLPredictionResult;
+  depression?: MLPredictionResult;
+  stress?: MLPredictionResult;
+  // Formatted structure from formatMLPredictions (all low risk case)
+  message?: string;
+  status?: "all_low_risk" | "initializing";
+  modelAccuracy:
+    | {
+        anxiety: number | string;
+        depression: number | string;
+        stress: number | string;
+      }
+    | {
+        anxiety?: number | string;
+        depression?: number | string;
+        stress?: number | string;
+      };
+  trainingDataSize?: number;
+  lastTrainingDate?: string;
 }
 
 export interface MentalHealthRiskAssessment {
@@ -497,6 +533,8 @@ export interface GetInventoryResponse {
       suicide?: SpecificMentalHealthRisk;
       allAssessments?: any; // Complete assessment data for internal use
     };
+    // NEW: Machine Learning predictions from actual outcome data
+    mlPredictions?: MLPredictions;
     inputData: any;
     recommendations: string[];
     predictionDate: string;
@@ -605,17 +643,10 @@ export class InventoryService {
    */
   static async getInventoryByStudentId(studentId: string): Promise<GetInventoryResponse | null> {
     try {
-      // Include all inventory fields and student/person/user data for comprehensive display
-      const fields =
-        "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,significantNotes," +
-        "person_to_be_contacted_in_case_of_accident_or_illness,educational_background,nature_of_schooling," +
-        "home_and_family_background,health,interest_and_hobbies,test_results,student_signature," +
-        "student.id,student.studentNumber,student.program,student.year,student.status," +
-        "student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.email," +
-        "student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.users.id,student.person.users.avatar";
-
+      // Don't use fields parameter - we need all nested data including mlPredictions
+      // The backend will use include which properly includes all nested fields
       const response = await HttpClient.get<GetInventoryResponse>(
-        `/inventory/student/${studentId}?fields=${encodeURIComponent(fields)}`
+        `/inventory/student/${studentId}`
       );
       return response;
     } catch (error: any) {

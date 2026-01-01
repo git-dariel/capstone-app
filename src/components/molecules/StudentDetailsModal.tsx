@@ -236,23 +236,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     return "text-gray-700 bg-gray-100 border-gray-300";
   };
 
-  const getRiskLevelColor = (level?: string) => {
-    if (!level) return "text-gray-700 bg-gray-100 border-gray-300";
-    const lower = level.toLowerCase();
-    switch (lower) {
-      case "low":
-        return "text-green-700 bg-green-100 border-green-300";
-      case "moderate":
-        return "text-yellow-700 bg-yellow-100 border-yellow-300";
-      case "high":
-        return "text-orange-700 bg-orange-100 border-orange-300";
-      case "critical":
-        return "text-red-700 bg-red-100 border-red-300";
-      default:
-        return "text-gray-700 bg-gray-100 border-gray-300";
-    }
-  };
-
   const getAssessmentTypeIcon = (type: string) => {
     switch (type) {
       case "anxiety":
@@ -709,17 +692,118 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                 </div>
                 <div
                   className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${(() => {
-                    const primaryConcern =
-                      latestPrediction?.mentalHealthPredictions?.primaryConcern;
-                    const concernData = primaryConcern
-                      ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
-                      : null;
-                    return concernData?.riskLevel
-                      ? getRiskLevelColor(concernData.riskLevel)
-                          .replace("text-", "border-")
-                          .replace("bg-", "border-")
-                          .split(" ")[2]
-                      : "border-gray-300";
+                    // Use mlPredictions for risk level display
+                    if (!latestPrediction?.mlPredictions) return "border-gray-300";
+
+                    const mlPredictions = latestPrediction.mlPredictions;
+
+                    // Check if all low risk
+                    if (
+                      "message" in mlPredictions &&
+                      "status" in mlPredictions &&
+                      (mlPredictions as any).status === "all_low_risk"
+                    ) {
+                      return "border-green-300";
+                    }
+
+                    // Helper to check risk level
+                    const isHighRisk = (condition: any): boolean => {
+                      if (!condition) return false;
+                      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                      const prediction = condition.prediction?.toLowerCase() || "";
+                      return riskLevel.includes("high") || prediction.includes("high");
+                    };
+
+                    const isModerateRisk = (condition: any): boolean => {
+                      if (!condition) return false;
+                      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                      const prediction = condition.prediction?.toLowerCase() || "";
+                      return (
+                        (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                        !isHighRisk(condition)
+                      );
+                    };
+
+                    // Categorize conditions
+                    const conditions = [
+                      { name: "depression", data: mlPredictions.depression },
+                      { name: "anxiety", data: mlPredictions.anxiety },
+                      { name: "stress", data: mlPredictions.stress },
+                    ].filter((c) => c.data);
+
+                    let highRiskCount = 0;
+                    let moderateRiskCount = 0;
+                    let lowRiskCount = 0;
+
+                    conditions.forEach((c) => {
+                      if (isHighRisk(c.data)) {
+                        highRiskCount++;
+                      } else if (isModerateRisk(c.data)) {
+                        moderateRiskCount++;
+                      } else {
+                        lowRiskCount++;
+                      }
+                    });
+
+                    // Determine selected category
+                    let selectedCondition: any = null;
+                    if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                      selectedCondition =
+                        conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                        conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                        conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                    } else if (
+                      moderateRiskCount > highRiskCount &&
+                      moderateRiskCount > lowRiskCount
+                    ) {
+                      selectedCondition =
+                        conditions.find((c) => c.name === "depression" && isModerateRisk(c.data)) ||
+                        conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                        conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                    } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                      selectedCondition =
+                        conditions.find(
+                          (c) =>
+                            c.name === "depression" &&
+                            !isHighRisk(c.data) &&
+                            !isModerateRisk(c.data)
+                        ) ||
+                        conditions.find(
+                          (c) =>
+                            c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                        ) ||
+                        conditions.find(
+                          (c) =>
+                            c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                        );
+                    } else {
+                      // Equal counts - prioritize high > moderate > low
+                      if (highRiskCount > 0) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (moderateRiskCount > 0) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression") ||
+                          conditions.find((c) => c.name === "anxiety") ||
+                          conditions.find((c) => c.name === "stress");
+                      }
+                    }
+
+                    if (!selectedCondition?.data) return "border-gray-300";
+
+                    const riskLevel = selectedCondition.data.riskLevel?.toLowerCase() || "";
+                    if (riskLevel.includes("high")) return "border-red-300";
+                    if (riskLevel.includes("moderate")) return "border-yellow-300";
+                    return "border-green-300";
                   })()}`}
                 >
                   <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
@@ -727,23 +811,240 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   </p>
                   <p
                     className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${(() => {
-                      const primaryConcern =
-                        latestPrediction?.mentalHealthPredictions?.primaryConcern;
-                      const concernData = primaryConcern
-                        ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
-                        : null;
-                      return concernData?.riskLevel
-                        ? getRiskLevelColor(concernData.riskLevel).split(" ")[0]
-                        : "text-gray-900";
+                      // Use mlPredictions for risk level display
+                      if (!latestPrediction?.mlPredictions) return "text-gray-900";
+
+                      const mlPredictions = latestPrediction.mlPredictions;
+
+                      // Check if all low risk
+                      if (
+                        "message" in mlPredictions &&
+                        "status" in mlPredictions &&
+                        (mlPredictions as any).status === "all_low_risk"
+                      ) {
+                        return "text-green-900";
+                      }
+
+                      // Helper to check risk level
+                      const isHighRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return riskLevel.includes("high") || prediction.includes("high");
+                      };
+
+                      const isModerateRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return (
+                          (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                          !isHighRisk(condition)
+                        );
+                      };
+
+                      // Categorize conditions
+                      const conditions = [
+                        { name: "depression", data: mlPredictions.depression },
+                        { name: "anxiety", data: mlPredictions.anxiety },
+                        { name: "stress", data: mlPredictions.stress },
+                      ].filter((c) => c.data);
+
+                      let highRiskCount = 0;
+                      let moderateRiskCount = 0;
+                      let lowRiskCount = 0;
+
+                      conditions.forEach((c) => {
+                        if (isHighRisk(c.data)) {
+                          highRiskCount++;
+                        } else if (isModerateRisk(c.data)) {
+                          moderateRiskCount++;
+                        } else {
+                          lowRiskCount++;
+                        }
+                      });
+
+                      // Determine selected category
+                      let selectedCondition: any = null;
+                      if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (
+                        moderateRiskCount > highRiskCount &&
+                        moderateRiskCount > lowRiskCount
+                      ) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) =>
+                              c.name === "depression" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data)
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                          );
+                      } else {
+                        // Equal counts - prioritize high > moderate > low
+                        if (highRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                        } else if (moderateRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find(
+                              (c) => c.name === "depression" && isModerateRisk(c.data)
+                            ) ||
+                            conditions.find(
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data)
+                            ) ||
+                            conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                        } else {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression") ||
+                            conditions.find((c) => c.name === "anxiety") ||
+                            conditions.find((c) => c.name === "stress");
+                        }
+                      }
+
+                      if (!selectedCondition?.data) return "text-gray-900";
+
+                      const riskLevel = selectedCondition.data.riskLevel?.toLowerCase() || "";
+                      if (riskLevel.includes("high")) return "text-red-900";
+                      if (riskLevel.includes("moderate")) return "text-yellow-900";
+                      return "text-green-900";
                     })()}`}
                   >
                     {(() => {
-                      const primaryConcern =
-                        latestPrediction?.mentalHealthPredictions?.primaryConcern;
-                      const concernData = primaryConcern
-                        ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
-                        : null;
-                      return concernData?.riskLevel ? concernData.riskLevel.toUpperCase() : "N/A";
+                      // Use mlPredictions for risk level display
+                      if (!latestPrediction?.mlPredictions) return "N/A";
+
+                      const mlPredictions = latestPrediction.mlPredictions;
+
+                      // Check if all low risk
+                      if (
+                        "message" in mlPredictions &&
+                        "status" in mlPredictions &&
+                        (mlPredictions as any).status === "all_low_risk"
+                      ) {
+                        return "LOW RISK";
+                      }
+
+                      // Helper to check risk level
+                      const isHighRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return riskLevel.includes("high") || prediction.includes("high");
+                      };
+
+                      const isModerateRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return (
+                          (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                          !isHighRisk(condition)
+                        );
+                      };
+
+                      // Categorize conditions
+                      const conditions = [
+                        { name: "depression", data: mlPredictions.depression },
+                        { name: "anxiety", data: mlPredictions.anxiety },
+                        { name: "stress", data: mlPredictions.stress },
+                      ].filter((c) => c.data);
+
+                      let highRiskCount = 0;
+                      let moderateRiskCount = 0;
+                      let lowRiskCount = 0;
+
+                      conditions.forEach((c) => {
+                        if (isHighRisk(c.data)) {
+                          highRiskCount++;
+                        } else if (isModerateRisk(c.data)) {
+                          moderateRiskCount++;
+                        } else {
+                          lowRiskCount++;
+                        }
+                      });
+
+                      // Determine selected category
+                      let selectedCondition: any = null;
+                      if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (
+                        moderateRiskCount > highRiskCount &&
+                        moderateRiskCount > lowRiskCount
+                      ) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) =>
+                              c.name === "depression" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data)
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                          );
+                      } else {
+                        // Equal counts - prioritize high > moderate > low
+                        if (highRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                        } else if (moderateRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find(
+                              (c) => c.name === "depression" && isModerateRisk(c.data)
+                            ) ||
+                            conditions.find(
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data)
+                            ) ||
+                            conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                        } else {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression") ||
+                            conditions.find((c) => c.name === "anxiety") ||
+                            conditions.find((c) => c.name === "stress");
+                        }
+                      }
+
+                      if (!selectedCondition?.data) return "N/A";
+
+                      const riskLevel =
+                        selectedCondition.data.riskLevel || selectedCondition.data.prediction || "";
+                      return riskLevel.toUpperCase() || "N/A";
                     })()}
                   </p>
                 </div>
@@ -1443,7 +1744,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
               </CollapsibleSection>
             )}
 
-            {/* Mental Health Predictions Section */}
+            {/* Mental Health Predictions Section - ML Predictions Only */}
             {inventoryData?.mentalHealthPredictions &&
               inventoryData.mentalHealthPredictions.length > 0 && (
                 <CollapsibleSection
@@ -1480,279 +1781,426 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                 {formatTime(prediction.createdAt)}
                               </p>
                             </div>
-                            <div className="flex items-center space-x-2 flex-wrap gap-2">
+                          </div>
+
+                          {/* Machine Learning Predictions Section */}
+                          {prediction.mlPredictions ? (
+                            <div className="mb-3">
+                              <div className="flex items-center space-x-2 mb-3">
+                                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                                <h5 className="text-sm sm:text-base font-semibold text-gray-900">
+                                  Machine Learning Predictions
+                                </h5>
+                                {prediction.mlPredictions.trainingDataSize && (
+                                  <span className="text-[8px] sm:text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                    Trained on {prediction.mlPredictions.trainingDataSize} students
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Check if all low risk (positive message) */}
                               {(() => {
-                                const primaryConcern =
-                                  prediction.mentalHealthPredictions?.primaryConcern;
-                                const concernData = primaryConcern
-                                  ? prediction.mentalHealthPredictions?.[primaryConcern]
-                                  : null;
+                                const mlPredictions = prediction.mlPredictions;
+                                // Check if it's the positive message format (all low risk)
+                                if (
+                                  mlPredictions &&
+                                  "message" in mlPredictions &&
+                                  "status" in mlPredictions &&
+                                  (mlPredictions as any).status === "all_low_risk"
+                                ) {
+                                  const formattedML = mlPredictions as any;
+                                  return (
+                                    <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200 mb-3">
+                                      <div className="flex items-start space-x-2 mb-2">
+                                        <span className="text-green-600 font-bold text-base sm:text-lg">
+                                          ✅
+                                        </span>
+                                        <div className="flex-1">
+                                          <p className="text-xs sm:text-sm font-medium text-green-900 mb-2">
+                                            {typeof formattedML.message === "string"
+                                              ? formattedML.message
+                                              : "Great news! Based on our machine learning analysis of your profile, you are not prone to anxiety, depression, or stress."}
+                                          </p>
+                                          {/* Show risk levels for each condition */}
+                                          {(formattedML.anxiety ||
+                                            formattedML.depression ||
+                                            formattedML.stress) && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                              {formattedML.anxiety && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Anxiety
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.anxiety.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {formattedML.depression && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Depression
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.depression.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {formattedML.stress && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Stress
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.stress.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                // Helper function to check if a condition is High Risk (case-insensitive)
+                                const isConditionHighRisk = (condition: any): boolean => {
+                                  if (!condition) return false;
+                                  const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                                  const prediction = condition.prediction?.toLowerCase() || "";
+                                  return riskLevel.includes("high") || prediction.includes("high");
+                                };
+
+                                // Helper function to check if a condition is Moderate Risk (case-insensitive)
+                                const isConditionModerateRisk = (condition: any): boolean => {
+                                  if (!condition) return false;
+                                  const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                                  const prediction = condition.prediction?.toLowerCase() || "";
+                                  return (
+                                    (riskLevel.includes("moderate") ||
+                                      prediction.includes("moderate")) &&
+                                    !isConditionHighRisk(condition)
+                                  );
+                                };
+
+                                // Categorize all conditions
+                                const conditions = [
+                                  { name: "depression", data: mlPredictions.depression },
+                                  { name: "anxiety", data: mlPredictions.anxiety },
+                                  { name: "stress", data: mlPredictions.stress },
+                                ].filter((c) => c.data);
+
+                                let highRiskConditions: { name: string; data: any }[] = [];
+                                let moderateRiskConditions: { name: string; data: any }[] = [];
+                                let lowRiskConditions: { name: string; data: any }[] = [];
+
+                                conditions.forEach((c) => {
+                                  if (isConditionHighRisk(c.data)) {
+                                    highRiskConditions.push(c);
+                                  } else if (isConditionModerateRisk(c.data)) {
+                                    moderateRiskConditions.push(c);
+                                  } else {
+                                    lowRiskConditions.push(c);
+                                  }
+                                });
+
+                                // Determine which category to pick from based on count
+                                let conditionData;
+                                let conditionName;
+                                let isHighRisk;
+
+                                if (
+                                  highRiskConditions.length > moderateRiskConditions.length &&
+                                  highRiskConditions.length > lowRiskConditions.length
+                                ) {
+                                  // High Risk has the most - pick from High Risk
+                                  isHighRisk = true;
+                                  const selectedCondition =
+                                    highRiskConditions.find((c) => c.name === "depression") ||
+                                    highRiskConditions.find((c) => c.name === "anxiety") ||
+                                    highRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else if (
+                                  moderateRiskConditions.length > highRiskConditions.length &&
+                                  moderateRiskConditions.length > lowRiskConditions.length
+                                ) {
+                                  // Moderate Risk has the most - pick from Moderate Risk
+                                  isHighRisk = false;
+                                  const selectedCondition =
+                                    moderateRiskConditions.find((c) => c.name === "depression") ||
+                                    moderateRiskConditions.find((c) => c.name === "anxiety") ||
+                                    moderateRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else if (
+                                  lowRiskConditions.length > highRiskConditions.length &&
+                                  lowRiskConditions.length > moderateRiskConditions.length
+                                ) {
+                                  // Low Risk has the most - pick from Low Risk
+                                  isHighRisk = false;
+                                  const selectedCondition =
+                                    lowRiskConditions.find((c) => c.name === "depression") ||
+                                    lowRiskConditions.find((c) => c.name === "anxiety") ||
+                                    lowRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else {
+                                  // Counts are equal or tied - use priority: High Risk > Moderate Risk > Low Risk
+                                  if (highRiskConditions.length > 0) {
+                                    isHighRisk = true;
+                                    const selectedCondition =
+                                      highRiskConditions.find((c) => c.name === "depression") ||
+                                      highRiskConditions.find((c) => c.name === "anxiety") ||
+                                      highRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  } else if (moderateRiskConditions.length > 0) {
+                                    isHighRisk = false;
+                                    const selectedCondition =
+                                      moderateRiskConditions.find((c) => c.name === "depression") ||
+                                      moderateRiskConditions.find((c) => c.name === "anxiety") ||
+                                      moderateRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  } else {
+                                    isHighRisk = false;
+                                    const selectedCondition =
+                                      lowRiskConditions.find((c) => c.name === "depression") ||
+                                      lowRiskConditions.find((c) => c.name === "anxiety") ||
+                                      lowRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  }
+                                }
+
+                                if (!conditionData) return null;
+
+                                // Ensure riskPercentage is set (use confidence if available)
+                                const riskPercentage =
+                                  conditionData.riskPercentage ||
+                                  (conditionData.confidence
+                                    ? `${(conditionData.confidence * 100).toFixed(1)}%`
+                                    : undefined);
+
+                                const isModerateRisk =
+                                  conditionData.riskLevel?.toLowerCase().includes("moderate") ||
+                                  conditionData.prediction?.toLowerCase().includes("moderate");
 
                                 return (
-                                  <>
-                                    {primaryConcern && (
-                                      <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 capitalize">
-                                        {primaryConcern}
-                                      </span>
+                                  <div className="space-y-3">
+                                    {/* Primary Concern Header */}
+                                    <div
+                                      className={`rounded-lg p-3 sm:p-4 border ${
+                                        isHighRisk
+                                          ? "bg-red-50 border-red-200"
+                                          : isModerateRisk
+                                          ? "bg-yellow-50 border-yellow-200"
+                                          : "bg-blue-50 border-blue-200"
+                                      }`}
+                                    >
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span
+                                          className={`text-sm sm:text-base font-semibold capitalize ${
+                                            isHighRisk
+                                              ? "text-red-900"
+                                              : isModerateRisk
+                                              ? "text-yellow-900"
+                                              : "text-blue-900"
+                                          }`}
+                                        >
+                                          {conditionName}
+                                        </span>
+                                        <span
+                                          className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                                            isHighRisk
+                                              ? "bg-red-100 text-red-800"
+                                              : isModerateRisk
+                                              ? "bg-yellow-100 text-yellow-800"
+                                              : "bg-green-100 text-green-800"
+                                          }`}
+                                        >
+                                          {conditionData.riskLevel || conditionData.prediction}
+                                        </span>
+                                      </div>
+
+                                      {/* Risk Percentage */}
+                                      {riskPercentage && (
+                                        <div className="mb-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                ? "text-yellow-700"
+                                                : "text-blue-700"
+                                            }`}
+                                          >
+                                            Risk Percentage
+                                          </label>
+                                          <div
+                                            className={`text-[10px] sm:text-xs rounded px-2 py-1 ${
+                                              isHighRisk
+                                                ? "text-red-900 bg-red-100"
+                                                : isModerateRisk
+                                                ? "text-yellow-900 bg-yellow-100"
+                                                : "text-blue-900 bg-blue-100"
+                                            }`}
+                                          >
+                                            {riskPercentage}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Explanation */}
+                                      {conditionData.explanation && (
+                                        <div className="mt-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                ? "text-yellow-700"
+                                                : "text-blue-700"
+                                            }`}
+                                          >
+                                            Explanation
+                                          </label>
+                                          <div
+                                            className={`text-[10px] sm:text-xs rounded p-2 ${
+                                              isHighRisk
+                                                ? "text-red-900 bg-red-100"
+                                                : isModerateRisk
+                                                ? "text-yellow-900 bg-yellow-100"
+                                                : "text-blue-900 bg-blue-100"
+                                            }`}
+                                          >
+                                            {conditionData.explanation}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Model Basis */}
+                                      {conditionData.modelBasis && (
+                                        <div className="mt-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                ? "text-yellow-700"
+                                                : "text-blue-700"
+                                            }`}
+                                          >
+                                            Model Basis
+                                          </label>
+                                          <div
+                                            className={`text-[8px] sm:text-[10px] rounded p-2 ${
+                                              isHighRisk
+                                                ? "text-red-800 bg-red-100"
+                                                : isModerateRisk
+                                                ? "text-yellow-800 bg-yellow-100"
+                                                : "text-blue-800 bg-blue-100"
+                                            }`}
+                                          >
+                                            {conditionData.modelBasis}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Risk Factors */}
+                                    {conditionData.riskFactors &&
+                                      conditionData.riskFactors.length > 0 && (
+                                        <div className="mb-2">
+                                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                            Risk Factors ({conditionData.riskFactors.length})
+                                          </label>
+                                          <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 border border-yellow-200">
+                                            <ul className="list-disc list-inside space-y-1">
+                                              {conditionData.riskFactors.map(
+                                                (factor: string, factorIndex: number) => (
+                                                  <li
+                                                    key={factorIndex}
+                                                    className="text-[10px] sm:text-xs text-yellow-900"
+                                                  >
+                                                    {factor}
+                                                  </li>
+                                                )
+                                              )}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Recommendations */}
+                                    {conditionData.recommendations &&
+                                      conditionData.recommendations.length > 0 && (
+                                        <div className="mb-2">
+                                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                            Recommendations ({conditionData.recommendations.length})
+                                          </label>
+                                          <div className="bg-green-50 rounded-lg p-2 sm:p-3 border border-green-200">
+                                            <ul className="list-disc list-inside space-y-1">
+                                              {conditionData.recommendations.map(
+                                                (rec: string, recIndex: number) => (
+                                                  <li
+                                                    key={recIndex}
+                                                    className="text-[10px] sm:text-xs text-green-900"
+                                                  >
+                                                    {rec}
+                                                  </li>
+                                                )
+                                              )}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Immediate Action */}
+                                    {conditionData.immediateAction && (
+                                      <div className="mb-2">
+                                        <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                          Immediate Action Required
+                                        </label>
+                                        <div className="bg-red-50 rounded-lg p-2 sm:p-3 border border-red-200">
+                                          <div className="flex items-start space-x-2">
+                                            <span className="text-red-600 font-bold text-sm">
+                                              ⚠️
+                                            </span>
+                                            <div className="text-[10px] sm:text-xs text-red-900 font-medium">
+                                              {conditionData.immediateAction}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
                                     )}
-                                    {concernData?.riskLevel && (
-                                      <span
-                                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getRiskLevelColor(
-                                          concernData.riskLevel
-                                        )}`}
-                                      >
-                                        {concernData.riskLevel.toUpperCase()}
-                                      </span>
-                                    )}
-                                    {prediction.mentalHealthPredictions?.priority && (
-                                      <span
-                                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
-                                          prediction.mentalHealthPredictions.priority === "Critical"
-                                            ? "bg-red-100 text-red-800 border-red-300"
-                                            : prediction.mentalHealthPredictions.priority === "High"
-                                            ? "bg-orange-100 text-orange-800 border-orange-300"
-                                            : prediction.mentalHealthPredictions.priority ===
-                                              "Moderate"
-                                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                                            : "bg-green-100 text-green-800 border-green-300"
-                                        }`}
-                                      >
-                                        {prediction.mentalHealthPredictions.priority} Priority
-                                      </span>
-                                    )}
-                                  </>
+                                  </div>
                                 );
                               })()}
-                            </div>
-                          </div>
 
-                          {/* Academic Performance Outlook */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                            <div>
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
-                                Confidence Level
-                              </label>
-                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900 font-medium">
-                                {prediction.confidence
-                                  ? `${(prediction.confidence * 100).toFixed(1)}%`
-                                  : "N/A"}
+                              {/* ML Predictions Disclaimer */}
+                              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 sm:p-3 mt-3">
+                                <p className="text-[8px] sm:text-[10px] text-orange-800">
+                                  <span className="font-semibold">⚠️ Disclaimer:</span> This
+                                  assessment is based on machine learning models trained on actual
+                                  student outcome data. For comprehensive mental health evaluation,
+                                  please consult with qualified mental health professionals.
+                                </p>
                               </div>
                             </div>
-                          </div>
-
-                          {/* Primary Concern Details */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-
-                            if (!primaryConcern || !concernData) return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
-                                  Primary Mental Health Concern
-                                </label>
-                                <div className="bg-blue-100 rounded-md p-2 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[10px] sm:text-xs font-semibold text-blue-900 capitalize">
-                                      {primaryConcern}
-                                    </span>
-                                    <span
-                                      className={`text-[8px] sm:text-[10px] px-2 py-1 rounded-full font-medium ${getRiskLevelColor(
-                                        concernData.riskLevel
-                                      )}`}
-                                    >
-                                      {concernData.riskLevel}
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-[8px] sm:text-[10px]">
-                                    <div>
-                                      <span className="text-blue-700">Score:</span>
-                                      <span className="text-blue-900 font-medium ml-1">
-                                        {concernData.riskScore} / {concernData.maxScore}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-blue-700">Risk:</span>
-                                      <span className="text-blue-900 font-medium ml-1">
-                                        {concernData.riskPercentage.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                  </div>
-                                  {concernData.explanation && (
-                                    <div className="text-[10px] sm:text-xs text-blue-900 border-t border-blue-200 pt-2">
-                                      {concernData.explanation}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Risk Factors */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-                            const riskFactors = concernData?.riskFactors || prediction.riskFactors;
-
-                            if (!riskFactors || riskFactors.length === 0) return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                  Risk Factors ({riskFactors.length})
-                                </label>
-                                <div className="flex flex-wrap gap-1">
-                                  {riskFactors.map((factor: string, factorIndex: number) => (
-                                    <span
-                                      key={factorIndex}
-                                      className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
-                                    >
-                                      {factor}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Protective Factors */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-                            const protectiveFactors = concernData?.protectiveFactors;
-
-                            if (!protectiveFactors || protectiveFactors.length === 0) return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                  Protective Factors ({protectiveFactors.length})
-                                </label>
-                                <div className="flex flex-wrap gap-1">
-                                  {protectiveFactors.map((factor: string, factorIndex: number) => (
-                                    <span
-                                      key={factorIndex}
-                                      className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-green-100 text-green-800 border border-green-300"
-                                    >
-                                      {factor}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Warning Signs */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-                            const warningSignsToWatch = concernData?.warningSignsToWatch;
-
-                            if (!warningSignsToWatch || warningSignsToWatch.length === 0)
-                              return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                  Warning Signs to Watch ({warningSignsToWatch.length})
-                                </label>
-                                <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
-                                  <ul className="space-y-1">
-                                    {warningSignsToWatch.map((sign: string, signIndex: number) => (
-                                      <li
-                                        key={signIndex}
-                                        className="text-[10px] sm:text-xs text-orange-800 flex items-start"
-                                      >
-                                        <span className="text-orange-600 mr-1 flex-shrink-0">
-                                          ⚠️
-                                        </span>
-                                        {sign}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Recommendations */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-                            const recommendations =
-                              concernData?.recommendations || prediction.recommendations;
-
-                            if (!recommendations || recommendations.length === 0) return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                  Recommendations ({recommendations.length})
-                                </label>
-                                <div className="bg-green-50 border border-green-200 rounded-md p-2">
-                                  <ul className="space-y-1">
-                                    {recommendations.map((rec: string, recIndex: number) => (
-                                      <li
-                                        key={recIndex}
-                                        className="text-[10px] sm:text-xs text-green-800 flex items-start"
-                                      >
-                                        <span className="text-green-600 mr-1 flex-shrink-0">•</span>
-                                        {rec}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {/* Immediate Action */}
-                          {(() => {
-                            const primaryConcern =
-                              prediction.mentalHealthPredictions?.primaryConcern;
-                            const concernData = primaryConcern
-                              ? prediction.mentalHealthPredictions?.[primaryConcern]
-                              : null;
-                            const immediateAction = concernData?.immediateAction;
-
-                            if (!immediateAction) return null;
-
-                            return (
-                              <div className="mb-3">
-                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                  Immediate Action Required
-                                </label>
-                                <div className="bg-red-50 border border-red-200 rounded-md p-2">
-                                  <div className="flex items-start space-x-2">
-                                    <span className="text-red-600 font-bold text-sm">⚠️</span>
-                                    <div className="text-[10px] sm:text-xs text-red-900 font-medium">
-                                      {immediateAction}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })()}
+                          ) : (
+                            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
+                              <p className="text-[10px] sm:text-xs text-gray-600">
+                                Machine learning predictions are not available for this assessment.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       ))}
 
-                    {/* Disclaimer */}
+                    {/* General Disclaimer */}
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                       <p className="text-[10px] sm:text-xs text-orange-800">
                         <strong>Disclaimer:</strong> These predictions are machine learning

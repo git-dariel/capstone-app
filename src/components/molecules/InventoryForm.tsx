@@ -81,6 +81,7 @@ const incomeOptions = [
 ];
 
 const consultedOptions = [
+  { value: "none", label: "None" },
   { value: "psychiatrist", label: "Psychiatrist" },
   { value: "psychologist", label: "Psychologist" },
   { value: "councelor", label: "Counselor" },

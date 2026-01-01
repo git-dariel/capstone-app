@@ -40,6 +40,8 @@ export type {
   MentalHealthPrediction,
   MentalHealthRiskAssessment,
   SpecificMentalHealthRisk,
+  MLPredictionResult,
+  MLPredictions,
 } from "./inventory.service";
 
 // Person Service

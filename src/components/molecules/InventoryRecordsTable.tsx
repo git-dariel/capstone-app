@@ -70,10 +70,98 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
       fetchInventories({
         limit: 100,
         fields:
-          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
+          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions.mlPredictions,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
       }).catch(console.error);
     }
   }, [propInventories, fetchInventories]);
+
+  // Helper function to extract risk level from ML predictions using count-based prioritization
+  const getMLRiskLevel = (mlPredictions: any): "low" | "moderate" | "high" | undefined => {
+    if (!mlPredictions || !mlPredictions.anxiety) {
+      return undefined;
+    }
+
+    // Check if it's the positive message format (all low risk)
+    if (
+      "message" in mlPredictions &&
+      "status" in mlPredictions &&
+      mlPredictions.status === "all_low_risk"
+    ) {
+      return "low";
+    }
+
+    // Helper function to check if a condition is High Risk (case-insensitive)
+    const isConditionHighRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return riskLevel.includes("high") || prediction.includes("high");
+    };
+
+    // Helper function to check if a condition is Moderate Risk (case-insensitive)
+    const isConditionModerateRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return (
+        (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+        !isConditionHighRisk(condition)
+      );
+    };
+
+    // Helper function to check if a condition is Low Risk (case-insensitive)
+    const isConditionLowRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return (
+        (riskLevel.includes("low") || prediction.includes("low")) &&
+        !isConditionHighRisk(condition) &&
+        !isConditionModerateRisk(condition)
+      );
+    };
+
+    // Categorize all conditions
+    const conditions = [
+      { name: "depression", data: mlPredictions.depression },
+      { name: "anxiety", data: mlPredictions.anxiety },
+      { name: "stress", data: mlPredictions.stress },
+    ].filter((c) => !!c.data);
+
+    const highRiskConditions = conditions.filter((c) => isConditionHighRisk(c.data));
+    const moderateRiskConditions = conditions.filter((c) => isConditionModerateRisk(c.data));
+    const lowRiskConditions = conditions.filter((c) => isConditionLowRisk(c.data));
+
+    // Prioritize category with more conditions
+    if (
+      highRiskConditions.length >= moderateRiskConditions.length &&
+      highRiskConditions.length >= lowRiskConditions.length &&
+      highRiskConditions.length > 0
+    ) {
+      // Pick from High Risk (Depression > Anxiety > Stress)
+      const selectedCondition =
+        highRiskConditions.find((c) => c.name === "depression") ||
+        highRiskConditions.find((c) => c.name === "anxiety") ||
+        highRiskConditions.find((c) => c.name === "stress");
+      return selectedCondition ? "high" : undefined;
+    } else if (
+      moderateRiskConditions.length > highRiskConditions.length &&
+      moderateRiskConditions.length >= lowRiskConditions.length &&
+      moderateRiskConditions.length > 0
+    ) {
+      // Pick from Moderate Risk (Depression > Anxiety > Stress)
+      const selectedCondition =
+        moderateRiskConditions.find((c) => c.name === "depression") ||
+        moderateRiskConditions.find((c) => c.name === "anxiety") ||
+        moderateRiskConditions.find((c) => c.name === "stress");
+      return selectedCondition ? "moderate" : undefined;
+    } else if (lowRiskConditions.length > 0) {
+      // Pick from Low Risk (Depression > Anxiety > Stress)
+      return "low";
+    }
+
+    return undefined;
+  };
 
   // Transform API data to table format
   const tableData: InventoryTableData[] = useMemo(() => {
@@ -85,6 +173,28 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
       }`.trim();
       // Get the latest prediction from the array (first element since they're ordered by createdAt desc)
       const latestPrediction = inventory.mentalHealthPredictions?.[0];
+
+      // Extract risk level from ML predictions
+      const mlRiskLevel = latestPrediction?.mlPredictions
+        ? getMLRiskLevel(latestPrediction.mlPredictions)
+        : undefined;
+
+      // Extract needsAttention from ML predictions (check if any condition has immediateAction)
+      const needsAttention = latestPrediction?.mlPredictions
+        ? (() => {
+            const ml = latestPrediction.mlPredictions;
+            // Check if it's the all_low_risk format
+            if ("message" in ml && "status" in ml && ml.status === "all_low_risk") {
+              return false;
+            }
+            // Check if any condition has immediateAction
+            return !!(
+              ml.anxiety?.immediateAction ||
+              ml.depression?.immediateAction ||
+              ml.stress?.immediateAction
+            );
+          })()
+        : undefined;
 
       return {
         id: inventory.id,
@@ -103,40 +213,8 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         predictionUpdatedAt: inventory.predictionUpdatedAt,
         academicPerformanceOutlook: latestPrediction?.academicPerformanceOutlook,
         confidence: latestPrediction?.confidence,
-        riskLevel: (() => {
-          if (!latestPrediction?.mentalHealthPredictions) return undefined;
-
-          const primaryConcern = latestPrediction.mentalHealthPredictions.primaryConcern;
-          let concernData = null;
-
-          if (primaryConcern === "anxiety")
-            concernData = latestPrediction.mentalHealthPredictions.anxiety;
-          else if (primaryConcern === "depression")
-            concernData = latestPrediction.mentalHealthPredictions.depression;
-          else if (primaryConcern === "stress")
-            concernData = latestPrediction.mentalHealthPredictions.stress;
-          else if (primaryConcern === "suicide")
-            concernData = latestPrediction.mentalHealthPredictions.suicide;
-
-          return concernData?.riskLevel;
-        })(),
-        needsAttention: (() => {
-          if (!latestPrediction?.mentalHealthPredictions) return undefined;
-
-          const primaryConcern = latestPrediction.mentalHealthPredictions.primaryConcern;
-          let concernData = null;
-
-          if (primaryConcern === "anxiety")
-            concernData = latestPrediction.mentalHealthPredictions.anxiety;
-          else if (primaryConcern === "depression")
-            concernData = latestPrediction.mentalHealthPredictions.depression;
-          else if (primaryConcern === "stress")
-            concernData = latestPrediction.mentalHealthPredictions.stress;
-          else if (primaryConcern === "suicide")
-            concernData = latestPrediction.mentalHealthPredictions.suicide;
-
-          return concernData?.immediateAction ? true : false;
-        })(),
+        riskLevel: mlRiskLevel,
+        needsAttention: needsAttention,
       };
     });
   }, [apiInventories]);
