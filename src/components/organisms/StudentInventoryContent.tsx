@@ -2533,13 +2533,30 @@ export const StudentInventoryContent: React.FC = () => {
                                     </div>
                                   </div>
                                   <div className="text-xs mt-1">
-                                    <span
-                                      className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getRiskLevelColor(
-                                        prediction.mentalHealthRisk.level
-                                      )}`}
-                                    >
-                                      {prediction.mentalHealthRisk.level}
-                                    </span>
+                                    {prediction.mentalHealthPredictions?.primaryConcern && (
+                                      <div className="flex items-center space-x-1">
+                                        <span className="text-xs text-gray-500">Primary:</span>
+                                        <span className="text-xs font-medium text-blue-600 capitalize">
+                                          {prediction.mentalHealthPredictions.primaryConcern}
+                                        </span>
+                                        <span
+                                          className={`text-xs px-1 py-0.5 rounded ${
+                                            prediction.mentalHealthPredictions.priority ===
+                                            "Critical"
+                                              ? "bg-red-100 text-red-700"
+                                              : prediction.mentalHealthPredictions.priority ===
+                                                "High"
+                                              ? "bg-orange-100 text-orange-700"
+                                              : prediction.mentalHealthPredictions.priority ===
+                                                "Moderate"
+                                              ? "bg-yellow-100 text-yellow-700"
+                                              : "bg-green-100 text-green-700"
+                                          }`}
+                                        >
+                                          {prediction.mentalHealthPredictions.priority}
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 </button>
                               ))}
@@ -2598,63 +2615,114 @@ export const StudentInventoryContent: React.FC = () => {
                             </div>
                           </div>
 
-                          {/* Assessment Overview */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                            <div className="bg-gray-50 rounded-lg p-4">
-                              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                Risk Level
+                          {/* Primary Concern Details */}
+                          {selectedPrediction.mentalHealthPredictions?.primaryConcern && (
+                            <div className="mb-6">
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Primary Mental Health Concern
                               </label>
-                              <span
-                                className={`inline-flex px-3 py-1 text-sm font-semibold rounded-lg capitalize ${getRiskLevelColor(
-                                  selectedPrediction.mentalHealthRisk.level
-                                )}`}
-                              >
-                                {selectedPrediction.mentalHealthRisk.level}
-                              </span>
-                            </div>
+                              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-lg font-semibold text-blue-900 capitalize">
+                                    {selectedPrediction.mentalHealthPredictions.primaryConcern}
+                                  </span>
+                                  <span
+                                    className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                      selectedPrediction.mentalHealthPredictions.priority ===
+                                      "Critical"
+                                        ? "bg-red-100 text-red-800"
+                                        : selectedPrediction.mentalHealthPredictions.priority ===
+                                          "High"
+                                        ? "bg-orange-100 text-orange-800"
+                                        : selectedPrediction.mentalHealthPredictions.priority ===
+                                          "Moderate"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                    }`}
+                                  >
+                                    {selectedPrediction.mentalHealthPredictions.priority} Priority
+                                  </span>
+                                </div>
 
-                            <div className="bg-gray-50 rounded-lg p-4">
-                              <label className="text-sm font-medium text-gray-700 mb-2 block">
-                                Needs Attention
-                              </label>
-                              {selectedPrediction.mentalHealthRisk.needsAttention ? (
-                                <span className="text-orange-600 font-medium text-lg">⚠️ Yes</span>
-                              ) : (
-                                <span className="text-green-600 font-medium text-lg">✓ No</span>
-                              )}
-                            </div>
-                          </div>
+                                {(() => {
+                                  const primaryConcern =
+                                    selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                                  if (!primaryConcern) return null;
 
-                          {/* Risk Description */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Risk Description
-                            </label>
-                            <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 leading-relaxed">
-                              {selectedPrediction.mentalHealthRisk.description}
-                            </div>
-                          </div>
+                                  const concernData =
+                                    selectedPrediction.mentalHealthPredictions?.[primaryConcern];
+                                  if (!concernData) return null;
 
-                          {/* Assessment Summary */}
-                          <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                              Assessment Summary
-                            </label>
-                            <div className="bg-primary-50 rounded-lg p-4 text-sm text-primary-800 leading-relaxed border border-primary-200">
-                              {selectedPrediction.mentalHealthRisk.assessmentSummary}
+                                  return (
+                                    <div className="space-y-4">
+                                      {/* Risk Score */}
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                          <label className="text-xs font-medium text-blue-700">
+                                            Risk Level
+                                          </label>
+                                          <div
+                                            className={`text-sm font-semibold py-1 px-2 rounded capitalize ${getRiskLevelColor(
+                                              concernData.riskLevel
+                                            )}`}
+                                          >
+                                            {concernData.riskLevel}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-xs font-medium text-blue-700">
+                                            Risk Score
+                                          </label>
+                                          <div className="text-sm text-blue-900 py-1 px-2 bg-blue-100 rounded">
+                                            {concernData.riskScore} / {concernData.maxScore}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <label className="text-xs font-medium text-blue-700">
+                                            Risk Percentage
+                                          </label>
+                                          <div className="text-sm text-blue-900 py-1 px-2 bg-blue-100 rounded">
+                                            {concernData.riskPercentage.toFixed(1)}%
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Explanation */}
+                                      <div>
+                                        <label className="text-sm font-medium text-blue-700 mb-1 block">
+                                          Explanation
+                                        </label>
+                                        <div className="text-sm text-blue-900 bg-blue-100 rounded p-3">
+                                          {concernData.explanation}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })()}
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Risk Factors */}
-                          {selectedPrediction.riskFactors &&
-                            selectedPrediction.riskFactors.length > 0 && (
+                          {(() => {
+                            const primaryConcern =
+                              selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? selectedPrediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const riskFactors =
+                              concernData?.riskFactors || selectedPrediction.riskFactors;
+
+                            if (!riskFactors || riskFactors.length === 0) return null;
+
+                            return (
                               <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Risk Factors ({selectedPrediction.riskFactors.length})
+                                  Risk Factors ({riskFactors.length})
                                 </label>
                                 <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                                   <ul className="list-disc list-inside space-y-1">
-                                    {selectedPrediction.riskFactors.map((factor, index) => (
+                                    {riskFactors.map((factor: string, index: number) => (
                                       <li key={index} className="text-sm text-yellow-900">
                                         {factor}
                                       </li>
@@ -2662,19 +2730,89 @@ export const StudentInventoryContent: React.FC = () => {
                                   </ul>
                                 </div>
                               </div>
-                            )}
+                            );
+                          })()}
 
-                          {/* Recommendations */}
-                          {selectedPrediction.recommendations &&
-                            selectedPrediction.recommendations.length > 0 && (
+                          {/* Protective Factors */}
+                          {(() => {
+                            const primaryConcern =
+                              selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? selectedPrediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const protectiveFactors = concernData?.protectiveFactors;
+
+                            if (!protectiveFactors || protectiveFactors.length === 0) return null;
+
+                            return (
                               <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                  Recommendations ({selectedPrediction.recommendations.length})
+                                  Protective Factors ({protectiveFactors.length})
                                 </label>
                                 <div className="bg-green-50 rounded-lg p-4 border border-green-200">
                                   <ul className="list-disc list-inside space-y-1">
-                                    {selectedPrediction.recommendations.map(
-                                      (recommendation, index) => (
+                                    {protectiveFactors.map((factor: string, index: number) => (
+                                      <li key={index} className="text-sm text-green-900">
+                                        {factor}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Warning Signs to Watch */}
+                          {(() => {
+                            const primaryConcern =
+                              selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? selectedPrediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const warningSignsToWatch = concernData?.warningSignsToWatch;
+
+                            if (!warningSignsToWatch || warningSignsToWatch.length === 0)
+                              return null;
+
+                            return (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Warning Signs to Watch ({warningSignsToWatch.length})
+                                </label>
+                                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {warningSignsToWatch.map((sign: string, index: number) => (
+                                      <li key={index} className="text-sm text-orange-900">
+                                        {sign}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Recommendations */}
+                          {(() => {
+                            const primaryConcern =
+                              selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? selectedPrediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const recommendations =
+                              concernData?.recommendations || selectedPrediction.recommendations;
+
+                            if (!recommendations || recommendations.length === 0) return null;
+
+                            return (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Recommendations ({recommendations.length})
+                                </label>
+                                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                  <ul className="list-disc list-inside space-y-1">
+                                    {recommendations.map(
+                                      (recommendation: string, index: number) => (
                                         <li key={index} className="text-sm text-green-900">
                                           {recommendation}
                                         </li>
@@ -2683,13 +2821,43 @@ export const StudentInventoryContent: React.FC = () => {
                                   </ul>
                                 </div>
                               </div>
-                            )}
+                            );
+                          })()}
+
+                          {/* Immediate Action (if any) */}
+                          {(() => {
+                            const primaryConcern =
+                              selectedPrediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? selectedPrediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const immediateAction = concernData?.immediateAction;
+
+                            if (!immediateAction) return null;
+
+                            return (
+                              <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                  Immediate Action Required
+                                </label>
+                                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                                  <div className="flex items-start space-x-2">
+                                    <span className="text-red-600 font-bold text-lg">⚠️</span>
+                                    <div className="text-sm text-red-900 font-medium">
+                                      {immediateAction}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Disclaimer */}
                           <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                             <p className="text-xs text-orange-800">
-                              <span className="font-semibold">⚠️ Disclaimer:</span>{" "}
-                              {selectedPrediction.mentalHealthRisk.disclaimer}
+                              <span className="font-semibold">⚠️ Disclaimer:</span> This assessment
+                              is based on preliminary data analysis. For comprehensive mental health
+                              evaluation, please consult with qualified mental health professionals.
                             </p>
                           </div>
                         </>

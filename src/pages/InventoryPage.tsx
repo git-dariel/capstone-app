@@ -53,10 +53,12 @@ export const InventoryPage: React.FC = () => {
     try {
       const response = await InventoryService.createInventory(formData);
 
-      // Navigate to results page with the mental health prediction
+      // Navigate to results page with the focused mental health risk assessment
       navigate("/inventory/results", {
         state: {
           inventoryResponse: response,
+          mentalHealthRiskAssessment: response.mentalHealthRiskAssessment,
+          // Legacy fallback
           mentalHealthPrediction: response.mentalHealthPrediction,
         },
         replace: true,

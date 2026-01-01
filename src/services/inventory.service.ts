@@ -247,8 +247,50 @@ export interface MentalHealthPrediction {
     assessmentSummary: string;
     disclaimer: string;
   };
+  // NEW: Focused mental health predictions
+  mentalHealthPredictions?: {
+    primaryConcern?: "anxiety" | "depression" | "stress" | "suicide";
+    priority?: "Low" | "Moderate" | "High" | "Critical";
+    anxiety?: SpecificMentalHealthRisk;
+    depression?: SpecificMentalHealthRisk;
+    stress?: SpecificMentalHealthRisk;
+    suicide?: SpecificMentalHealthRisk;
+    allAssessments?: any; // Complete assessment data for internal use
+  };
+  primaryMentalHealthConcern?: "anxiety" | "depression" | "stress" | "suicide";
+  priority?: "Low" | "Moderate" | "High" | "Critical";
   inputData: any;
   recommendations: string[];
+}
+
+export interface SpecificMentalHealthRisk {
+  riskLevel: "low" | "moderate" | "high" | "critical";
+  riskScore: number;
+  maxScore: number;
+  riskPercentage: number;
+  isProne: boolean;
+  riskFactors: string[];
+  protectiveFactors: string[];
+  explanation: string;
+  recommendations: string[];
+  warningSignsToWatch: string[];
+  immediateAction?: string;
+}
+
+export interface MentalHealthRiskAssessment {
+  type: "anxiety" | "depression" | "stress" | "suicide";
+  priority: "Low" | "Moderate" | "High" | "Critical";
+  reason: string;
+  riskLevel: "low" | "moderate" | "high" | "critical";
+  riskPercentage: string;
+  isProne: boolean;
+  riskScore: string;
+  explanation: string;
+  riskFactors: string[];
+  protectiveFactors: string[];
+  recommendations: string[];
+  warningSignsToWatch: string[];
+  immediateAction?: string;
 }
 
 export interface InventoryResponse {
@@ -281,6 +323,10 @@ export interface InventoryResponse {
       };
     };
   };
+  // NEW: Focused mental health risk assessment
+  mentalHealthRiskAssessment?: MentalHealthRiskAssessment;
+  primaryMentalHealthConcern?: string;
+  // Legacy support
   mentalHealthPrediction?: MentalHealthPrediction;
 }
 
@@ -440,6 +486,16 @@ export interface GetInventoryResponse {
       urgency: "none" | "monitor" | "schedule" | "immediate";
       assessmentSummary: string;
       disclaimer: string;
+    };
+    // NEW: Specific mental health predictions structure
+    mentalHealthPredictions?: {
+      primaryConcern?: "anxiety" | "depression" | "stress" | "suicide";
+      priority?: "Low" | "Moderate" | "High" | "Critical";
+      anxiety?: SpecificMentalHealthRisk;
+      depression?: SpecificMentalHealthRisk;
+      stress?: SpecificMentalHealthRisk;
+      suicide?: SpecificMentalHealthRisk;
+      allAssessments?: any; // Complete assessment data for internal use
     };
     inputData: any;
     recommendations: string[];

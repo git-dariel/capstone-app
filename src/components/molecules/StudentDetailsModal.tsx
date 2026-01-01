@@ -708,28 +708,43 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   </p>
                 </div>
                 <div
-                  className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${
-                    latestPrediction?.mentalHealthRisk?.level
-                      ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level)
+                  className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${(() => {
+                    const primaryConcern =
+                      latestPrediction?.mentalHealthPredictions?.primaryConcern;
+                    const concernData = primaryConcern
+                      ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
+                      : null;
+                    return concernData?.riskLevel
+                      ? getRiskLevelColor(concernData.riskLevel)
                           .replace("text-", "border-")
                           .replace("bg-", "border-")
                           .split(" ")[2]
-                      : "border-gray-300"
-                  }`}
+                      : "border-gray-300";
+                  })()}`}
                 >
                   <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                     Mental Health Risk Level
                   </p>
                   <p
-                    className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${
-                      latestPrediction?.mentalHealthRisk?.level
-                        ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level).split(" ")[0]
-                        : "text-gray-900"
-                    }`}
+                    className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${(() => {
+                      const primaryConcern =
+                        latestPrediction?.mentalHealthPredictions?.primaryConcern;
+                      const concernData = primaryConcern
+                        ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
+                        : null;
+                      return concernData?.riskLevel
+                        ? getRiskLevelColor(concernData.riskLevel).split(" ")[0]
+                        : "text-gray-900";
+                    })()}`}
                   >
-                    {latestPrediction?.mentalHealthRisk?.level
-                      ? latestPrediction.mentalHealthRisk.level.toUpperCase()
-                      : "N/A"}
+                    {(() => {
+                      const primaryConcern =
+                        latestPrediction?.mentalHealthPredictions?.primaryConcern;
+                      const concernData = primaryConcern
+                        ? latestPrediction?.mentalHealthPredictions?.[primaryConcern]
+                        : null;
+                      return concernData?.riskLevel ? concernData.riskLevel.toUpperCase() : "N/A";
+                    })()}
                   </p>
                 </div>
               </div>
@@ -1466,18 +1481,48 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                               </p>
                             </div>
                             <div className="flex items-center space-x-2 flex-wrap gap-2">
-                              <span
-                                className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getRiskLevelColor(
-                                  prediction.mentalHealthRisk?.level
-                                )}`}
-                              >
-                                {prediction.mentalHealthRisk?.level?.toUpperCase() || "UNKNOWN"}
-                              </span>
-                              {prediction.mentalHealthRisk?.needsAttention && (
-                                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-300">
-                                  ⚠️ Needs Attention
-                                </span>
-                              )}
+                              {(() => {
+                                const primaryConcern =
+                                  prediction.mentalHealthPredictions?.primaryConcern;
+                                const concernData = primaryConcern
+                                  ? prediction.mentalHealthPredictions?.[primaryConcern]
+                                  : null;
+
+                                return (
+                                  <>
+                                    {primaryConcern && (
+                                      <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-300 capitalize">
+                                        {primaryConcern}
+                                      </span>
+                                    )}
+                                    {concernData?.riskLevel && (
+                                      <span
+                                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getRiskLevelColor(
+                                          concernData.riskLevel
+                                        )}`}
+                                      >
+                                        {concernData.riskLevel.toUpperCase()}
+                                      </span>
+                                    )}
+                                    {prediction.mentalHealthPredictions?.priority && (
+                                      <span
+                                        className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
+                                          prediction.mentalHealthPredictions.priority === "Critical"
+                                            ? "bg-red-100 text-red-800 border-red-300"
+                                            : prediction.mentalHealthPredictions.priority === "High"
+                                            ? "bg-orange-100 text-orange-800 border-orange-300"
+                                            : prediction.mentalHealthPredictions.priority ===
+                                              "Moderate"
+                                            ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                                            : "bg-green-100 text-green-800 border-green-300"
+                                        }`}
+                                      >
+                                        {prediction.mentalHealthPredictions.priority} Priority
+                                      </span>
+                                    )}
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
 
@@ -1495,68 +1540,215 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                             </div>
                           </div>
 
-                          {/* Risk Description */}
-                          {prediction.mentalHealthRisk?.description && (
-                            <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
-                                Risk Assessment
-                              </label>
-                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900">
-                                {prediction.mentalHealthRisk.description}
+                          {/* Primary Concern Details */}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+
+                            if (!primaryConcern || !concernData) return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
+                                  Primary Mental Health Concern
+                                </label>
+                                <div className="bg-blue-100 rounded-md p-2 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[10px] sm:text-xs font-semibold text-blue-900 capitalize">
+                                      {primaryConcern}
+                                    </span>
+                                    <span
+                                      className={`text-[8px] sm:text-[10px] px-2 py-1 rounded-full font-medium ${getRiskLevelColor(
+                                        concernData.riskLevel
+                                      )}`}
+                                    >
+                                      {concernData.riskLevel}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-[8px] sm:text-[10px]">
+                                    <div>
+                                      <span className="text-blue-700">Score:</span>
+                                      <span className="text-blue-900 font-medium ml-1">
+                                        {concernData.riskScore} / {concernData.maxScore}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <span className="text-blue-700">Risk:</span>
+                                      <span className="text-blue-900 font-medium ml-1">
+                                        {concernData.riskPercentage.toFixed(1)}%
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {concernData.explanation && (
+                                    <div className="text-[10px] sm:text-xs text-blue-900 border-t border-blue-200 pt-2">
+                                      {concernData.explanation}
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
 
                           {/* Risk Factors */}
-                          {prediction.riskFactors && prediction.riskFactors.length > 0 && (
-                            <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                Risk Factors ({prediction.riskFactors.length})
-                              </label>
-                              <div className="flex flex-wrap gap-1">
-                                {prediction.riskFactors.map((factor, factorIndex) => (
-                                  <span
-                                    key={factorIndex}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
-                                  >
-                                    {factor}
-                                  </span>
-                                ))}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const riskFactors = concernData?.riskFactors || prediction.riskFactors;
+
+                            if (!riskFactors || riskFactors.length === 0) return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                  Risk Factors ({riskFactors.length})
+                                </label>
+                                <div className="flex flex-wrap gap-1">
+                                  {riskFactors.map((factor: string, factorIndex: number) => (
+                                    <span
+                                      key={factorIndex}
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
+                                    >
+                                      {factor}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
+
+                          {/* Protective Factors */}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const protectiveFactors = concernData?.protectiveFactors;
+
+                            if (!protectiveFactors || protectiveFactors.length === 0) return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                  Protective Factors ({protectiveFactors.length})
+                                </label>
+                                <div className="flex flex-wrap gap-1">
+                                  {protectiveFactors.map((factor: string, factorIndex: number) => (
+                                    <span
+                                      key={factorIndex}
+                                      className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-green-100 text-green-800 border border-green-300"
+                                    >
+                                      {factor}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Warning Signs */}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const warningSignsToWatch = concernData?.warningSignsToWatch;
+
+                            if (!warningSignsToWatch || warningSignsToWatch.length === 0)
+                              return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                  Warning Signs to Watch ({warningSignsToWatch.length})
+                                </label>
+                                <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
+                                  <ul className="space-y-1">
+                                    {warningSignsToWatch.map((sign: string, signIndex: number) => (
+                                      <li
+                                        key={signIndex}
+                                        className="text-[10px] sm:text-xs text-orange-800 flex items-start"
+                                      >
+                                        <span className="text-orange-600 mr-1 flex-shrink-0">
+                                          ⚠️
+                                        </span>
+                                        {sign}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            );
+                          })()}
 
                           {/* Recommendations */}
-                          {prediction.recommendations && prediction.recommendations.length > 0 && (
-                            <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                Recommendations ({prediction.recommendations.length})
-                              </label>
-                              <div className="bg-green-50 border border-green-200 rounded-md p-2">
-                                <ul className="space-y-1">
-                                  {prediction.recommendations.map((rec, recIndex) => (
-                                    <li
-                                      key={recIndex}
-                                      className="text-[10px] sm:text-xs text-green-800 flex items-start"
-                                    >
-                                      <span className="text-green-600 mr-1 flex-shrink-0">•</span>
-                                      {rec}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            </div>
-                          )}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const recommendations =
+                              concernData?.recommendations || prediction.recommendations;
 
-                          {/* Assessment Summary */}
-                          {prediction.mentalHealthRisk?.assessmentSummary && (
-                            <div className="mt-3 p-2 bg-blue-100 border-l-4 border-blue-500 rounded">
-                              <p className="text-[10px] sm:text-xs text-blue-900 font-medium">
-                                <strong>Summary:</strong>{" "}
-                                {prediction.mentalHealthRisk.assessmentSummary}
-                              </p>
-                            </div>
-                          )}
+                            if (!recommendations || recommendations.length === 0) return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                  Recommendations ({recommendations.length})
+                                </label>
+                                <div className="bg-green-50 border border-green-200 rounded-md p-2">
+                                  <ul className="space-y-1">
+                                    {recommendations.map((rec: string, recIndex: number) => (
+                                      <li
+                                        key={recIndex}
+                                        className="text-[10px] sm:text-xs text-green-800 flex items-start"
+                                      >
+                                        <span className="text-green-600 mr-1 flex-shrink-0">•</span>
+                                        {rec}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Immediate Action */}
+                          {(() => {
+                            const primaryConcern =
+                              prediction.mentalHealthPredictions?.primaryConcern;
+                            const concernData = primaryConcern
+                              ? prediction.mentalHealthPredictions?.[primaryConcern]
+                              : null;
+                            const immediateAction = concernData?.immediateAction;
+
+                            if (!immediateAction) return null;
+
+                            return (
+                              <div className="mb-3">
+                                <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
+                                  Immediate Action Required
+                                </label>
+                                <div className="bg-red-50 border border-red-200 rounded-md p-2">
+                                  <div className="flex items-start space-x-2">
+                                    <span className="text-red-600 font-bold text-sm">⚠️</span>
+                                    <div className="text-[10px] sm:text-xs text-red-900 font-medium">
+                                      {immediateAction}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       ))}
 

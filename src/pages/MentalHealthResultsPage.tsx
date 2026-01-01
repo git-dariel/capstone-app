@@ -2,11 +2,16 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/atoms";
-import type { ConsentResponse, MentalHealthPrediction } from "@/services";
+import type {
+  ConsentResponse,
+  MentalHealthPrediction,
+  MentalHealthRiskAssessment,
+} from "@/services";
 
 interface LocationState {
   consentResponse?: ConsentResponse;
   mentalHealthPrediction?: MentalHealthPrediction;
+  mentalHealthRiskAssessment?: MentalHealthRiskAssessment;
 }
 
 export const MentalHealthResultsPage: React.FC = () => {
@@ -14,16 +19,22 @@ export const MentalHealthResultsPage: React.FC = () => {
   const navigate = useNavigate();
   const state = location.state as LocationState;
 
-  const prediction = state?.mentalHealthPrediction;
+  const assessment = state?.mentalHealthRiskAssessment;
+  const prediction = state?.mentalHealthPrediction; // Legacy fallback
   const consentResponse = state?.consentResponse;
 
-  // Redirect if no prediction data
-  if (!prediction) {
+  // Redirect if no assessment data
+  if (!assessment && !prediction) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-md w-full text-center">
           <div className="text-gray-400 mb-4">
-            <svg className="w-10 h-10 sm:w-12 sm:h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg
+              className="w-10 h-10 sm:w-12 sm:h-12 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -49,17 +60,121 @@ export const MentalHealthResultsPage: React.FC = () => {
 
   const getRiskLevelColor = (level: string) => {
     const lowerLevel = level.toLowerCase();
-    if (lowerLevel.includes("high") || lowerLevel.includes("urgent")) return "text-red-600";
-    if (lowerLevel.includes("medium") || lowerLevel.includes("moderate")) return "text-yellow-600";
+    if (lowerLevel.includes("critical") || lowerLevel.includes("high")) return "text-red-600";
+    if (lowerLevel.includes("moderate")) return "text-yellow-600";
     return "text-green-600";
   };
 
   const getRiskLevelBgColor = (level: string) => {
     const lowerLevel = level.toLowerCase();
-    if (lowerLevel.includes("high") || lowerLevel.includes("urgent")) return "bg-red-50 border-red-200";
-    if (lowerLevel.includes("medium") || lowerLevel.includes("moderate")) return "bg-yellow-50 border-yellow-200";
+    if (lowerLevel.includes("critical") || lowerLevel.includes("high"))
+      return "bg-red-50 border-red-200";
+    if (lowerLevel.includes("moderate")) return "bg-yellow-50 border-yellow-200";
     return "bg-green-50 border-green-200";
   };
+
+  // Get the primary mental health concern data
+  const getPrimaryMentalHealthData = () => {
+    // Use new assessment structure if available
+    if (assessment) {
+      return {
+        concern: assessment.type.charAt(0).toUpperCase() + assessment.type.slice(1),
+        priority: assessment.priority,
+        riskLevel: assessment.riskLevel,
+        riskPercentage: assessment.riskPercentage,
+        riskScore: assessment.riskScore,
+        isProne: assessment.isProne,
+        assessment: {
+          explanation: assessment.explanation,
+          recommendations: assessment.recommendations || [],
+          warningSignsToWatch: assessment.warningSignsToWatch || [],
+          riskFactors: assessment.riskFactors || [],
+          protectiveFactors: assessment.protectiveFactors || [],
+          immediateAction: assessment.immediateAction,
+          reason: assessment.reason,
+        },
+      };
+    }
+
+    // Legacy fallback for old prediction structure
+    if (prediction?.mentalHealthPredictions?.primaryConcern) {
+      const primaryConcern = prediction.mentalHealthPredictions.primaryConcern;
+      const priority = prediction.mentalHealthPredictions.priority || prediction.priority || "Low";
+      const assessmentData = prediction.mentalHealthPredictions[primaryConcern];
+
+      return {
+        concern: primaryConcern.charAt(0).toUpperCase() + primaryConcern.slice(1),
+        priority,
+        assessment: {
+          explanation:
+            assessmentData?.explanation ||
+            `${primaryConcern} risk factors identified that need attention.`,
+          recommendations: assessmentData?.recommendations || prediction.recommendations || [],
+          warningSignsToWatch: assessmentData?.warningSignsToWatch || [],
+          riskFactors: assessmentData?.riskFactors || [],
+          protectiveFactors: assessmentData?.protectiveFactors || [],
+          immediateAction: assessmentData?.immediateAction,
+        },
+      };
+    }
+
+    // Final fallback to general mental health risk
+    if (prediction) {
+      return {
+        concern: "General Assessment",
+        priority: prediction.mentalHealthRisk.level,
+        assessment: {
+          explanation: prediction.mentalHealthRisk.description,
+          recommendations: prediction.recommendations || [],
+          warningSignsToWatch: [],
+          riskFactors: [],
+          protectiveFactors: [],
+          immediateAction: prediction.mentalHealthRisk.needsAttention
+            ? "Follow up with counseling services"
+            : undefined,
+        },
+      };
+    }
+
+    return null;
+  };
+
+  const primaryData = getPrimaryMentalHealthData();
+
+  // If no data available, show the existing error state
+  if (!primaryData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-md max-w-md w-full text-center">
+          <div className="text-gray-400 mb-4">
+            <svg
+              className="w-10 h-10 sm:w-12 sm:h-12 mx-auto"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Results Found</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
+            No mental health assessment results were found. Please complete the consent form first.
+          </p>
+          <Button
+            onClick={() => navigate("/consent")}
+            className="bg-primary-700 hover:bg-primary-800 text-white px-4 py-2 rounded-lg font-medium w-full sm:w-auto"
+          >
+            Take Assessment
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // const getPerformanceIcon = (outlook: string) => {
   //   switch (outlook.toLowerCase()) {
@@ -113,9 +228,11 @@ export const MentalHealthResultsPage: React.FC = () => {
             </div>
           </div>
           <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900"> Mental Health Risk Assessment</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+              Mental Health Assessment Results
+            </h1>
             <p className="text-sm sm:text-base text-gray-600 mt-2 px-2 sm:px-0">
-              Your personalized mental health screening results
+              Primary concern identified for focused support and intervention
             </p>
           </div>
         </div>
@@ -150,41 +267,65 @@ export const MentalHealthResultsPage: React.FC = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-1 gap-4 sm:gap-6">
-          {/* Academic Performance Prediction */}
-          {/* <div className="bg-white rounded-lg shadow p-4 sm:p-6">
-            <div className="flex items-center mb-3 sm:mb-4">
-              {getPerformanceIcon(prediction.academicPerformanceOutlook)}
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 ml-2">
-                Academic Performance Outlook
-              </h3>
-            </div>
-            <div className="text-center py-3 sm:py-4">
-              <div className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-                {prediction.academicPerformanceOutlook}
-              </div>
-              <div className="text-xs sm:text-sm text-gray-600">
-                Confidence: {prediction.confidence}
-              </div>
-            </div>
-          </div> */}
-
-          {/* Mental Health Risk Level */}
+          {/* Primary Mental Health Concern */}
           <div
-            className={`rounded-lg shadow p-4 sm:p-6 border ${getRiskLevelBgColor(prediction.mentalHealthRisk.level)}`}
+            className={`rounded-lg shadow p-4 sm:p-6 border ${getRiskLevelBgColor(
+              primaryData.priority
+            )}`}
           >
-            {/* <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 text-center">
-              Mental Health Risk Assessment
-            </h3> */}
             <div className="text-center py-3 sm:py-4">
-              <div
-                className={`text-xl sm:text-2xl font-bold mb-2 ${getRiskLevelColor(prediction.mentalHealthRisk.level)}`}
+              <p className="text-sm sm:text-base text-gray-600 mb-2">
+                Student are possibly prone to:
+              </p>
+              <h2
+                className={`text-3xl sm:text-4xl font-bold mb-2 ${getRiskLevelColor(
+                  primaryData.priority
+                )}`}
               >
-                {prediction.mentalHealthRisk.level}
+                {primaryData.concern}
+              </h2>
+              <div
+                className={`text-sm sm:text-base font-medium mb-3 ${getRiskLevelColor(
+                  primaryData.priority
+                )}`}
+              >
+                Priority Level: {primaryData.priority}
               </div>
-              <div className="text-xs sm:text-sm text-gray-700 mb-3">{prediction.mentalHealthRisk.description}</div>
-              <div className={`text-xs sm:text-sm font-medium ${getRiskLevelColor(prediction.mentalHealthRisk.level)}`}>
-                {prediction.mentalHealthRisk.assessmentSummary}
+              {primaryData.riskScore && (
+                <div className="text-xs sm:text-sm text-gray-600 mb-2">
+                  Risk Score: {primaryData.riskScore}
+                </div>
+              )}
+              <div className="text-xs sm:text-sm text-gray-700 mb-3">
+                {primaryData.assessment.explanation}
               </div>
+              {primaryData.assessment.reason && (
+                <div className="text-xs sm:text-sm font-medium text-gray-800 mb-3 p-2 bg-gray-100 rounded">
+                  {primaryData.assessment.reason}
+                </div>
+              )}
+              {primaryData.assessment.immediateAction && (
+                <div className="bg-amber-100 border border-amber-300 rounded-lg p-3 mt-3">
+                  <div className="flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-amber-600 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                      />
+                    </svg>
+                    <span className="text-xs sm:text-sm font-medium text-amber-800">
+                      Immediate Action: {primaryData.assessment.immediateAction}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -205,76 +346,121 @@ export const MentalHealthResultsPage: React.FC = () => {
         </div> */}
 
         {/* Risk Factors */}
-        {prediction.riskFactors && prediction.riskFactors.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Areas to Monitor</h3>
-            <div className="space-y-2">
-              {prediction.riskFactors.map((factor, index) => (
-                <div key={index} className="flex items-start">
-                  <div className="flex-shrink-0 w-2 h-2 bg-yellow-400 rounded-full mt-2"></div>
-                  <div className="ml-3 text-xs sm:text-sm text-gray-700">{factor}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recommendations */}
-        {prediction.recommendations && prediction.recommendations.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-              Personalized Recommendations
+        {primaryData.assessment.riskFactors && primaryData.assessment.riskFactors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+            <h3 className="text-base sm:text-lg font-semibold text-red-900 mb-3 sm:mb-4">
+              Risk Factors for {primaryData.concern}
             </h3>
-            <div className="space-y-3">
-              {prediction.recommendations.map((recommendation, index) => (
+            <div className="space-y-2">
+              {primaryData.assessment.riskFactors.map((factor: string, index: number) => (
                 <div key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg
-                      className="w-4 h-4 sm:w-5 sm:h-5 text-primary-700 mt-0.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                      />
-                    </svg>
-                  </div>
-                  <div className="ml-3 text-xs sm:text-sm text-gray-700">{recommendation}</div>
+                  <div className="flex-shrink-0 w-2 h-2 bg-red-400 rounded-full mt-2"></div>
+                  <div className="ml-3 text-xs sm:text-sm text-red-800">{factor}</div>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Mental Health Risk Disclaimer */}
-        {prediction.mentalHealthRisk.disclaimer && (
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mt-4 sm:mt-6">
-            <div className="flex flex-col sm:flex-row items-start">
-              <div className="flex-shrink-0 mx-auto sm:mx-0 mb-2 sm:mb-0">
-                <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600 mt-0.5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
-                  />
-                </svg>
-              </div>
-              <div className="sm:ml-3 text-center sm:text-left">
-                <p className="text-xs sm:text-sm text-amber-800">{prediction.mentalHealthRisk.disclaimer}</p>
+        {/* Protective Factors */}
+        {primaryData.assessment.protectiveFactors &&
+          primaryData.assessment.protectiveFactors.length > 0 && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+              <h3 className="text-base sm:text-lg font-semibold text-green-900 mb-3 sm:mb-4">
+                Protective Factors
+              </h3>
+              <div className="space-y-2">
+                {primaryData.assessment.protectiveFactors.map((factor: string, index: number) => (
+                  <div key={index} className="flex items-start">
+                    <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full mt-2"></div>
+                    <div className="ml-3 text-xs sm:text-sm text-green-800">{factor}</div>
+                  </div>
+                ))}
               </div>
             </div>
+          )}
+
+        {/* Targeted Recommendations for Primary Concern */}
+        {primaryData.assessment.recommendations &&
+          primaryData.assessment.recommendations.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6 mt-4 sm:mt-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+                Targeted Recommendations for {primaryData.concern}
+              </h3>
+              <div className="space-y-3">
+                {primaryData.assessment.recommendations.map(
+                  (recommendation: string, index: number) => (
+                    <div key={index} className="flex items-start">
+                      <div className="flex-shrink-0">
+                        <svg
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-primary-700 mt-0.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                          />
+                        </svg>
+                      </div>
+                      <div className="ml-3 text-xs sm:text-sm text-gray-700">{recommendation}</div>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+        {/* Warning Signs to Watch */}
+        {primaryData.assessment.warningSignsToWatch &&
+          primaryData.assessment.warningSignsToWatch.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
+              <h3 className="text-base sm:text-lg font-semibold text-amber-900 mb-3 sm:mb-4">
+                Warning Signs to Monitor
+              </h3>
+              <div className="space-y-2">
+                {primaryData.assessment.warningSignsToWatch.map((sign: string, index: number) => (
+                  <div key={index} className="flex items-start">
+                    <div className="flex-shrink-0 w-2 h-2 bg-amber-400 rounded-full mt-2"></div>
+                    <div className="ml-3 text-xs sm:text-sm text-amber-800">{sign}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+        {/* Mental Health Assessment Disclaimer */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4 sm:mt-6">
+          <div className="flex flex-col sm:flex-row items-start">
+            <div className="flex-shrink-0 mx-auto sm:mx-0 mb-2 sm:mb-0">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600 mt-0.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <div className="sm:ml-3 text-center sm:text-left">
+              <p className="text-xs sm:text-sm text-blue-800">
+                <strong>Important:</strong> This assessment identifies the primary mental health
+                concern that needs attention based on your responses. While comprehensive
+                assessments for anxiety, depression, stress, and suicide risk were conducted, we're
+                showing the most critical area requiring immediate focus and support. For complete
+                professional evaluation, please consult with our guidance counselors.
+              </p>
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -294,12 +480,20 @@ export const MentalHealthResultsPage: React.FC = () => {
 
         {/* Next Steps */}
         <div className="bg-primary-50 border border-primary-200 rounded-lg p-4 sm:p-6 mt-4 sm:mt-6">
-          <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3">What's Next?</h3>
+          <h3 className="text-base sm:text-lg font-semibold text-primary-900 mb-3">
+            Next Steps for {primaryData.concern} Support
+          </h3>
           <div className="space-y-2 text-xs sm:text-sm text-primary-800">
-            <p>• Use our comprehensive mental health assessment tools for detailed analysis</p>
-            <p>• Access personalized resources and coping strategies</p>
-            <p>• Connect with guidance counselors and mental health professionals</p>
-            <p>• Track your progress over time with regular check-ins</p>
+            <p>
+              • Focus on {primaryData.concern.toLowerCase()}-specific interventions and coping
+              strategies
+            </p>
+            <p>• Schedule follow-up with guidance counselors for targeted support</p>
+            <p>• Access specialized resources for {primaryData.concern.toLowerCase()} management</p>
+            <p>
+              • Monitor progress and warning signs specific to {primaryData.concern.toLowerCase()}
+            </p>
+            <p>• Complete comprehensive assessments if additional concerns arise</p>
           </div>
         </div>
       </div>

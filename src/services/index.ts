@@ -38,6 +38,8 @@ export type {
   InventoryResponse,
   GetInventoryResponse,
   MentalHealthPrediction,
+  MentalHealthRiskAssessment,
+  SpecificMentalHealthRisk,
 } from "./inventory.service";
 
 // Person Service
@@ -162,7 +164,4 @@ export type {
 
 // Guidance Dashboard Service
 export { GuidanceDashboardService } from "./guidance-dashboard.service";
-export type {
-  StudentProgressInsight,
-  StudentProgressOverview,
-} from "./guidance-dashboard.service";
+export type { StudentProgressInsight, StudentProgressOverview } from "./guidance-dashboard.service";

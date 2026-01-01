@@ -103,8 +103,40 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         predictionUpdatedAt: inventory.predictionUpdatedAt,
         academicPerformanceOutlook: latestPrediction?.academicPerformanceOutlook,
         confidence: latestPrediction?.confidence,
-        riskLevel: latestPrediction?.mentalHealthRisk?.level,
-        needsAttention: latestPrediction?.mentalHealthRisk?.needsAttention,
+        riskLevel: (() => {
+          if (!latestPrediction?.mentalHealthPredictions) return undefined;
+
+          const primaryConcern = latestPrediction.mentalHealthPredictions.primaryConcern;
+          let concernData = null;
+
+          if (primaryConcern === "anxiety")
+            concernData = latestPrediction.mentalHealthPredictions.anxiety;
+          else if (primaryConcern === "depression")
+            concernData = latestPrediction.mentalHealthPredictions.depression;
+          else if (primaryConcern === "stress")
+            concernData = latestPrediction.mentalHealthPredictions.stress;
+          else if (primaryConcern === "suicide")
+            concernData = latestPrediction.mentalHealthPredictions.suicide;
+
+          return concernData?.riskLevel;
+        })(),
+        needsAttention: (() => {
+          if (!latestPrediction?.mentalHealthPredictions) return undefined;
+
+          const primaryConcern = latestPrediction.mentalHealthPredictions.primaryConcern;
+          let concernData = null;
+
+          if (primaryConcern === "anxiety")
+            concernData = latestPrediction.mentalHealthPredictions.anxiety;
+          else if (primaryConcern === "depression")
+            concernData = latestPrediction.mentalHealthPredictions.depression;
+          else if (primaryConcern === "stress")
+            concernData = latestPrediction.mentalHealthPredictions.stress;
+          else if (primaryConcern === "suicide")
+            concernData = latestPrediction.mentalHealthPredictions.suicide;
+
+          return concernData?.immediateAction ? true : false;
+        })(),
       };
     });
   }, [apiInventories]);
