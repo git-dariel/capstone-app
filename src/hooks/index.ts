@@ -20,3 +20,4 @@ export { useSchedules } from "./useSchedules";
 export { useToast } from "./useToast";
 export { useInventoryInsights } from "./useInventoryInsights";
 export { useInventoryReminder } from "./useInventoryReminder";
+export { useSimplifiedInsights } from "./useSimplifiedInsights";

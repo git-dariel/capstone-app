@@ -24,3 +24,4 @@ export { NotificationsContent } from "./NotificationsContent";
 export { InventoryInsightsContent } from "./InventoryInsightsContent";
 export { StudentConsultationRecordsContent } from "./StudentConsultationRecordsContent";
 export { ArchiveStudentsContent } from "./ArchiveStudentsContent";
+export { SimplifiedInsightsContent } from "./SimplifiedInsightsContent";

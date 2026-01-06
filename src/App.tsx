@@ -15,6 +15,7 @@ import {
   HistoryPage,
   HomePage,
   InsightsPage,
+  SimplifiedInsightsPage,
   InventoryPage,
   InventoryRecordsPage,
   InventoryInsightsPage,
@@ -311,6 +312,16 @@ function App() {
           {/* Insights routes */}
           <Route
             path="/insights/:type"
+            element={
+              <ProtectedRoute>
+                <SimplifiedInsightsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Old insights route (keep for reference/comparison) */}
+          <Route
+            path="/insights-old/:type"
             element={
               <ProtectedRoute>
                 <InsightsPage />

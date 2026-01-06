@@ -9,6 +9,9 @@ export interface InsightData {
 export interface ChartFilters {
   year?: number;
   month?: number;
+  program?: string; // Program filter for simplified dashboard
+  yearLevel?: string; // Year level filter (1st, 2nd, 3rd, 4th)
+  gender?: string; // Gender filter (male, female, other)
 }
 
 export interface InsightsDrilldownLevel {
@@ -25,6 +28,7 @@ export interface MentalHealthInsights {
   currentLevel: InsightsDrilldownLevel;
   availableYears: number[];
   availableMonths: { value: number; label: string }[];
+  availablePrograms: string[]; // Add available programs for the dropdown
   filters: ChartFilters;
 }
 
@@ -42,4 +46,19 @@ export interface StudentDetails {
   score?: number;
   assessmentDate?: string;
   createdAt: string;
+}
+
+// Simplified insights for new dashboard approach
+export interface SimplifiedInsights {
+  type: "anxiety" | "depression" | "stress" | "suicide" | "checklist";
+  programData: InsightData[]; // Program-level data
+  availablePrograms: string[];
+  filters: ChartFilters;
+  totalCount: number;
+}
+
+export interface ProgramFilterState {
+  selectedProgram: string | null;
+  studentList: StudentDetails[];
+  loading: boolean;
 }

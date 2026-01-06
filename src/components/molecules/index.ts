@@ -88,3 +88,5 @@ export { StudentDetailsModal } from "./StudentDetailsModal";
 export { AssessmentHistoryModal } from "./AssessmentHistoryModal";
 export { InventoryReminderModal } from "./InventoryReminderModal";
 export { ArchiveStudentsTable } from "./ArchiveStudentsTable";
+export { SeverityPieChart } from "./SeverityPieChart";
+export { GenderDistributionChart } from "./GenderDistributionChart";
