@@ -21,7 +21,9 @@ import { ToastContainer } from "@/components/atoms";
 
 interface AppointmentsContentProps {
   activeTab?: "appointments" | "schedules" | "pending-requests";
-  onTabChange?: (tab: "appointments" | "schedules" | "pending-requests") => void;
+  onTabChange?: (
+    tab: "appointments" | "schedules" | "pending-requests",
+  ) => void;
 }
 
 export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
@@ -35,22 +37,27 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
   // State for modals and view mode
   const [isAppointmentModalOpen, setIsAppointmentModalOpen] = useState(false);
-  const [isAppointmentViewModalOpen, setIsAppointmentViewModalOpen] = useState(false);
+  const [isAppointmentViewModalOpen, setIsAppointmentViewModalOpen] =
+    useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isScheduleViewModalOpen, setIsScheduleViewModalOpen] = useState(false);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isDateEventsDrawerOpen, setIsDateEventsDrawerOpen] = useState(false);
-  const [isRequestAppointmentModalOpen, setIsRequestAppointmentModalOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
+  const [isRequestAppointmentModalOpen, setIsRequestAppointmentModalOpen] =
+    useState(false);
+  const [selectedAppointment, setSelectedAppointment] =
+    useState<Appointment | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(
+    null,
+  );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [calendarModalMode, setCalendarModalMode] = useState<"appointment" | "schedule">(
-    "appointment"
-  );
-  const [appointmentModalMode, setAppointmentModalMode] = useState<"create" | "edit" | "view">(
-    "create"
-  );
+  const [calendarModalMode, setCalendarModalMode] = useState<
+    "appointment" | "schedule"
+  >("appointment");
+  const [appointmentModalMode, setAppointmentModalMode] = useState<
+    "create" | "edit" | "view"
+  >("create");
 
   // Hooks for data management
   const {
@@ -135,19 +142,24 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
       // Filter for pending requests
       const pending = response.appointments.filter(
-        (appointment: Appointment) => appointment.status === "pending"
+        (appointment: Appointment) => appointment.status === "pending",
       );
       setPendingRequests(pending);
     } catch (err) {
       console.error("Failed to fetch pending requests:", err);
-      error("Error", "Failed to fetch pending appointment requests. Please try again.");
+      error(
+        "Error",
+        "Failed to fetch pending appointment requests. Please try again.",
+      );
     } finally {
       setPendingRequestsLoading(false);
     }
   };
 
   // Handle tab changes
-  const handleTabClick = (tab: "appointments" | "schedules" | "pending-requests") => {
+  const handleTabClick = (
+    tab: "appointments" | "schedules" | "pending-requests",
+  ) => {
     onTabChange?.(tab);
 
     // Switch to list view when switching to pending-requests tab
@@ -175,7 +187,8 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             title: appointment.title || "Appointment",
             startTime: new Date(appointment.requestedDate),
             endTime: new Date(
-              new Date(appointment.requestedDate).getTime() + (appointment.duration || 60) * 60000
+              new Date(appointment.requestedDate).getTime() +
+                (appointment.duration || 60) * 60000,
             ),
             date: appointmentDate,
             color: getAppointmentColor(appointment.status),
@@ -260,7 +273,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
     // For guidance users with 0 or 1 events, open create modal
     if (isGuidance) {
-      setCalendarModalMode(activeTab === "schedules" && isGuidance ? "schedule" : "appointment");
+      setCalendarModalMode(
+        activeTab === "schedules" && isGuidance ? "schedule" : "appointment",
+      );
       setIsCalendarModalOpen(true);
     }
   };
@@ -292,7 +307,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       if (calendarModalMode === "appointment") {
         await createAppointment(data);
-        success("Appointment Created", "Your appointment has been successfully created.");
+        success(
+          "Appointment Created",
+          "Your appointment has been successfully created.",
+        );
         // Refresh appointments
         if (isStudent) {
           await fetchAppointmentsByStudentId(user?.id || "");
@@ -301,7 +319,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         }
       } else {
         await createSchedule(data);
-        success("Schedule Created", "Your schedule has been successfully created.");
+        success(
+          "Schedule Created",
+          "Your schedule has been successfully created.",
+        );
         // Refresh schedules
         await fetchSchedules();
       }
@@ -335,7 +356,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await createAppointment(appointmentData);
       success(
         "Appointment Requested",
-        "Your appointment request has been submitted successfully. The counselor will review and respond soon."
+        "Your appointment request has been submitted successfully. The counselor will review and respond soon.",
       );
 
       // Refresh appointments
@@ -346,7 +367,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       setIsRequestAppointmentModalOpen(false);
     } catch (err) {
       console.error("Failed to submit appointment request:", err);
-      error("Request Failed", "Failed to submit appointment request. Please try again.");
+      error(
+        "Request Failed",
+        "Failed to submit appointment request. Please try again.",
+      );
       throw err;
     }
   };
@@ -357,7 +381,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await updateAppointment(request.id, { status: "confirmed" });
       success(
         "Request Approved",
-        `Appointment with ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been approved.`
+        `Appointment with ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been approved.`,
       );
 
       // Refresh pending requests and appointments
@@ -367,7 +391,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       }
     } catch (err) {
       console.error("Failed to approve request:", err);
-      error("Approval Failed", "Failed to approve appointment request. Please try again.");
+      error(
+        "Approval Failed",
+        "Failed to approve appointment request. Please try again.",
+      );
     }
   };
 
@@ -379,7 +406,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       });
       success(
         "Request Denied",
-        `Appointment request from ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been denied.`
+        `Appointment request from ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been denied.`,
       );
 
       // Refresh pending requests and appointments
@@ -389,7 +416,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       }
     } catch (err) {
       console.error("Failed to deny request:", err);
-      error("Denial Failed", "Failed to deny appointment request. Please try again.");
+      error(
+        "Denial Failed",
+        "Failed to deny appointment request. Please try again.",
+      );
     }
   };
 
@@ -440,7 +470,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         cancellationReason: "Cancelled by user",
       });
 
-      success("Appointment Cancelled", "Your appointment has been successfully cancelled.");
+      success(
+        "Appointment Cancelled",
+        "Your appointment has been successfully cancelled.",
+      );
 
       // Refresh both appointments and schedules since cancelling frees up the schedule slot
       if (isStudent) {
@@ -452,7 +485,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       }
     } catch (err) {
       console.error("Failed to cancel appointment:", err);
-      error("Cancellation Failed", "Failed to cancel appointment. Please try again.");
+      error(
+        "Cancellation Failed",
+        "Failed to cancel appointment. Please try again.",
+      );
     }
   };
 
@@ -470,7 +506,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
       success(
         "Appointment Completed",
-        `Appointment with ${appointment.student?.person?.firstName} ${appointment.student?.person?.lastName} has been marked as completed.`
+        `Appointment with ${appointment.student?.person?.firstName} ${appointment.student?.person?.lastName} has been marked as completed.`,
       );
 
       // Refresh the list
@@ -481,7 +517,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       }
     } catch (err) {
       console.error("Failed to complete appointment:", err);
-      error("Completion Failed", "Failed to mark appointment as completed. Please try again.");
+      error(
+        "Completion Failed",
+        "Failed to mark appointment as completed. Please try again.",
+      );
     }
   };
 
@@ -503,10 +542,16 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       if (selectedAppointment) {
         await updateAppointment(selectedAppointment.id, appointmentData);
-        success("Appointment Updated", "Your appointment has been successfully updated.");
+        success(
+          "Appointment Updated",
+          "Your appointment has been successfully updated.",
+        );
       } else {
         await createAppointment(appointmentData);
-        success("Appointment Created", "Your appointment has been successfully created.");
+        success(
+          "Appointment Created",
+          "Your appointment has been successfully created.",
+        );
       }
       setIsAppointmentModalOpen(false);
       // Refresh the list
@@ -515,9 +560,69 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       } else if (isGuidance) {
         await fetchAppointmentsByCounselorId(user?.id || "");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to save appointment:", err);
-      error("Save Failed", "Failed to save appointment. Please try again.");
+      console.log("Full error object:", JSON.stringify(err, null, 2));
+
+      // Extract error message from backend response
+      const errorResponse = err as {
+        response?: {
+          status?: number;
+          data?: {
+            error?: string;
+            message?: string;
+            conflictDetails?: {
+              date: string;
+              duration: number;
+              student?: string;
+              counselor?: string;
+              appointmentId?: string;
+            };
+          };
+        };
+        message?: string;
+      };
+
+      console.log("Error response status:", errorResponse?.response?.status);
+      console.log("Error response data:", errorResponse?.response?.data);
+
+      const responseData = errorResponse?.response?.data;
+      const backendError = responseData?.error || responseData?.message;
+
+      console.log("Backend error message:", backendError);
+
+      // Handle conflict errors (409 status)
+      if (errorResponse?.response?.status === 409) {
+        const conflictDetails = responseData?.conflictDetails;
+
+        if (conflictDetails) {
+          const date = new Date(conflictDetails.date).toLocaleString();
+          const personInfo = conflictDetails.student
+            ? `Student: ${conflictDetails.student}`
+            : conflictDetails.counselor
+              ? `Counselor: ${conflictDetails.counselor}`
+              : "Unknown person";
+
+          const detailedMessage = `${backendError || "This time slot is already booked"}\n\nConflicting Appointment:\n${personInfo}\nDate: ${date}\nDuration: ${conflictDetails.duration} minutes`;
+
+          error("Schedule Conflict", detailedMessage);
+        } else {
+          error(
+            "Schedule Conflict",
+            backendError ||
+              "This time slot is already booked. Please choose a different time.",
+          );
+        }
+      } else if (backendError) {
+        // Display any other backend error messages
+        error("Error", backendError);
+      } else if (errorResponse?.message) {
+        // Try to get error from top-level message
+        error("Error", errorResponse.message);
+      } else {
+        // Generic error message
+        error("Save Failed", "Failed to save appointment. Please try again.");
+      }
       throw err;
     }
   };
@@ -556,7 +661,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
           scheduleData as Omit<
             Schedule,
             "id" | "createdAt" | "updatedAt" | "isDeleted" | "bookedSlots"
-          >
+          >,
         );
       }
       setIsScheduleModalOpen(false);
@@ -572,12 +677,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       // Check if student already has an active appointment for this schedule
       if (hasActiveAppointmentForSchedule(schedule.id)) {
-        const existingAppointment = getExistingAppointmentForSchedule(schedule.id);
+        const existingAppointment = getExistingAppointmentForSchedule(
+          schedule.id,
+        );
         error(
           "Already Booked",
           `You already have an appointment for "${schedule.title}" on ${new Date(
-            existingAppointment?.requestedDate || ""
-          ).toLocaleDateString()}. Cancel it first to book again.`
+            existingAppointment?.requestedDate || "",
+          ).toLocaleDateString()}. Cancel it first to book again.`,
         );
         return;
       }
@@ -600,7 +707,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await createAppointment(appointmentData);
       success(
         "Appointment Booked",
-        `Your appointment for "${schedule.title}" has been successfully booked.`
+        `Your appointment for "${schedule.title}" has been successfully booked.`,
       );
 
       // Refresh data
@@ -626,12 +733,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       (appointment) =>
         appointment.scheduleId === scheduleId &&
         appointment.status !== "cancelled" &&
-        appointment.status !== "completed"
+        appointment.status !== "completed",
     );
   };
 
   // Get the existing appointment for a schedule (if any)
-  const getExistingAppointmentForSchedule = (scheduleId: string): Appointment | null => {
+  const getExistingAppointmentForSchedule = (
+    scheduleId: string,
+  ): Appointment | null => {
     if (!isStudent || !appointments) return null;
 
     return (
@@ -639,7 +748,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         (appointment) =>
           appointment.scheduleId === scheduleId &&
           appointment.status !== "cancelled" &&
-          appointment.status !== "completed"
+          appointment.status !== "completed",
       ) || null
     );
   };
@@ -677,7 +786,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
                   : "border-gray-200 text-gray-500 hover:text-gray-700 sm:border-transparent sm:hover:border-gray-300"
               }`}
             >
-              <span className="block sm:inline">{isStudent ? "Available" : "Schedules"}</span>
+              <span className="block sm:inline">
+                {isStudent ? "Available" : "Schedules"}
+              </span>
               {(isStudent ? availableSchedules : schedules).length > 0 && (
                 <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                   {(isStudent ? availableSchedules : schedules).length}
@@ -742,10 +853,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             {activeTab === "appointments"
               ? "Appointments"
               : activeTab === "pending-requests"
-              ? "Pending Requests"
-              : isStudent
-              ? "Available Schedules"
-              : "Schedules"}
+                ? "Pending Requests"
+                : isStudent
+                  ? "Available Schedules"
+                  : "Schedules"}
           </h2>
           <p className="mt-1 text-sm text-gray-500 pr-4">
             {activeTab === "appointments"
@@ -753,10 +864,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
                 ? "View your booked appointments with guidance counselors"
                 : "View students who booked your scheduled sessions"
               : activeTab === "pending-requests"
-              ? "Review and approve student appointment requests"
-              : isStudent
-              ? "Browse available counseling schedules to book appointments"
-              : "Configure available time slots and schedules"}
+                ? "Review and approve student appointment requests"
+                : isStudent
+                  ? "Browse available counseling schedules to book appointments"
+                  : "Configure available time slots and schedules"}
           </p>
         </div>
 
@@ -765,15 +876,21 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
           {isGuidance && (
             <button
               onClick={
-                activeTab === "appointments" ? handleCreateAppointment : handleCreateSchedule
+                activeTab === "appointments"
+                  ? handleCreateAppointment
+                  : handleCreateSchedule
               }
               className="inline-flex items-center justify-center w-full sm:w-auto px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 touch-manipulation"
             >
               <span className="mr-2">+</span>
               <span className="hidden sm:inline">
-                {activeTab === "appointments" ? "New Appointment" : "New Schedule"}
+                {activeTab === "appointments"
+                  ? "New Appointment"
+                  : "New Schedule"}
               </span>
-              <span className="sm:hidden">{activeTab === "appointments" ? "New" : "Schedule"}</span>
+              <span className="sm:hidden">
+                {activeTab === "appointments" ? "New" : "Schedule"}
+              </span>
             </button>
           )}
 
@@ -799,11 +916,17 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               <span className="text-red-400">⚠️</span>
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Backend API Not Available</h3>
+              <h3 className="text-sm font-medium text-red-800">
+                Backend API Not Available
+              </h3>
               <div className="mt-2 text-sm text-red-700">
-                <p>The appointments and schedules backend services are currently unavailable.</p>
+                <p>
+                  The appointments and schedules backend services are currently
+                  unavailable.
+                </p>
                 <p className="mt-1">
-                  Please ensure your backend server is running or contact your administrator.
+                  Please ensure your backend server is running or contact your
+                  administrator.
                 </p>
                 {(appointmentsError || schedulesError) && (
                   <details className="mt-2">
@@ -811,7 +934,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
                       View technical details
                     </summary>
                     <div className="mt-2 pl-4 border-l-2 border-red-300">
-                      {appointmentsError && <p>Appointments API: {appointmentsError}</p>}
+                      {appointmentsError && (
+                        <p>Appointments API: {appointmentsError}</p>
+                      )}
                       {schedulesError && <p>Schedules API: {schedulesError}</p>}
                     </div>
                   </details>
@@ -832,7 +957,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               onEdit={isGuidance ? handleEditAppointment : undefined}
               onView={handleViewAppointment}
               onCancel={handleCancelAppointment}
-              onReschedule={isGuidance ? handleRescheduleAppointment : undefined}
+              onReschedule={
+                isGuidance ? handleRescheduleAppointment : undefined
+              }
               onComplete={isGuidance ? handleCompleteAppointment : undefined}
               onDelete={isGuidance ? handleDeleteAppointment : undefined}
               showActions={true}
@@ -940,7 +1067,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         onBook={isStudent ? handleBookFromScheduleView : undefined}
         loading={schedulesLoading}
         userType={user?.type}
-        hasActiveAppointmentForSchedule={isStudent ? hasActiveAppointmentForSchedule : undefined}
+        hasActiveAppointmentForSchedule={
+          isStudent ? hasActiveAppointmentForSchedule : undefined
+        }
         getExistingAppointmentForSchedule={
           isStudent ? getExistingAppointmentForSchedule : undefined
         }
@@ -951,9 +1080,15 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         onClose={() => setIsCalendarModalOpen(false)}
         selectedDate={selectedDate}
         onCreateAppointment={
-          calendarModalMode === "appointment" ? handleCreateFromCalendar : undefined
+          calendarModalMode === "appointment"
+            ? handleCreateFromCalendar
+            : undefined
         }
-        onCreateSchedule={calendarModalMode === "schedule" ? handleCreateFromCalendar : undefined}
+        onCreateSchedule={
+          calendarModalMode === "schedule"
+            ? handleCreateFromCalendar
+            : undefined
+        }
         loading={appointmentsLoading || schedulesLoading}
         mode={calendarModalMode}
       />
@@ -966,7 +1101,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         events={selectedDate ? getEventsForDate(selectedDate) : []}
         onEventClick={handleDrawerEventClick}
         userType={user?.type}
-        hasActiveAppointmentForSchedule={isStudent ? hasActiveAppointmentForSchedule : undefined}
+        hasActiveAppointmentForSchedule={
+          isStudent ? hasActiveAppointmentForSchedule : undefined
+        }
       />
 
       {/* Request Appointment Modal for Students */}

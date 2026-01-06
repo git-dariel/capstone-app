@@ -2,19 +2,30 @@ import React, { useState, useEffect, useRef } from "react";
 import { Modal, FormField, FormSelect } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon, Search } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useSchedules } from "@/hooks/useSchedules";
-import { useUsers } from "@/hooks/useUsers";
 import { useAuth } from "@/hooks";
-import type { CreateAppointmentRequest, UpdateAppointmentRequest, Appointment } from "@/services";
+import { InventoryService, StudentService } from "@/services";
+import type { Student } from "@/services/student.service";
+import type {
+  CreateAppointmentRequest,
+  UpdateAppointmentRequest,
+  Appointment,
+} from "@/services";
 
 interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateAppointmentRequest | UpdateAppointmentRequest) => Promise<void>;
+  onSubmit: (
+    data: CreateAppointmentRequest | UpdateAppointmentRequest,
+  ) => Promise<void>;
   appointment?: Appointment | null;
   loading?: boolean;
   mode: "create" | "edit" | "view";
@@ -36,6 +47,7 @@ interface AppointmentFormData {
     | "individual_counseling"
     | "referral_for_university";
   requestedDate: string;
+  status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
   priority: "low" | "normal" | "high" | "urgent";
   location: string;
   duration: number;
@@ -53,12 +65,28 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   loading = false,
   mode,
 }) => {
+  // Enhanced close handler to ensure proper cleanup
+  const handleClose = () => {
+    console.log("=== MODAL CLOSING ===");
+    console.log("Resetting all state...");
+    setSelectedStudent(null);
+    setStudentSearchQuery("");
+    setStudentSuggestions([]);
+    setShowSuggestions(false);
+    setErrors({});
+    onClose();
+  };
   const { user, student } = useAuth();
   const { availableSchedules, fetchAvailableSchedules } = useSchedules();
-  const { users: studentUsers, fetchUsers } = useUsers();
+
+  const [studentSearchQuery, setStudentSearchQuery] = useState("");
+  const [studentSuggestions, setStudentSuggestions] = useState<Student[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<AppointmentFormData>({
-    studentId: student?.id || "",
+    studentId: "",
     counselorId: "",
     scheduleId: "",
     title: "",
@@ -75,6 +103,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
   const isCreateMode = mode === "create";
@@ -90,7 +119,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         title: appointment.title,
         description: appointment.description || "",
         appointmentType: appointment.appointmentType,
-        requestedDate: new Date(appointment.requestedDate).toISOString().slice(0, 16),
+        requestedDate: new Date(appointment.requestedDate)
+          .toISOString()
+          .slice(0, 16),
         priority: appointment.priority,
         location: appointment.location || "",
         duration: appointment.duration,
@@ -104,13 +135,14 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     } else {
       // Reset for create mode
       setFormData({
-        studentId: student?.id || "", // For students, this will be their ID, for guidance users it will be empty
+        studentId: isGuidanceUser ? "" : user?.id || "", // For students, use their user ID (not student record ID), for guidance users it will be empty
         counselorId: isGuidanceUser ? user?.id || "" : "", // For guidance users, set their ID as counselor
         scheduleId: "",
         title: "",
         description: "",
         appointmentType: "general_information",
         requestedDate: "",
+        status: isGuidanceUser ? "confirmed" : "pending", // Auto-confirm for guidance users
         priority: "normal",
         location: "",
         duration: 60,
@@ -121,6 +153,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       });
     }
     setErrors({});
+    setStudentSearchQuery("");
+    setSelectedStudent(null);
+    setStudentSuggestions([]);
+    setShowSuggestions(false);
   }, [appointment, student, isOpen, isGuidanceUser, user]);
 
   // Fetch data when modal opens (once per open). Guard against StrictMode double-invoke.
@@ -138,14 +174,6 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     (async () => {
       try {
         await fetchAvailableSchedules();
-        if (isGuidanceUser) {
-          // Fetch users with type=student using the proper service
-          await fetchUsers({
-            type: "student",
-            limit: 100,
-            fields: "id,person.firstName,person.lastName,person.email",
-          });
-        }
       } catch (error) {
         console.error("Error loading data:", error);
       }
@@ -154,9 +182,56 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
-  const handleInputChange = (
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Search students as user types
+  useEffect(() => {
+    const searchStudents = async () => {
+      if (!studentSearchQuery.trim() || studentSearchQuery.length < 2) {
+        setStudentSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      try {
+        const response = await StudentService.getAllStudents({
+          query: studentSearchQuery,
+          limit: 10,
+          fields:
+            "id,userId,studentNumber,program,person.firstName,person.lastName,person.email",
+        });
+
+        setStudentSuggestions(response.data || []);
+        setShowSuggestions(true);
+      } catch (error) {
+        console.error("Error searching students:", error);
+        setStudentSuggestions([]);
+      }
+    };
+
+    const debounce = setTimeout(() => {
+      searchStudents();
+    }, 300);
+
+    return () => clearTimeout(debounce);
+  }, [studentSearchQuery]);
+
+  const handleInputChange = async (
     field: keyof AppointmentFormData,
-    value: string | number | boolean
+    value: string | number | boolean,
   ) => {
     console.log(`Changing ${field} to:`, value);
     console.log(`Previous formData.${field}:`, formData[field]);
@@ -172,7 +247,94 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  // Handle student selection from suggestions
+  const handleSelectStudent = async (selectedStudent: Student) => {
+    console.log("=== SELECTING STUDENT ===");
+    console.log("Selected student object:", selectedStudent);
+    console.log("Student userId:", selectedStudent.userId);
+    console.log("Student id (record):", selectedStudent.id);
+
+    setSelectedStudent(selectedStudent);
+    setStudentSearchQuery(
+      `${selectedStudent.person?.firstName} ${selectedStudent.person?.lastName}`,
+    );
+    setShowSuggestions(false);
+
+    // Update form data with userId for appointment (not student record id)
+    if (!selectedStudent.userId) {
+      console.error("Student record missing userId:", selectedStudent);
+      setErrors((prev) => ({
+        ...prev,
+        studentId:
+          "Selected student has no user account. Please contact support.",
+      }));
+      return;
+    }
+
+    console.log("Setting studentId in form to:", selectedStudent.userId);
+    setFormData((prev) => {
+      const newFormData = {
+        ...prev,
+        studentId: selectedStudent.userId!,
+      };
+      console.log("New form data after student selection:", newFormData);
+      return newFormData;
+    });
+
+    // Auto-populate priority and suggested type based on inventory
+    // Inventory uses student record ID, not userId
+    try {
+      const inventory = await InventoryService.getInventoryByStudentId(
+        selectedStudent.id,
+      );
+      if (
+        inventory?.mentalHealthPredictions &&
+        inventory.mentalHealthPredictions.length > 0
+      ) {
+        const latestPrediction = inventory.mentalHealthPredictions[0];
+        const riskLevel = latestPrediction.mentalHealthRisk?.level;
+
+        // Map risk level to priority
+        let suggestedPriority: "low" | "normal" | "high" | "urgent" = "normal";
+        let suggestedType = formData.appointmentType;
+        let suggestedDuration = formData.duration;
+
+        switch (riskLevel) {
+          case "critical":
+            suggestedPriority = "urgent";
+            suggestedType = "individual_counseling";
+            suggestedDuration = 90;
+            break;
+          case "high":
+            suggestedPriority = "high";
+            suggestedType = "individual_counseling";
+            suggestedDuration = 60;
+            break;
+          case "moderate":
+            suggestedPriority = "normal";
+            suggestedType = "one_or_two_session_problem_solving";
+            suggestedDuration = 60;
+            break;
+          case "low":
+            suggestedPriority = "low";
+            suggestedType = "general_information";
+            suggestedDuration = 30;
+            break;
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          priority: suggestedPriority,
+          appointmentType: suggestedType,
+          duration: suggestedDuration,
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching inventory for priority:", error);
+    }
+  };
+
+  const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
@@ -183,6 +345,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       newErrors.studentId = "Please select a student";
     }
 
+    if (isGuidanceUser && !selectedStudent) {
+      newErrors.studentId = "Please search and select a student";
+    }
+
     // Schedule selection is optional - guidance can assign later
 
     if (!formData.requestedDate) {
@@ -191,21 +357,103 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
       // Validate time range (8 AM to 8 PM)
       const selectedDate = new Date(formData.requestedDate);
       const hours = selectedDate.getHours();
+
       if (hours < 8 || hours >= 20) {
-        newErrors.requestedDate = "Appointments can only be scheduled between 8:00 AM and 8:00 PM";
+        newErrors.requestedDate =
+          "Appointments can only be scheduled between 8:00 AM and 8:00 PM";
+      }
+
+      // Check if the selected date/time is in the past
+      const now = new Date();
+      if (selectedDate < now) {
+        newErrors.requestedDate = "Cannot schedule appointments in the past";
+      }
+
+      // Check for conflicts if we have a student and counselor
+      if (
+        formData.studentId &&
+        formData.counselorId &&
+        !newErrors.requestedDate
+      ) {
+        setCheckingConflicts(true);
+        try {
+          // Check student's existing appointments
+          const studentAppointments = await fetch(
+            `/api/appointment/student/${formData.studentId}?dateFrom=${selectedDate.toISOString()}&dateTo=${new Date(selectedDate.getTime() + formData.duration * 60000).toISOString()}`,
+          ).then((res) => res.json());
+
+          // Check counselor's existing appointments
+          const counselorAppointments = await fetch(
+            `/api/appointment/counselor/${formData.counselorId}?dateFrom=${selectedDate.toISOString()}&dateTo=${new Date(selectedDate.getTime() + formData.duration * 60000).toISOString()}`,
+          ).then((res) => res.json());
+
+          const appointmentEndTime = new Date(
+            selectedDate.getTime() + formData.duration * 60000,
+          );
+
+          // Check for conflicts (excluding current appointment in edit mode)
+          const hasStudentConflict = studentAppointments.appointments?.some(
+            (apt: Appointment) => {
+              if (appointment && apt.id === appointment.id) return false;
+              if (apt.status === "cancelled") return false;
+
+              const aptStart = new Date(apt.requestedDate);
+              const aptEnd = new Date(
+                aptStart.getTime() + apt.duration * 60000,
+              );
+
+              return selectedDate < aptEnd && appointmentEndTime > aptStart;
+            },
+          );
+
+          const hasCounselorConflict = counselorAppointments.appointments?.some(
+            (apt: Appointment) => {
+              if (appointment && apt.id === appointment.id) return false;
+              if (apt.status === "cancelled") return false;
+
+              const aptStart = new Date(apt.requestedDate);
+              const aptEnd = new Date(
+                aptStart.getTime() + apt.duration * 60000,
+              );
+
+              return selectedDate < aptEnd && appointmentEndTime > aptStart;
+            },
+          );
+
+          if (hasStudentConflict) {
+            newErrors.requestedDate =
+              "Student already has an appointment at this time";
+          } else if (hasCounselorConflict) {
+            newErrors.requestedDate =
+              "Counselor already has an appointment at this time";
+          }
+        } catch (error) {
+          console.error("Error checking conflicts:", error);
+        } finally {
+          setCheckingConflicts(false);
+        }
       }
     }
 
-    if (isEditMode && appointment?.status === "cancelled" && !formData.cancellationReason.trim()) {
+    if (
+      isEditMode &&
+      appointment?.status === "cancelled" &&
+      !formData.cancellationReason.trim()
+    ) {
       newErrors.cancellationReason = "Cancellation reason is required";
     }
 
-    if (isEditMode && appointment?.status === "completed" && !formData.completionNotes.trim()) {
+    if (
+      isEditMode &&
+      appointment?.status === "completed" &&
+      !formData.completionNotes.trim()
+    ) {
       newErrors.completionNotes = "Completion notes are required";
     }
 
     if (formData.followUpRequired && !formData.followUpDate) {
-      newErrors.followUpDate = "Follow-up date is required when follow-up is needed";
+      newErrors.followUpDate =
+        "Follow-up date is required when follow-up is needed";
     }
 
     setErrors(newErrors);
@@ -215,7 +463,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    const isValid = await validateForm();
+    if (!isValid) {
       return;
     }
 
@@ -230,29 +479,47 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         ...(formData.scheduleId && { scheduleId: formData.scheduleId }),
       };
 
-      console.log("Submitting appointment data:", submitData);
-      console.log("Selected student ID:", formData.studentId);
-      console.log("Available student users:", studentUsers);
-      console.log("Student options:", [
-        { value: "", label: "Please Select a Student" },
-        ...(Array.isArray(studentUsers) ? studentUsers : []).map((user) => ({
-          value: user.id,
-          label: `${user.person?.firstName ?? "Unknown"} ${user.person?.lastName ?? "Student"}`,
-        })),
-      ]);
+      console.log("=== SUBMITTING APPOINTMENT ===");
+      console.log("Full submitData:", submitData);
+      console.log(
+        "studentId being sent:",
+        (submitData as CreateAppointmentRequest).studentId,
+      );
+      console.log("formData.studentId:", formData.studentId);
+      console.log("Selected student object:", selectedStudent);
+      console.log("Selected student userId:", selectedStudent?.userId);
 
       await onSubmit(submitData);
+
+      // Reset form after successful submit
+      console.log("=== APPOINTMENT CREATED SUCCESSFULLY ===");
+      console.log("Resetting form state...");
+      setSelectedStudent(null);
+      setStudentSearchQuery("");
     } catch (error) {
       console.error("Error submitting appointment:", error);
     }
   };
 
   const appointmentTypeOptions = [
-    { value: "consultation", label: "Consultation" },
-    { value: "counseling", label: "Counseling" },
-    { value: "follow_up", label: "Follow Up" },
-    { value: "emergency", label: "Emergency" },
-    { value: "group_session", label: "Group Session" },
+    { value: "general_information", label: "General Information" },
+    {
+      value: "one_or_two_session_problem_solving",
+      label: "One or Two Session Problem Solving",
+    },
+    { value: "stress_management", label: "Stress Management" },
+    { value: "group_counseling", label: "Group Counseling" },
+    { value: "substance_abuse_services", label: "Substance Abuse Services" },
+    { value: "career_exploration", label: "Career Exploration" },
+    { value: "individual_counseling", label: "Individual Counseling" },
+    { value: "referral_for_university", label: "Referral for University" },
+  ];
+
+  const durationOptions = [
+    { value: "30", label: "30 minutes" },
+    { value: "60", label: "60 minutes" },
+    { value: "90", label: "90 minutes" },
+    { value: "120", label: "120 minutes" },
   ];
 
   const priorityOptions = [
@@ -278,6 +545,100 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={getModalTitle()} size="xl">
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Student Search with Autocomplete (only for guidance users) - MOVED TO TOP */}
+        {isGuidanceUser && (
+          <div ref={searchRef}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Student <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search student by name..."
+                  value={studentSearchQuery}
+                  onChange={(e) => setStudentSearchQuery(e.target.value)}
+                  onFocus={() => {
+                    if (studentSuggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  disabled={loading || isViewMode}
+                  required
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                />
+              </div>
+
+              {/* Suggestions Dropdown */}
+              {showSuggestions && studentSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                  {studentSuggestions.map((student) => (
+                    <button
+                      key={student.id}
+                      type="button"
+                      onClick={() => handleSelectStudent(student)}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {student.person?.firstName}{" "}
+                            {student.person?.lastName}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {student.studentNumber} • {student.program}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* No results message */}
+              {showSuggestions &&
+                studentSearchQuery.length >= 2 &&
+                studentSuggestions.length === 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-sm text-gray-500">
+                    No students found
+                  </div>
+                )}
+            </div>
+
+            {/* Selected Student Display */}
+            {selectedStudent && (
+              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium text-blue-900">
+                      Selected: {selectedStudent.person?.firstName}{" "}
+                      {selectedStudent.person?.lastName}
+                    </div>
+                    <div className="text-xs text-blue-700">
+                      {selectedStudent.studentNumber} •{" "}
+                      {selectedStudent.program}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedStudent(null);
+                      setStudentSearchQuery("");
+                      setFormData((prev) => ({ ...prev, studentId: "" }));
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                  >
+                    Change
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {errors.studentId && (
+              <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>
+            )}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Title */}
           <div>
@@ -291,7 +652,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               disabled={loading || isViewMode}
               required
             />
-            {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+            {errors.title && (
+              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+            )}
           </div>
 
           {/* Type */}
@@ -316,43 +679,18 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           />
 
           {/* Duration */}
-          <div>
-            <FormField
-              id="duration"
-              label="Duration (minutes)"
-              type="number"
-              value={formData.duration.toString()}
-              onChange={(e) => handleInputChange("duration", parseInt(e.target.value) || 60)}
-              disabled={loading || isViewMode}
-            />
-            {errors.duration && <p className="mt-1 text-sm text-red-600">{errors.duration}</p>}
-          </div>
+          <FormSelect
+            id="duration"
+            label="Duration (minutes)"
+            value={formData.duration.toString()}
+            onChange={(value) =>
+              handleInputChange("duration", parseInt(value) || 60)
+            }
+            options={durationOptions}
+            disabled={loading || isViewMode}
+            required
+          />
         </div>
-
-        {/* Student Selection (only for guidance users) */}
-        {isGuidanceUser && (
-          <div>
-            <FormSelect
-              id="studentId"
-              label="Student"
-              value={formData.studentId}
-              onChange={(value) => handleInputChange("studentId", value)}
-              options={[
-                { value: "", label: "Please Select a Student" },
-                ...(Array.isArray(studentUsers) ? studentUsers : []).map((user, index) => ({
-                  value: user.id, // Use user id directly since these are user records
-                  label: `${user.person?.firstName ?? "Unknown"} ${
-                    user.person?.lastName ?? "Student"
-                  }`,
-                  key: `user-${user.id}-${index}`, // Unique key for React
-                })),
-              ]}
-              disabled={loading || isViewMode}
-              required
-            />
-            {errors.studentId && <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>}
-          </div>
-        )}
 
         {/* Schedule Selection */}
         <div>
@@ -362,7 +700,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             value={formData.scheduleId}
             onChange={(value) => handleInputChange("scheduleId", value)}
             options={[
-              { value: "", label: "No specific schedule - counselor will assign later" },
+              {
+                value: "",
+                label: "No specific schedule - counselor will assign later",
+              },
               ...(availableSchedules || []).map((s) => ({
                 value: s.id,
                 label: `${s.title} - ${new Date(s.startTime).toLocaleString()} (${(
@@ -372,7 +713,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             ]}
             disabled={loading || isViewMode}
           />
-          {errors.scheduleId && <p className="mt-1 text-sm text-red-600">{errors.scheduleId}</p>}
+          {errors.scheduleId && (
+            <p className="mt-1 text-sm text-red-600">{errors.scheduleId}</p>
+          )}
         </div>
 
         {/* Date and Time */}
@@ -389,7 +732,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   disabled={loading || isViewMode}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !formData.requestedDate && "text-muted-foreground"
+                    !formData.requestedDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -403,17 +746,30 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.requestedDate ? new Date(formData.requestedDate) : undefined}
+                  selected={
+                    formData.requestedDate
+                      ? new Date(formData.requestedDate)
+                      : undefined
+                  }
                   onSelect={(date) => {
                     if (date) {
-                      const currentTime = formData.requestedDate.slice(11, 16) || "09:00";
+                      const currentTime =
+                        formData.requestedDate.slice(11, 16) || "09:00";
                       const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const day = String(date.getDate()).padStart(2, "0");
-                      handleInputChange("requestedDate", `${year}-${month}-${day}T${currentTime}`);
+                      handleInputChange(
+                        "requestedDate",
+                        `${year}-${month}-${day}T${currentTime}`,
+                      );
                     }
                   }}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -429,18 +785,29 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               value={formData.requestedDate.slice(11, 16) || "09:00"}
               onChange={(e) => {
                 const currentDate =
-                  formData.requestedDate.slice(0, 10) || new Date().toISOString().slice(0, 10);
-                handleInputChange("requestedDate", `${currentDate}T${e.target.value}`);
+                  formData.requestedDate.slice(0, 10) ||
+                  new Date().toISOString().slice(0, 10);
+                handleInputChange(
+                  "requestedDate",
+                  `${currentDate}T${e.target.value}`,
+                );
               }}
               min="08:00"
-              max="20:00"
+              max="19:45"
               step="900"
-              disabled={loading || isViewMode}
+              disabled={loading || isViewMode || checkingConflicts}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
             />
+            {checkingConflicts && (
+              <p className="mt-1 text-sm text-blue-600">
+                Checking for scheduling conflicts...
+              </p>
+            )}
             {errors.requestedDate && (
-              <p className="mt-1 text-sm text-red-600">{errors.requestedDate}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.requestedDate}
+              </p>
             )}
           </div>
         </div>
@@ -456,12 +823,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             placeholder="Meeting location (optional)"
             disabled={loading || isViewMode}
           />
-          {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location}</p>}
+          {errors.location && (
+            <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+          )}
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
           <textarea
             value={formData.description}
             onChange={(e) => handleInputChange("description", e.target.value)}
@@ -480,14 +851,18 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             </label>
             <textarea
               value={formData.cancellationReason}
-              onChange={(e) => handleInputChange("cancellationReason", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("cancellationReason", e.target.value)
+              }
               placeholder="Please provide a reason for cancellation..."
               disabled={loading}
               rows={2}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
             {errors.cancellationReason && (
-              <p className="mt-1 text-sm text-red-600">{errors.cancellationReason}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.cancellationReason}
+              </p>
             )}
           </div>
         )}
@@ -500,14 +875,18 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
             </label>
             <textarea
               value={formData.completionNotes}
-              onChange={(e) => handleInputChange("completionNotes", e.target.value)}
+              onChange={(e) =>
+                handleInputChange("completionNotes", e.target.value)
+              }
               placeholder="Summary of the appointment and any recommendations..."
               disabled={loading}
               rows={3}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
             {errors.completionNotes && (
-              <p className="mt-1 text-sm text-red-600">{errors.completionNotes}</p>
+              <p className="mt-1 text-sm text-red-600">
+                {errors.completionNotes}
+              </p>
             )}
           </div>
         )}
@@ -520,11 +899,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                 type="checkbox"
                 id="followUpRequired"
                 checked={formData.followUpRequired}
-                onChange={(e) => handleInputChange("followUpRequired", e.target.checked)}
+                onChange={(e) =>
+                  handleInputChange("followUpRequired", e.target.checked)
+                }
                 disabled={loading}
                 className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
-              <label htmlFor="followUpRequired" className="ml-2 block text-sm text-gray-700">
+              <label
+                htmlFor="followUpRequired"
+                className="ml-2 block text-sm text-gray-700"
+              >
                 Follow-up appointment required
               </label>
             </div>
@@ -536,12 +920,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
                   label="Follow-up Date"
                   type="datetime-local"
                   value={formData.followUpDate}
-                  onChange={(e) => handleInputChange("followUpDate", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("followUpDate", e.target.value)
+                  }
                   disabled={loading}
                   required
                 />
                 {errors.followUpDate && (
-                  <p className="mt-1 text-sm text-red-600">{errors.followUpDate}</p>
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.followUpDate}
+                  </p>
                 )}
               </div>
             )}
@@ -551,7 +939,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         {/* Form Actions */}
         {!isViewMode && (
           <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-200">
-            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleClose}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button
@@ -559,7 +952,11 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
               disabled={loading}
               className="bg-primary-700 hover:bg-primary-800 text-white"
             >
-              {loading ? "Submitting..." : isCreateMode ? "Book Appointment" : "Update Appointment"}
+              {loading
+                ? "Submitting..."
+                : isCreateMode
+                  ? "Book Appointment"
+                  : "Update Appointment"}
             </Button>
           </div>
         )}

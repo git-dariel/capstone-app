@@ -19,7 +19,13 @@ export interface Appointment {
     | "referral_for_university";
   requestedDate: string;
   priority: "low" | "normal" | "high" | "urgent";
-  status: "pending" | "confirmed" | "cancelled" | "completed" | "no_show" | "rescheduled";
+  status:
+    | "pending"
+    | "confirmed"
+    | "cancelled"
+    | "completed"
+    | "no_show"
+    | "rescheduled";
   location?: string;
   duration: number;
   cancellationReason?: string;
@@ -88,7 +94,13 @@ export interface CreateAppointmentRequest {
 }
 
 export interface UpdateAppointmentRequest {
-  status?: "pending" | "confirmed" | "cancelled" | "completed" | "no_show" | "rescheduled";
+  status?:
+    | "pending"
+    | "confirmed"
+    | "cancelled"
+    | "completed"
+    | "no_show"
+    | "rescheduled";
   title?: string;
   description?: string;
   appointmentType?:
@@ -126,26 +138,27 @@ export class AppointmentService {
    * Get all appointments with pagination and filtering
    */
   static async getAllAppointments(
-    params?: AppointmentQueryParams
+    params?: AppointmentQueryParams,
   ): Promise<PaginatedResponse<Appointment>> {
-    try {
-      const response = await HttpClient.get<PaginatedResponse<Appointment>>("/appointment", params);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await HttpClient.get<PaginatedResponse<Appointment>>(
+      "/appointment",
+      params,
+    );
+    return response;
   }
 
   /**
    * Get appointment by ID
    */
-  static async getAppointmentById(id: string, params?: QueryParams): Promise<Appointment> {
-    try {
-      const response = await HttpClient.get<Appointment>(`/appointment/${id}`, params);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  static async getAppointmentById(
+    id: string,
+    params?: QueryParams,
+  ): Promise<Appointment> {
+    const response = await HttpClient.get<Appointment>(
+      `/appointment/${id}`,
+      params,
+    );
+    return response;
   }
 
   /**
@@ -153,17 +166,13 @@ export class AppointmentService {
    */
   static async getAppointmentsByStudentId(
     studentId: string,
-    params?: AppointmentQueryParams
+    params?: AppointmentQueryParams,
   ): Promise<PaginatedResponse<Appointment>> {
-    try {
-      const response = await HttpClient.get<PaginatedResponse<Appointment>>(
-        `/appointment/student/${studentId}`,
-        params
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await HttpClient.get<PaginatedResponse<Appointment>>(
+      `/appointment/student/${studentId}`,
+      params,
+    );
+    return response;
   }
 
   /**
@@ -171,29 +180,26 @@ export class AppointmentService {
    */
   static async getAppointmentsByCounselorId(
     counselorId: string,
-    params?: AppointmentQueryParams
+    params?: AppointmentQueryParams,
   ): Promise<PaginatedResponse<Appointment>> {
-    try {
-      const response = await HttpClient.get<PaginatedResponse<Appointment>>(
-        `/appointment/counselor/${counselorId}`,
-        params
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await HttpClient.get<PaginatedResponse<Appointment>>(
+      `/appointment/counselor/${counselorId}`,
+      params,
+    );
+    return response;
   }
 
   /**
    * Create a new appointment
    */
-  static async createAppointment(appointmentData: CreateAppointmentRequest): Promise<Appointment> {
-    try {
-      const response = await HttpClient.post<Appointment>("/appointment", appointmentData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+  static async createAppointment(
+    appointmentData: CreateAppointmentRequest,
+  ): Promise<Appointment> {
+    const response = await HttpClient.post<Appointment>(
+      "/appointment",
+      appointmentData,
+    );
+    return response;
   }
 
   /**
@@ -201,32 +207,33 @@ export class AppointmentService {
    */
   static async updateAppointment(
     id: string,
-    appointmentData: UpdateAppointmentRequest
+    appointmentData: UpdateAppointmentRequest,
   ): Promise<Appointment> {
-    try {
-      const response = await HttpClient.patch<Appointment>(`/appointment/${id}`, appointmentData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await HttpClient.patch<Appointment>(
+      `/appointment/${id}`,
+      appointmentData,
+    );
+    return response;
   }
 
   /**
    * Delete appointment (soft delete)
    */
   static async deleteAppointment(id: string): Promise<{ message: string }> {
-    try {
-      const response = await HttpClient.delete<{ message: string }>(`/appointment/${id}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = await HttpClient.delete<{ message: string }>(
+      `/appointment/${id}`,
+    );
+    return response;
   }
 
   /**
    * Get status display info with colors
    */
-  static getStatusDisplayInfo(status: string): { label: string; color: string; bgColor: string } {
+  static getStatusDisplayInfo(status: string): {
+    label: string;
+    color: string;
+    bgColor: string;
+  } {
     switch (status) {
       case "pending":
         return {
@@ -331,7 +338,10 @@ export class AppointmentService {
       case "group_session":
         return { label: "Group Session", icon: "👥" };
       default:
-        return { label: type.charAt(0).toUpperCase() + type.slice(1), icon: "📅" };
+        return {
+          label: type.charAt(0).toUpperCase() + type.slice(1),
+          icon: "📅",
+        };
     }
   }
 
@@ -354,10 +364,13 @@ export class AppointmentService {
    * Check if appointment can be cancelled
    */
   static canCancelAppointment(appointment: Appointment): boolean {
-    const isNotCompleted = !["completed", "cancelled", "no_show"].includes(appointment.status);
+    const isNotCompleted = !["completed", "cancelled", "no_show"].includes(
+      appointment.status,
+    );
     const appointmentDate = new Date(appointment.requestedDate);
     const now = new Date();
-    const hoursUntilAppointment = (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const hoursUntilAppointment =
+      (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     // Can cancel if at least 2 hours before appointment
     return isNotCompleted && hoursUntilAppointment > 2;
@@ -367,12 +380,94 @@ export class AppointmentService {
    * Check if appointment can be rescheduled
    */
   static canRescheduleAppointment(appointment: Appointment): boolean {
-    const isNotCompleted = !["completed", "cancelled", "no_show"].includes(appointment.status);
+    const isNotCompleted = !["completed", "cancelled", "no_show"].includes(
+      appointment.status,
+    );
     const appointmentDate = new Date(appointment.requestedDate);
     const now = new Date();
-    const hoursUntilAppointment = (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    const hoursUntilAppointment =
+      (appointmentDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     // Can reschedule if at least 4 hours before appointment
     return isNotCompleted && hoursUntilAppointment > 4;
+  }
+
+  /**
+   * Sort appointments alphabetically by student name (firstName, then lastName)
+   */
+  static sortAppointmentsByStudentName(
+    appointments: Appointment[],
+    order: "asc" | "desc" = "asc",
+  ): Appointment[] {
+    return [...appointments].sort((a, b) => {
+      const aFirstName = a.student?.person?.firstName?.toLowerCase() || "";
+      const aLastName = a.student?.person?.lastName?.toLowerCase() || "";
+      const bFirstName = b.student?.person?.firstName?.toLowerCase() || "";
+      const bLastName = b.student?.person?.lastName?.toLowerCase() || "";
+
+      const aFullName = `${aFirstName} ${aLastName}`;
+      const bFullName = `${bFirstName} ${bLastName}`;
+
+      if (order === "asc") {
+        return aFullName.localeCompare(bFullName);
+      } else {
+        return bFullName.localeCompare(aFullName);
+      }
+    });
+  }
+
+  /**
+   * Sort appointments by priority (urgent > high > normal > low)
+   */
+  static sortAppointmentsByPriority(
+    appointments: Appointment[],
+    order: "asc" | "desc" = "desc",
+  ): Appointment[] {
+    const priorityOrder: Record<string, number> = {
+      urgent: 4,
+      high: 3,
+      normal: 2,
+      low: 1,
+    };
+
+    return [...appointments].sort((a, b) => {
+      const aPriority = priorityOrder[a.priority] || 0;
+      const bPriority = priorityOrder[b.priority] || 0;
+
+      if (order === "desc") {
+        return bPriority - aPriority;
+      } else {
+        return aPriority - bPriority;
+      }
+    });
+  }
+
+  /**
+   * Get student full name from appointment
+   */
+  static getStudentFullName(appointment: Appointment): string {
+    if (!appointment.student?.person) {
+      return "Unknown Student";
+    }
+    const { firstName, lastName } = appointment.student.person;
+    return `${firstName} ${lastName}`;
+  }
+
+  /**
+   * Search appointments by student name
+   */
+  static searchAppointmentsByStudentName(
+    appointments: Appointment[],
+    searchQuery: string,
+  ): Appointment[] {
+    const query = searchQuery.toLowerCase().trim();
+    if (!query) {
+      return appointments;
+    }
+
+    return appointments.filter((appointment) => {
+      const fullName = this.getStudentFullName(appointment).toLowerCase();
+      return fullName.includes(query);
+    });
   }
 }
