@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, Pencil, Trash2, Calendar, Search } from "lucide-react";
 import type { Schedule, Appointment } from "@/services";
 import { ConfirmationModal } from "./ConfirmationModal";
 
@@ -13,7 +14,9 @@ interface SchedulesTableProps {
   searchable?: boolean;
   userType?: "student" | "guidance";
   hasActiveAppointmentForSchedule?: (scheduleId: string) => boolean;
-  getExistingAppointmentForSchedule?: (scheduleId: string) => Appointment | null;
+  getExistingAppointmentForSchedule?: (
+    scheduleId: string,
+  ) => Appointment | null;
 }
 
 export const SchedulesTable: React.FC<SchedulesTableProps> = ({
@@ -29,16 +32,24 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
   hasActiveAppointmentForSchedule,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
+  const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(
+    null,
+  );
 
   const filteredSchedules = searchable
     ? schedules.filter(
         (schedule) =>
           schedule.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.counselor?.person?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.counselor?.person?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.location?.toLowerCase().includes(searchTerm.toLowerCase())
+          schedule.description
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          schedule.counselor?.person?.firstName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          schedule.counselor?.person?.lastName
+            ?.toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          schedule.location?.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     : schedules;
 
@@ -76,8 +87,12 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📅</div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 mb-1">No schedules found</h3>
+          <div className="mx-auto h-12 w-12 text-gray-400 mb-4 flex items-center justify-center">
+            <Calendar className="h-12 w-12" />
+          </div>
+          <h3 className="mt-2 text-sm font-medium text-gray-900 mb-1">
+            No schedules found
+          </h3>
           <p className="text-sm text-gray-500">
             {searchable && searchTerm
               ? "No schedules match your search criteria."
@@ -101,7 +116,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             />
-            <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">🔍</div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search className="h-4 w-4" />
+            </div>
           </div>
         </div>
       )}
@@ -110,7 +127,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
       <div className="block md:hidden">
         {filteredSchedules.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm ? "No schedules match your search." : "No schedules found."}
+            {searchTerm
+              ? "No schedules match your search."
+              : "No schedules found."}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -138,7 +157,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         </p>
                       )}
                       {schedule.location && (
-                        <p className="text-xs text-gray-400 mt-1">📍 {schedule.location}</p>
+                        <p className="text-xs text-gray-400 mt-1">
+                          📍 {schedule.location}
+                        </p>
                       )}
                     </div>
                     <span
@@ -146,20 +167,23 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         schedule.status === "available"
                           ? "bg-green-100 text-green-800"
                           : schedule.status === "booked"
-                          ? "bg-blue-100 text-blue-800"
-                          : schedule.status === "unavailable"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-red-100 text-red-800"
+                            ? "bg-blue-100 text-blue-800"
+                            : schedule.status === "unavailable"
+                              ? "bg-gray-100 text-gray-800"
+                              : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
+                      {schedule.status.charAt(0).toUpperCase() +
+                        schedule.status.slice(1)}
                     </span>
                   </div>
 
                   {/* Card Body */}
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">Counselor:</span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">
+                        Counselor:
+                      </span>
                       <span className="text-gray-900 truncate">
                         {schedule.counselor?.person
                           ? `${schedule.counselor.person.firstName} ${schedule.counselor.person.lastName}`
@@ -168,7 +192,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                     </div>
 
                     <div className="flex items-start text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">Time:</span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">
+                        Time:
+                      </span>
                       <div className="flex-1">
                         <div className="text-gray-900">
                           {new Date(schedule.startTime).toLocaleString()}
@@ -180,12 +206,14 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                     </div>
 
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">Slots:</span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">
+                        Slots:
+                      </span>
                       <div className="flex-1">
                         <div className="flex items-center">
                           <span className="text-gray-900 mr-2">
-                            {schedule.maxSlots - schedule.bookedSlots} / {schedule.maxSlots}{" "}
-                            available
+                            {schedule.maxSlots - schedule.bookedSlots} /{" "}
+                            {schedule.maxSlots} available
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
@@ -193,14 +221,16 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                             className={`h-2 rounded-full ${
                               schedule.bookedSlots >= schedule.maxSlots
                                 ? "bg-red-500"
-                                : schedule.bookedSlots >= schedule.maxSlots * 0.8
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
+                                : schedule.bookedSlots >=
+                                    schedule.maxSlots * 0.8
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
                             }`}
                             style={{
                               width: `${Math.min(
-                                (schedule.bookedSlots / schedule.maxSlots) * 100,
-                                100
+                                (schedule.bookedSlots / schedule.maxSlots) *
+                                  100,
+                                100,
                               )}%`,
                             }}
                           ></div>
@@ -212,29 +242,32 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                   {/* Card Actions */}
                   {showActions && (
                     <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
-                      {userType === "student" && onBook && schedule.status === "available" && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onBook(schedule);
-                            }}
-                            className={`px-3 py-1 text-xs font-medium border rounded-md touch-manipulation ${
-                              isDisabled
-                                ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-                                : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
-                            }`}
-                            disabled={isDisabled}
-                          >
-                            📅 {hasExistingAppointment ? "Booked" : "Book"}
-                          </button>
-                          {hasExistingAppointment && (
-                            <span className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded-md">
-                              Already Booked
-                            </span>
-                          )}
-                        </>
-                      )}
+                      {userType === "student" &&
+                        onBook &&
+                        schedule.status === "available" && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onBook(schedule);
+                              }}
+                              className={`px-3 py-1 text-xs font-medium border rounded-md touch-manipulation ${
+                                isDisabled
+                                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                  : "text-green-700 bg-green-50 border-green-200 hover:bg-green-100"
+                              }`}
+                              disabled={isDisabled}
+                            >
+                              <Calendar className="h-4 w-4 inline mr-1" />
+                              {hasExistingAppointment ? "Booked" : "Book"}
+                            </button>
+                            {hasExistingAppointment && (
+                              <span className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded-md">
+                                Already Booked
+                              </span>
+                            )}
+                          </>
+                        )}
                       {onView && (
                         <button
                           onClick={(e) => {
@@ -319,7 +352,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                       </div>
                     )}
                     {schedule.location && (
-                      <div className="text-xs text-gray-400 mt-1">📍 {schedule.location}</div>
+                      <div className="text-xs text-gray-400 mt-1">
+                        📍 {schedule.location}
+                      </div>
                     )}
                   </div>
                 </td>
@@ -332,7 +367,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                       : "Unassigned"}
                   </div>
                   {schedule.counselor?.person?.email && (
-                    <div className="text-xs text-gray-500">{schedule.counselor.person.email}</div>
+                    <div className="text-xs text-gray-500">
+                      {schedule.counselor.person.email}
+                    </div>
                   )}
                 </td>
 
@@ -353,20 +390,22 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                       schedule.status === "available"
                         ? "bg-green-100 text-green-800"
                         : schedule.status === "booked"
-                        ? "bg-blue-100 text-blue-800"
-                        : schedule.status === "unavailable"
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-red-100 text-red-800"
+                          ? "bg-blue-100 text-blue-800"
+                          : schedule.status === "unavailable"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
+                    {schedule.status.charAt(0).toUpperCase() +
+                      schedule.status.slice(1)}
                   </span>
                 </td>
 
                 {/* Availability */}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-gray-900">
-                    {schedule.maxSlots - schedule.bookedSlots} / {schedule.maxSlots} slots
+                    {schedule.maxSlots - schedule.bookedSlots} /{" "}
+                    {schedule.maxSlots} slots
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                     <div
@@ -374,13 +413,13 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         schedule.bookedSlots >= schedule.maxSlots
                           ? "bg-red-500"
                           : schedule.bookedSlots >= schedule.maxSlots * 0.8
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
                       }`}
                       style={{
                         width: `${Math.min(
                           (schedule.bookedSlots / schedule.maxSlots) * 100,
-                          100
+                          100,
                         )}%`,
                       }}
                     ></div>
@@ -396,9 +435,12 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         schedule.status === "available" &&
                         (() => {
                           const hasExistingAppointment =
-                            hasActiveAppointmentForSchedule?.(schedule.id) || false;
-                          const isFullyBooked = schedule.bookedSlots >= schedule.maxSlots;
-                          const isDisabled = hasExistingAppointment || isFullyBooked;
+                            hasActiveAppointmentForSchedule?.(schedule.id) ||
+                            false;
+                          const isFullyBooked =
+                            schedule.bookedSlots >= schedule.maxSlots;
+                          const isDisabled =
+                            hasExistingAppointment || isFullyBooked;
 
                           return (
                             <div className="flex flex-col items-end space-y-1">
@@ -413,12 +455,13 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                                   hasExistingAppointment
                                     ? "You already have an appointment for this schedule"
                                     : isFullyBooked
-                                    ? "This schedule is fully booked"
-                                    : "Book Appointment"
+                                      ? "This schedule is fully booked"
+                                      : "Book Appointment"
                                 }
                                 disabled={isDisabled}
                               >
-                                📅 {hasExistingAppointment ? "Booked" : "Book"}
+                                <Calendar className="h-4 w-4 inline mr-1" />
+                                {hasExistingAppointment ? "Booked" : "Book"}
                               </button>
                               {hasExistingAppointment && (
                                 <span className="text-xs text-orange-600 font-medium">
@@ -434,7 +477,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-primary-600 hover:text-primary-900 transition-colors"
                           title="View Schedule"
                         >
-                          👁️
+                          <Eye className="h-4 w-4" />
                         </button>
                       )}
                       {userType === "guidance" && onEdit && (
@@ -443,7 +486,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-blue-600 hover:text-blue-900 transition-colors"
                           title="Edit Schedule"
                         >
-                          ✏️
+                          <Pencil className="h-4 w-4" />
                         </button>
                       )}
                       {userType === "guidance" && onDelete && (
@@ -452,7 +495,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-red-600 hover:text-red-900 transition-colors"
                           title="Delete Schedule"
                         >
-                          🗑️
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>

@@ -20,6 +20,32 @@ import type {
   Appointment,
 } from "@/services";
 
+// Character limits for fields
+const CHAR_LIMITS = {
+  title: 100,
+  description: 500,
+  location: 100,
+  cancellationReason: 500,
+  completionNotes: 500,
+};
+
+// Validation helper functions
+const validateSpecialCharacters = (value: string): boolean => {
+  // Allow letters, numbers, spaces, common punctuation, and basic accented characters
+  // Disallow potentially harmful characters like <, >, &, script tags, etc.
+  const allowedPattern = /^[a-zA-Z0-9\s.,!?;:()\]{}'"\-–—\n\r\u00C0-\u017F]*$/;
+  return allowedPattern.test(value);
+};
+
+const sanitizeInput = (value: string): string => {
+  // Remove potentially harmful characters
+  return value.replace(/[<>&]/g, "");
+};
+
+const getRemainingChars = (value: string, limit: number): number => {
+  return limit - value.length;
+};
+
 interface AppointmentModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -337,8 +363,67 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   const validateForm = async (): Promise<boolean> => {
     const newErrors: Record<string, string> = {};
 
+    // Title validation
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
+    } else if (formData.title.length > CHAR_LIMITS.title) {
+      newErrors.title = `Title must not exceed ${CHAR_LIMITS.title} characters`;
+    } else if (!validateSpecialCharacters(formData.title)) {
+      newErrors.title =
+        "Title contains invalid characters (< > & are not allowed)";
+    }
+
+    // Description validation
+    if (
+      formData.description &&
+      formData.description.length > CHAR_LIMITS.description
+    ) {
+      newErrors.description = `Description must not exceed ${CHAR_LIMITS.description} characters`;
+    } else if (
+      formData.description &&
+      !validateSpecialCharacters(formData.description)
+    ) {
+      newErrors.description =
+        "Description contains invalid characters (< > & are not allowed)";
+    }
+
+    // Location validation
+    if (formData.location && formData.location.length > CHAR_LIMITS.location) {
+      newErrors.location = `Location must not exceed ${CHAR_LIMITS.location} characters`;
+    } else if (
+      formData.location &&
+      !validateSpecialCharacters(formData.location)
+    ) {
+      newErrors.location =
+        "Location contains invalid characters (< > & are not allowed)";
+    }
+
+    // Cancellation reason validation
+    if (
+      formData.cancellationReason &&
+      formData.cancellationReason.length > CHAR_LIMITS.cancellationReason
+    ) {
+      newErrors.cancellationReason = `Cancellation reason must not exceed ${CHAR_LIMITS.cancellationReason} characters`;
+    } else if (
+      formData.cancellationReason &&
+      !validateSpecialCharacters(formData.cancellationReason)
+    ) {
+      newErrors.cancellationReason =
+        "Cancellation reason contains invalid characters (< > & are not allowed)";
+    }
+
+    // Completion notes validation
+    if (
+      formData.completionNotes &&
+      formData.completionNotes.length > CHAR_LIMITS.completionNotes
+    ) {
+      newErrors.completionNotes = `Completion notes must not exceed ${CHAR_LIMITS.completionNotes} characters`;
+    } else if (
+      formData.completionNotes &&
+      !validateSpecialCharacters(formData.completionNotes)
+    ) {
+      newErrors.completionNotes =
+        "Completion notes contains invalid characters (< > & are not allowed)";
     }
 
     if (isGuidanceUser && !formData.studentId) {
@@ -642,15 +727,28 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Title */}
           <div>
-            <FormField
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Appointment Title *
+              <span className="text-xs text-gray-500 font-normal ml-2">
+                ({getRemainingChars(formData.title, CHAR_LIMITS.title)}{" "}
+                characters remaining)
+              </span>
+            </label>
+            <input
               id="title"
-              label="Title"
               type="text"
               value={formData.title}
-              onChange={(e) => handleInputChange("title", e.target.value)}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                if (sanitized.length <= CHAR_LIMITS.title) {
+                  handleInputChange("title", sanitized);
+                }
+              }}
+              maxLength={CHAR_LIMITS.title}
               placeholder="e.g., Academic Consultation"
-              disabled={loading || isViewMode}
+              disabled={isViewMode || loading}
               required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title}</p>
@@ -814,14 +912,27 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
         {/* Location */}
         <div>
-          <FormField
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Location
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              ({getRemainingChars(formData.location, CHAR_LIMITS.location)}{" "}
+              characters remaining)
+            </span>
+          </label>
+          <input
             id="location"
-            label="Location"
             type="text"
             value={formData.location}
-            onChange={(e) => handleInputChange("location", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.location) {
+                handleInputChange("location", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.location}
             placeholder="Meeting location (optional)"
-            disabled={loading || isViewMode}
+            disabled={isViewMode || loading}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
           />
           {errors.location && (
             <p className="mt-1 text-sm text-red-600">{errors.location}</p>
@@ -830,34 +941,60 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             Description
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              (
+              {getRemainingChars(formData.description, CHAR_LIMITS.description)}{" "}
+              characters remaining)
+            </span>
           </label>
           <textarea
-            value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Describe the purpose of your appointment..."
-            disabled={loading || isViewMode}
             rows={3}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50 disabled:text-gray-500"
+            value={formData.description}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.description) {
+                handleInputChange("description", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.description}
+            placeholder="Describe the purpose of your appointment..."
+            disabled={isViewMode || loading}
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
           />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+          )}
         </div>
 
         {/* Cancellation Reason (only for cancelled appointments) */}
         {isEditMode && appointment?.status === "cancelled" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Cancellation Reason *
+              <span className="text-xs text-gray-500 font-normal ml-2">
+                (
+                {getRemainingChars(
+                  formData.cancellationReason,
+                  CHAR_LIMITS.cancellationReason,
+                )}{" "}
+                characters remaining)
+              </span>
             </label>
             <textarea
+              rows={3}
               value={formData.cancellationReason}
-              onChange={(e) =>
-                handleInputChange("cancellationReason", e.target.value)
-              }
-              placeholder="Please provide a reason for cancellation..."
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                if (sanitized.length <= CHAR_LIMITS.cancellationReason) {
+                  handleInputChange("cancellationReason", sanitized);
+                }
+              }}
+              maxLength={CHAR_LIMITS.cancellationReason}
               disabled={loading}
-              rows={2}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              placeholder="Reason for cancellation"
             />
             {errors.cancellationReason && (
               <p className="mt-1 text-sm text-red-600">
@@ -870,18 +1007,30 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         {/* Completion Notes (only for completed appointments) */}
         {isEditMode && appointment?.status === "completed" && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Completion Notes *
+              <span className="text-xs text-gray-500 font-normal ml-2">
+                (
+                {getRemainingChars(
+                  formData.completionNotes,
+                  CHAR_LIMITS.completionNotes,
+                )}{" "}
+                characters remaining)
+              </span>
             </label>
             <textarea
-              value={formData.completionNotes}
-              onChange={(e) =>
-                handleInputChange("completionNotes", e.target.value)
-              }
-              placeholder="Summary of the appointment and any recommendations..."
-              disabled={loading}
               rows={3}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              value={formData.completionNotes}
+              onChange={(e) => {
+                const sanitized = sanitizeInput(e.target.value);
+                if (sanitized.length <= CHAR_LIMITS.completionNotes) {
+                  handleInputChange("completionNotes", sanitized);
+                }
+              }}
+              maxLength={CHAR_LIMITS.completionNotes}
+              disabled={loading}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+              placeholder="Notes about the completed appointment"
             />
             {errors.completionNotes && (
               <p className="mt-1 text-sm text-red-600">

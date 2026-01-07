@@ -4,13 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useSchedules } from "@/hooks";
 import { HttpClient } from "@/services/api.config";
 import type { Schedule } from "@/services";
+
+// Character limits for fields
+const CHAR_LIMITS = {
+  title: 100,
+  description: 500,
+  preferredLocation: 100,
+};
+
+// Validation helper functions
+const validateSpecialCharacters = (value: string): boolean => {
+  // Allow letters, numbers, spaces, common punctuation, and basic accented characters
+  // Disallow potentially harmful characters like <, >, &, script tags, etc.
+  const allowedPattern = /^[a-zA-Z0-9\s.,!?;:()\]{}'"\-–—\n\r\u00C0-\u017F]*$/;
+  return allowedPattern.test(value);
+};
+
+const sanitizeInput = (value: string): string => {
+  // Remove potentially harmful characters
+  return value.replace(/[<>&]/g, "");
+};
+
+const getRemainingChars = (value: string, limit: number): number => {
+  return limit - value.length;
+};
 
 interface RequestAppointmentModalProps {
   isOpen: boolean;
@@ -33,7 +61,10 @@ interface RequestAppointmentData {
 
 const appointmentTypes = [
   { value: "general_information", label: "General Information" },
-  { value: "one_or_two_session_problem_solving", label: "One or Two Session Problem Solving" },
+  {
+    value: "one_or_two_session_problem_solving",
+    label: "One or Two Session Problem Solving",
+  },
   { value: "stress_management", label: "Stress Management" },
   { value: "group_counseling", label: "Group Counseling" },
   { value: "substance_abuse_services", label: "Substance Abuse Services" },
@@ -55,16 +86,14 @@ const durations = [
   { value: 120, label: "2 hours" },
 ];
 
-export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = ({
-  isOpen,
-  onClose,
-  onSubmit,
-  loading = false,
-}) => {
+export const RequestAppointmentModal: React.FC<
+  RequestAppointmentModalProps
+> = ({ isOpen, onClose, onSubmit, loading = false }) => {
   const { schedules, fetchSchedules } = useSchedules();
   const [counselors, setCounselors] = useState<any[]>([]);
   const [availableSchedules, setAvailableSchedules] = useState<Schedule[]>([]);
   const hasFetchedSchedules = useRef(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState<RequestAppointmentData>({
     counselorId: "",
@@ -87,7 +116,9 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
           console.log("Fetching counselors from /user?type=guidance");
 
           // Fetch all guidance counselors using authenticated HttpClient
-          const data = await HttpClient.get<{ users: any[] }>("/user?type=guidance");
+          const data = await HttpClient.get<{ users: any[] }>(
+            "/user?type=guidance",
+          );
 
           console.log("Counselors data:", data);
           setCounselors(data.users || []);
@@ -122,7 +153,7 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
         (schedule) =>
           schedule.counselorId === formData.counselorId &&
           schedule.status === "available" &&
-          new Date(schedule.startTime) > new Date()
+          new Date(schedule.startTime) > new Date(),
       );
       setAvailableSchedules(filteredSchedules);
     } else {
@@ -130,11 +161,23 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
     }
   }, [formData.counselorId, schedules]);
 
-  const handleInputChange = (field: keyof RequestAppointmentData, value: any) => {
+  const handleInputChange = (
+    field: keyof RequestAppointmentData,
+    value: any,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
+
+    // Clear error for this field when user starts typing
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
 
     // If counselor changes, reset schedule selection
     if (field === "counselorId") {
@@ -151,29 +194,92 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
       if (selectedSchedule) {
         setFormData((prev) => ({
           ...prev,
-          requestedDate: new Date(selectedSchedule.startTime).toISOString().slice(0, 16),
+          requestedDate: new Date(selectedSchedule.startTime)
+            .toISOString()
+            .slice(0, 16),
           preferredLocation: selectedSchedule.location || "",
         }));
       }
     }
   };
 
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Title validation
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required";
+    } else if (formData.title.length > CHAR_LIMITS.title) {
+      newErrors.title = `Title must not exceed ${CHAR_LIMITS.title} characters`;
+    } else if (!validateSpecialCharacters(formData.title)) {
+      newErrors.title =
+        "Title contains invalid characters (< > & are not allowed)";
+    }
+
+    // Description validation
+    if (
+      formData.description &&
+      formData.description.length > CHAR_LIMITS.description
+    ) {
+      newErrors.description = `Description must not exceed ${CHAR_LIMITS.description} characters`;
+    } else if (
+      formData.description &&
+      !validateSpecialCharacters(formData.description)
+    ) {
+      newErrors.description =
+        "Description contains invalid characters (< > & are not allowed)";
+    }
+
+    // Preferred location validation
+    if (
+      formData.preferredLocation &&
+      formData.preferredLocation.length > CHAR_LIMITS.preferredLocation
+    ) {
+      newErrors.preferredLocation = `Location must not exceed ${CHAR_LIMITS.preferredLocation} characters`;
+    } else if (
+      formData.preferredLocation &&
+      !validateSpecialCharacters(formData.preferredLocation)
+    ) {
+      newErrors.preferredLocation =
+        "Location contains invalid characters (< > & are not allowed)";
+    }
+
+    // Counselor validation
+    if (!formData.counselorId) {
+      newErrors.counselorId = "Please select a counselor";
+    }
+
+    // Date and time validation
+    if (!formData.requestedDate) {
+      newErrors.requestedDate = "Please select a date and time";
+    } else {
+      // Validate time range (8 AM to 8 PM)
+      const selectedDate = new Date(formData.requestedDate);
+      const hours = selectedDate.getHours();
+
+      if (hours < 8 || hours >= 20) {
+        newErrors.requestedDate =
+          "Appointments can only be scheduled between 8:00 AM and 8:00 PM";
+      }
+
+      // Check if the selected date/time is in the past
+      const now = new Date();
+      if (selectedDate < now) {
+        newErrors.requestedDate = "Cannot schedule appointments in the past";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
-    if (!formData.counselorId || !formData.title || !formData.requestedDate) {
-      console.error("Missing required fields:", {
-        counselorId: formData.counselorId,
-        title: formData.title,
-        requestedDate: formData.requestedDate,
-        scheduleId: formData.scheduleId,
-      });
-      alert("Please fill in all required fields.");
+    // Validate form
+    if (!validateForm()) {
       return;
     }
-
-    // Schedule selection is now optional - counselor can assign later
 
     try {
       // Prepare data with proper formatting
@@ -215,7 +321,9 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Counselor Selection */}
         <div className="space-y-1">
-          <Label className="text-sm font-medium text-gray-700">Select Counselor *</Label>
+          <Label className="text-sm font-medium text-gray-700">
+            Select Counselor *
+          </Label>
           <select
             value={formData.counselorId}
             onChange={(e) => handleInputChange("counselorId", e.target.value)}
@@ -229,6 +337,9 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
               </option>
             ))}
           </select>
+          {errors.counselorId && (
+            <p className="mt-1 text-xs text-red-600">{errors.counselorId}</p>
+          )}
         </div>
 
         {/* Schedule Selection (Optional) */}
@@ -242,39 +353,61 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
               onChange={(e) => handleInputChange("scheduleId", e.target.value)}
               className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-md focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
             >
-              <option value="">Select a schedule or let counselor assign later...</option>
+              <option value="">
+                Select a schedule or let counselor assign later...
+              </option>
               {availableSchedules.map((schedule) => (
                 <option key={schedule.id} value={schedule.id}>
-                  {schedule.title} - {new Date(schedule.startTime).toLocaleString()}
+                  {schedule.title} -{" "}
+                  {new Date(schedule.startTime).toLocaleString()}
                 </option>
               ))}
             </select>
             <p className="text-xs text-gray-500">
-              Optionally select a specific schedule, or leave blank and the counselor will assign an
-              appropriate time slot for you.
+              Optionally select a specific schedule, or leave blank and the
+              counselor will assign an appropriate time slot for you.
             </p>
           </div>
         )}
 
         {/* Appointment Title */}
         <div className="space-y-1">
-          <Label className="text-sm font-medium text-gray-700">Appointment Title *</Label>
+          <Label className="text-sm font-medium text-gray-700">
+            Appointment Title *
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              ({getRemainingChars(formData.title, CHAR_LIMITS.title)} characters
+              remaining)
+            </span>
+          </Label>
           <Input
             type="text"
             value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.title) {
+                handleInputChange("title", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.title}
             placeholder="e.g., Academic Guidance Session"
             required
             className="h-10"
           />
+          {errors.title && (
+            <p className="mt-1 text-xs text-red-600">{errors.title}</p>
+          )}
         </div>
 
         {/* Appointment Type */}
         <div className="space-y-1">
-          <Label className="text-sm font-medium text-gray-700">Type of Consultation *</Label>
+          <Label className="text-sm font-medium text-gray-700">
+            Type of Consultation *
+          </Label>
           <select
             value={formData.appointmentType}
-            onChange={(e) => handleInputChange("appointmentType", e.target.value)}
+            onChange={(e) =>
+              handleInputChange("appointmentType", e.target.value)
+            }
             required
             className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-md focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
           >
@@ -288,16 +421,30 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
 
         {/* Description */}
         <div className="space-y-1">
-          <Label className="text-sm font-medium text-gray-700">Description</Label>
+          <Label className="text-sm font-medium text-gray-700">
+            Description
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              (
+              {getRemainingChars(formData.description, CHAR_LIMITS.description)}{" "}
+              characters remaining)
+            </span>
+          </Label>
           <textarea
             value={formData.description}
-            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-              handleInputChange("description", e.target.value)
-            }
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.description) {
+                handleInputChange("description", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.description}
             placeholder="Please describe what you'd like to discuss or any specific concerns you have..."
             rows={4}
             className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-md focus:border-primary-400 focus:ring-1 focus:ring-primary-400 resize-none"
           />
+          {errors.description && (
+            <p className="mt-1 text-xs text-red-600">{errors.description}</p>
+          )}
           <p className="text-xs text-gray-500">
             Providing details helps the counselor prepare for your session
           </p>
@@ -317,7 +464,7 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
                   disabled={loading}
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !formData.requestedDate && "text-muted-foreground"
+                    !formData.requestedDate && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
@@ -331,21 +478,39 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={formData.requestedDate ? new Date(formData.requestedDate) : undefined}
+                  selected={
+                    formData.requestedDate
+                      ? new Date(formData.requestedDate)
+                      : undefined
+                  }
                   onSelect={(date) => {
                     if (date) {
-                      const currentTime = formData.requestedDate.slice(11, 16) || "09:00";
+                      const currentTime =
+                        formData.requestedDate.slice(11, 16) || "09:00";
                       const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
                       const day = String(date.getDate()).padStart(2, "0");
-                      handleInputChange("requestedDate", `${year}-${month}-${day}T${currentTime}`);
+                      handleInputChange(
+                        "requestedDate",
+                        `${year}-${month}-${day}T${currentTime}`,
+                      );
                     }
                   }}
-                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
+            {errors.requestedDate && (
+              <p className="mt-1 text-xs text-red-600">
+                {errors.requestedDate}
+              </p>
+            )}
           </div>
 
           <div>
@@ -357,8 +522,12 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
               value={formData.requestedDate.slice(11, 16) || "09:00"}
               onChange={(e) => {
                 const currentDate =
-                  formData.requestedDate.slice(0, 10) || new Date().toISOString().slice(0, 10);
-                handleInputChange("requestedDate", `${currentDate}T${e.target.value}`);
+                  formData.requestedDate.slice(0, 10) ||
+                  new Date().toISOString().slice(0, 10);
+                handleInputChange(
+                  "requestedDate",
+                  `${currentDate}T${e.target.value}`,
+                );
               }}
               min="08:00"
               max="20:00"
@@ -373,7 +542,9 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Priority */}
           <div className="space-y-1">
-            <Label className="text-sm font-medium text-gray-700">Priority</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Priority
+            </Label>
             <select
               value={formData.priority}
               onChange={(e) => handleInputChange("priority", e.target.value)}
@@ -389,10 +560,14 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
 
           {/* Duration */}
           <div className="space-y-1">
-            <Label className="text-sm font-medium text-gray-700">Duration</Label>
+            <Label className="text-sm font-medium text-gray-700">
+              Duration
+            </Label>
             <select
               value={formData.duration}
-              onChange={(e) => handleInputChange("duration", parseInt(e.target.value))}
+              onChange={(e) =>
+                handleInputChange("duration", parseInt(e.target.value))
+              }
               className="w-full h-10 px-3 text-sm bg-white border border-gray-200 rounded-md focus:border-primary-400 focus:ring-1 focus:ring-primary-400"
             >
               {durations.map((duration) => (
@@ -406,14 +581,35 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
 
         {/* Preferred Location */}
         <div className="space-y-1">
-          <Label className="text-sm font-medium text-gray-700">Preferred Location</Label>
+          <Label className="text-sm font-medium text-gray-700">
+            Preferred Location
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              (
+              {getRemainingChars(
+                formData.preferredLocation,
+                CHAR_LIMITS.preferredLocation,
+              )}{" "}
+              characters remaining)
+            </span>
+          </Label>
           <Input
             type="text"
             value={formData.preferredLocation}
-            onChange={(e) => handleInputChange("preferredLocation", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.preferredLocation) {
+                handleInputChange("preferredLocation", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.preferredLocation}
             placeholder="e.g., Guidance Office, Online Meeting, etc."
             className="h-10"
           />
+          {errors.preferredLocation && (
+            <p className="mt-1 text-xs text-red-600">
+              {errors.preferredLocation}
+            </p>
+          )}
           <p className="text-xs text-gray-500">
             Leave blank to use the counselor's default location
           </p>
@@ -421,13 +617,21 @@ export const RequestAppointmentModal: React.FC<RequestAppointmentModalProps> = (
 
         {/* Submit Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-          <Button type="button" variant="outline" onClick={handleClose} disabled={loading}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={loading}
+          >
             Cancel
           </Button>
           <Button
             type="submit"
             disabled={
-              loading || !formData.counselorId || !formData.title || !formData.requestedDate
+              loading ||
+              !formData.counselorId ||
+              !formData.title ||
+              !formData.requestedDate
             }
           >
             {loading ? "Submitting..." : "Submit Request"}

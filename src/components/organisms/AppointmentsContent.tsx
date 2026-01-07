@@ -647,8 +647,27 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       await deleteSchedule(scheduleId);
       fetchSchedules(); // Refresh the list
-    } catch (error) {
-      console.error("Failed to delete schedule:", error);
+      success(
+        "Schedule Deleted",
+        "The schedule has been successfully deleted.",
+      );
+    } catch (err: any) {
+      console.error("Failed to delete schedule:", err);
+
+      // Handle specific error cases
+      if (err.response && err.response.status === 400) {
+        const errorData = err.response.data;
+        const errorMessage =
+          errorData.error ||
+          "Cannot delete schedule with existing appointments";
+        error("Cannot Delete Schedule", errorMessage);
+      } else {
+        const errorMessage =
+          err.response?.data?.error ||
+          err.message ||
+          "Failed to delete schedule";
+        error("Error", errorMessage);
+      }
     }
   };
 
@@ -656,6 +675,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       if (selectedSchedule) {
         await updateSchedule(selectedSchedule.id, scheduleData);
+        success(
+          "Schedule Updated",
+          "The schedule has been successfully updated.",
+        );
       } else {
         await createSchedule(
           scheduleData as Omit<
@@ -663,12 +686,46 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             "id" | "createdAt" | "updatedAt" | "isDeleted" | "bookedSlots"
           >,
         );
+        success(
+          "Schedule Created",
+          "Your schedule has been successfully created.",
+        );
       }
       setIsScheduleModalOpen(false);
       fetchSchedules(); // Refresh the list
-    } catch (error) {
-      console.error("Failed to save schedule:", error);
-      throw error;
+    } catch (err: any) {
+      console.error("Failed to save schedule:", err);
+
+      // Handle 409 conflict responses (schedule conflicts with appointments)
+      if (err.response && err.response.status === 409) {
+        const errorData = err.response.data;
+        const conflicts =
+          errorData.conflicts || errorData.affectedAppointments || [];
+
+        let errorMessage =
+          errorData.message ||
+          errorData.error ||
+          "Schedule conflicts with existing appointments";
+
+        if (conflicts.length > 0) {
+          const conflictList = conflicts
+            .map(
+              (c: any) =>
+                `• ${c.studentName} - ${new Date(c.date).toLocaleString()} (${c.duration || 60} min)`,
+            )
+            .join("\n");
+          errorMessage += `:\n\n${conflictList}`;
+        }
+
+        error("Schedule Conflict", errorMessage);
+      } else {
+        // Handle other errors
+        const errorMessage =
+          err.response?.data?.error || err.message || "Failed to save schedule";
+        error("Error", errorMessage);
+      }
+
+      throw err;
     }
   };
 
