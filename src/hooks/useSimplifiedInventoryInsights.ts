@@ -158,14 +158,16 @@ export const useSimplifiedInventoryInsights = () => {
         // Create filter for API call
         const metricFilter: MetricFilter = {};
 
-        // Add category filter based on type
-        if (state.insightType === "mental-health-prediction") {
-          metricFilter.riskLevel = category;
-        } else if (
-          state.insightType === "bmi-category" ||
-          state.insightType === "physical-health"
-        ) {
-          metricFilter.bmiCategory = category;
+        // Add category filter based on type (only if not "all")
+        if (category !== "all") {
+          if (state.insightType === "mental-health-prediction") {
+            metricFilter.riskLevel = category;
+          } else if (
+            state.insightType === "bmi-category" ||
+            state.insightType === "physical-health"
+          ) {
+            metricFilter.bmiCategory = category;
+          }
         }
 
         // Apply date filters if they exist
@@ -208,7 +210,7 @@ export const useSimplifiedInventoryInsights = () => {
           metricFilter.gender = activeFilters.gender;
         }
 
-        // Fetch students for the selected category
+        // Fetch students for the selected category (or all categories if "all")
         const studentList =
           await MetricsService.getInventoryStudentList(metricFilter);
 

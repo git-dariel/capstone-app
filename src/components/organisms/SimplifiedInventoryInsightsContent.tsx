@@ -32,10 +32,8 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
     error,
     filters,
     totalCount,
-    isCategorySelected,
     fetchInsights,
     selectCategory,
-    clearCategorySelection,
     updateFilters,
     clearError,
   } = useSimplifiedInventoryInsights();
@@ -208,12 +206,16 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
     }
   }, [type, fetchInsights, navigate]);
 
-  const handleCategorySelect = (category: string) => {
-    if (category === "all") {
-      clearCategorySelection();
-    } else {
-      selectCategory(category);
+  // Auto-select "All Categories" when category data is loaded
+  useEffect(() => {
+    if (categoryData.length > 0 && !selectedCategory) {
+      selectCategory("all");
     }
+  }, [categoryData, selectedCategory, selectCategory]);
+
+  const handleCategorySelect = (category: string) => {
+    // Always call selectCategory - it will handle "all" by not filtering by category
+    selectCategory(category);
   };
 
   const handleYearChange = (year: string) => {
@@ -653,17 +655,17 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
           </div>
 
           {/* Category Selection Dropdown */}
-          <div className="bg-white rounded-lg border shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-lg border shadow-sm p-6 max-w-2xl">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Select Category for Details
               </h3>
-              {isCategorySelected && (
+              {selectedCategory && selectedCategory !== "all" && (
                 <button
-                  onClick={() => clearCategorySelection()}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  onClick={() => selectCategory("all")}
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium whitespace-nowrap"
                 >
-                  Clear Selection
+                  Show All Categories
                 </button>
               )}
             </div>
@@ -671,8 +673,12 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
               value={selectedCategory || "all"}
               onValueChange={handleCategorySelect}
             >
-              <SelectTrigger className="w-full sm:w-64">
-                <span>{selectedCategory || "Select a category..."}</span>
+              <SelectTrigger className="w-full">
+                <span>
+                  {selectedCategory === "all"
+                    ? "All Categories"
+                    : selectedCategory || "Select a category..."}
+                </span>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
@@ -686,7 +692,7 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
           </div>
 
           {/* Category Analytics (when category selected) */}
-          {isCategorySelected && studentList.length > 0 && (
+          {selectedCategory && studentList.length > 0 && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Category Distribution Pie */}
@@ -695,25 +701,51 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
                     Category Breakdown
                   </h3>
                   <div className="space-y-3">
-                    {categoryDistribution.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm text-gray-700">
-                            {item.name}
+                    {categoryDistribution.map((item, index) => {
+                      // Get color classes based on category name
+                      const getCategoryColorClass = (name: string) => {
+                        const lowerName = name.toLowerCase();
+                        // Mental Health Risk Levels
+                        if (lowerName.includes("low")) {
+                          return "bg-green-100 text-green-800";
+                        } else if (lowerName.includes("moderate")) {
+                          return "bg-yellow-100 text-yellow-800";
+                        } else if (lowerName.includes("high")) {
+                          return "bg-orange-100 text-orange-800";
+                        } else if (lowerName.includes("critical")) {
+                          return "bg-red-100 text-red-800";
+                        }
+                        // BMI Categories
+                        else if (lowerName.includes("normal")) {
+                          return "bg-green-100 text-green-800";
+                        } else if (lowerName.includes("underweight")) {
+                          return "bg-blue-100 text-blue-800";
+                        } else if (lowerName.includes("overweight")) {
+                          return "bg-yellow-100 text-yellow-800";
+                        } else if (lowerName.includes("obese")) {
+                          return "bg-red-100 text-red-800";
+                        }
+                        return "bg-gray-100 text-gray-800";
+                      };
+
+                      return (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-3 py-1 rounded-md text-sm font-medium ${getCategoryColorClass(item.name)}`}
+                            >
+                              {item.name}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-gray-900">
+                            {item.value}
                           </span>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {item.value}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -729,11 +761,13 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm text-gray-700">
+                          <span
+                            className="px-3 py-1 rounded-md text-sm font-medium text-gray-700"
+                            style={{
+                              backgroundColor: item.color + "20",
+                              color: item.color,
+                            }}
+                          >
                             {item.program}
                           </span>
                         </div>
@@ -757,11 +791,13 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
                         className="flex items-center justify-between"
                       >
                         <div className="flex items-center gap-2">
-                          <div
-                            className="w-4 h-4 rounded"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm text-gray-700">
+                          <span
+                            className="px-3 py-1 rounded-md text-sm font-medium text-gray-700"
+                            style={{
+                              backgroundColor: item.color + "20",
+                              color: item.color,
+                            }}
+                          >
                             {item.gender}
                           </span>
                         </div>
@@ -778,7 +814,7 @@ export const SimplifiedInventoryInsightsContent: React.FC = () => {
               <InventoryStudentList
                 students={studentList}
                 loading={loading}
-                title={`Students - ${selectedCategory}`}
+                title={`Students - ${selectedCategory === "all" ? "All Categories" : selectedCategory}`}
               />
             </>
           )}
