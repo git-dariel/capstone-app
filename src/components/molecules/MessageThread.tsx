@@ -45,7 +45,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const partnerName = conversationPartner
     ? `${conversationPartner.person.firstName} ${conversationPartner.person.lastName}`
     : currentUserName || "Unknown User";
-    
+
   const partnerAvatar = conversationPartner?.avatar;
 
   // Auto-scroll to bottom when new messages arrive
@@ -99,10 +99,10 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
           )}
 
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <Avatar 
-              src={partnerAvatar} 
-              fallback={partnerName.charAt(0)} 
-              className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0" 
+            <Avatar
+              src={partnerAvatar}
+              fallback={partnerName.charAt(0)}
+              className="w-8 h-8 sm:w-10 sm:h-10 flex-shrink-0"
             />
             <div className="min-w-0 flex-1">
               <h3 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
@@ -116,13 +116,13 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/*<div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <VideoCallButton
             recipientName={partnerName}
             onCallInitiated={handleCallInitiated}
             className="touch-manipulation"
           />
-        </div>
+        </div>*/}
       </div>
 
       {/* Messages */}
@@ -154,7 +154,9 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
               <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
               </div>
-              <p className="text-gray-500 mb-2 text-sm sm:text-base">No messages yet</p>
+              <p className="text-gray-500 mb-2 text-sm sm:text-base">
+                No messages yet
+              </p>
               <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">
                 Start the conversation by sending a message!
               </p>
@@ -192,19 +194,22 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
       {/* Message input */}
       <div className="border-t border-gray-200 p-2 sm:p-4 bg-white space-y-3">
         {/* Video call section */}
-        {showVideoCall && (
+        {/*{showVideoCall && (
           <VideoCallButton
             recipientName={partnerName}
             onCallInitiated={handleCallInitiated}
             className="w-full"
           />
-        )}
-        
+        )}*/}
+
         <div className="flex gap-2">
           <div className="flex-1">
-            <MessageInput onSend={handleSendMessage} placeholder={`Message ${partnerName}...`} />
+            <MessageInput
+              onSend={handleSendMessage}
+              placeholder={`Message ${partnerName}...`}
+            />
           </div>
-          {!showVideoCall && (
+          {/*{!showVideoCall && (
             <Button
               variant="outline"
               size="sm"
@@ -214,7 +219,7 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
             >
               📹
             </Button>
-          )}
+          )}*/}
         </div>
       </div>
     </div>

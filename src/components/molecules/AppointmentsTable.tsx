@@ -35,6 +35,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] =
     useState<Appointment | null>(null);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [appointmentToComplete, setAppointmentToComplete] =
+    useState<Appointment | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] =
+    useState<Appointment | null>(null);
   const [sortBy, setSortBy] = useState<
     "date" | "priority" | "student" | "status"
   >("date");
@@ -109,6 +115,32 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
     }
     setShowDeleteConfirm(false);
     setAppointmentToDelete(null);
+  };
+
+  const handleCompleteClick = (appointment: Appointment) => {
+    setAppointmentToComplete(appointment);
+    setShowCompleteConfirm(true);
+  };
+
+  const handleCompleteConfirm = () => {
+    if (appointmentToComplete && onComplete) {
+      onComplete(appointmentToComplete);
+    }
+    setShowCompleteConfirm(false);
+    setAppointmentToComplete(null);
+  };
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelConfirm(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (appointmentToCancel && onCancel) {
+      onCancel(appointmentToCancel);
+    }
+    setShowCancelConfirm(false);
+    setAppointmentToCancel(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -300,7 +332,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onComplete(appointment);
+                            handleCompleteClick(appointment);
                           }}
                           className="px-3 py-1 text-green-600 hover:text-green-900 text-xs font-medium border border-green-200 rounded-md hover:bg-green-50 touch-manipulation"
                         >
@@ -336,7 +368,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onCancel(appointment);
+                            handleCancelClick(appointment);
                           }}
                           className="px-3 py-1 text-red-600 hover:text-red-900 text-xs font-medium border border-red-200 rounded-md hover:bg-red-50 touch-manipulation"
                         >
@@ -503,7 +535,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onComplete(appointment);
+                                handleCompleteClick(appointment);
                               }}
                               className="text-green-600 hover:text-green-900 text-sm font-medium"
                               title="Mark Complete"
@@ -542,7 +574,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onCancel(appointment);
+                                handleCancelClick(appointment);
                               }}
                               className="text-red-600 hover:text-red-900 text-sm font-medium"
                               title="Cancel"
@@ -583,6 +615,28 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
         title="Delete Appointment"
         message={`Are you sure you want to delete the appointment "${appointmentToDelete?.title}"? This action cannot be undone.`}
         confirmText="Delete"
+        isDestructive={true}
+      />
+
+      {/* Complete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleCompleteConfirm}
+        title="Complete Appointment"
+        message={`Are you sure you want to mark the appointment "${appointmentToComplete?.title}" as completed?`}
+        confirmText="Complete"
+        isDestructive={false}
+      />
+
+      {/* Cancel Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelConfirm}
+        title="Cancel Appointment"
+        message={`Are you sure you want to cancel the appointment "${appointmentToCancel?.title}"? This action cannot be undone.`}
+        confirmText="Cancel Appointment"
         isDestructive={true}
       />
     </div>
