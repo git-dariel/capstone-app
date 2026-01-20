@@ -1,11 +1,10 @@
 import { MessageBubble, MessageInput, Avatar } from "@/components/atoms";
-import { VideoCallButton } from "@/components/molecules";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/types/message";
 import { ArrowLeft, MessageCircle } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -33,7 +32,6 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
   const { user } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [showVideoCall, setShowVideoCall] = useState(false);
 
   const currentUser = user?.id || currentUserId;
   const conversationPartner =
@@ -73,12 +71,6 @@ export const MessageThread: React.FC<MessageThreadProps> = ({
     } catch (error) {
       console.error("Error sending message:", error);
     }
-  };
-
-  const handleCallInitiated = async (meetLink: string) => {
-    // Send the meet link as a message
-    const callMessage = `📹 Video call started: ${meetLink}\n\nClick the link to join the call!`;
-    await handleSendMessage(callMessage);
   };
 
   return (

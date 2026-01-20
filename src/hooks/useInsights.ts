@@ -53,6 +53,9 @@ export const useInsights = () => {
           data: overviewData.data,
         };
 
+        // Extract unique programs from the data
+        const availablePrograms = overviewData.data.map((item) => item.label);
+
         const insights: MentalHealthInsights = {
           type,
           currentLevel: overviewLevel,
@@ -71,6 +74,7 @@ export const useInsights = () => {
             { value: 11, label: "November" },
             { value: 12, label: "December" },
           ],
+          availablePrograms,
           filters,
         };
 

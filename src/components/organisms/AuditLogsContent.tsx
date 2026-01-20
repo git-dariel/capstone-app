@@ -79,12 +79,6 @@ export const AuditLogsContent: React.FC = () => {
         sort: "-timestamp",
       }).catch((err) => {
         console.error("Failed to fetch audit logs:", err);
-        // Check if it's a 404 error (API not available)
-        if (err?.response?.status === 404) {
-          setError(
-            "Audit logs API is not available. Please ensure the backend audit logs feature is properly configured.",
-          );
-        }
       });
 
       fetchStatistics().catch((err) => {

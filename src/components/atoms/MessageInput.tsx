@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui";
-import { Send, Paperclip } from "lucide-react";
+import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MessageInputProps {

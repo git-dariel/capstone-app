@@ -209,6 +209,8 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         followUpRequired: false,
         followUpDate: "",
         maxStudents: 10,
+        cancellationReason: "",
+        completionNotes: "",
       });
       setSelectedStudents([]);
     }
