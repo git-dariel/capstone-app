@@ -279,11 +279,16 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center text-sm">
                       <span className="text-gray-500 w-20 flex-shrink-0">
-                        Student:
+                        {(appointment as any).students?.length > 1
+                          ? "Students:"
+                          : "Student:"}
                       </span>
                       <span className="text-gray-900 truncate">
-                        {appointment.student?.person.firstName}{" "}
-                        {appointment.student?.person.lastName}
+                        {(appointment as any).students?.length > 0
+                          ? (appointment as any).students.length > 1
+                            ? `${(appointment as any).students.length} students`
+                            : `${(appointment as any).students[0]?.person?.firstName} ${(appointment as any).students[0]?.person?.lastName}`
+                          : `${appointment.student?.person.firstName} ${appointment.student?.person.lastName}`}
                       </span>
                     </div>
 
@@ -406,7 +411,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                 Appointment
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
+                Student(s)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Counselor
@@ -485,14 +490,51 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                     </td>
                     <td className="px-4 py-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {appointment.student?.person.firstName}{" "}
-                          {appointment.student?.person.lastName}
-                        </p>
-                        {appointment.student?.studentNumber && (
-                          <p className="text-sm text-gray-500">
-                            {appointment.student.studentNumber}
-                          </p>
+                        {(appointment as any).students?.length > 0 ? (
+                          (appointment as any).students.length > 1 ? (
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {(appointment as any).students.length} students
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Group Session
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {
+                                  (appointment as any).students[0]?.person
+                                    ?.firstName
+                                }{" "}
+                                {
+                                  (appointment as any).students[0]?.person
+                                    ?.lastName
+                                }
+                              </p>
+                              {(appointment as any).students[0]
+                                ?.studentNumber && (
+                                <p className="text-sm text-gray-500">
+                                  {
+                                    (appointment as any).students[0]
+                                      .studentNumber
+                                  }
+                                </p>
+                              )}
+                            </div>
+                          )
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {appointment.student?.person.firstName}{" "}
+                              {appointment.student?.person.lastName}
+                            </p>
+                            {appointment.student?.studentNumber && (
+                              <p className="text-sm text-gray-500">
+                                {appointment.student.studentNumber}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>

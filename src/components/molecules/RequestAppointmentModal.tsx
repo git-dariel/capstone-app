@@ -417,6 +417,16 @@ export const RequestAppointmentModal: React.FC<
               </option>
             ))}
           </select>
+          {formData.appointmentType === "group_counseling" && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="text-xs text-blue-800">
+                <span className="font-medium">ℹ️ Note:</span> You are requesting
+                to join a group counseling session. The guidance counselor will
+                create the group session and may add other students who have
+                similar concerns.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Description */}

@@ -4,6 +4,7 @@ import { HttpClient } from "./api.config";
 export interface Appointment {
   id: string;
   studentId: string;
+  studentIds?: string[]; // Array of student IDs for group sessions
   counselorId: string;
   scheduleId: string;
   title: string;
@@ -28,6 +29,7 @@ export interface Appointment {
     | "rescheduled";
   location?: string;
   duration: number;
+  maxStudents?: number; // Maximum students for group sessions
   cancellationReason?: string;
   completionNotes?: string;
   followUpRequired?: boolean;
@@ -51,6 +53,19 @@ export interface Appointment {
       contactNumber?: string;
     };
   };
+  students?: Array<{
+    id: string;
+    studentNumber: string;
+    program: string;
+    year: string;
+    person: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email?: string;
+      contactNumber?: string;
+    };
+  }>; // Array of students for group sessions
   counselor?: {
     id: string;
     person: {
@@ -73,6 +88,7 @@ export interface Appointment {
 
 export interface CreateAppointmentRequest {
   studentId: string;
+  studentIds?: string[]; // Array of student IDs for group sessions
   counselorId: string;
   scheduleId: string;
   title: string;
@@ -90,6 +106,7 @@ export interface CreateAppointmentRequest {
   priority?: "low" | "normal" | "high" | "urgent";
   location?: string;
   duration?: number;
+  maxStudents?: number; // Maximum students for group sessions
   attachments?: string[];
 }
 
@@ -116,6 +133,8 @@ export interface UpdateAppointmentRequest {
   priority?: "low" | "normal" | "high" | "urgent";
   location?: string;
   duration?: number;
+  studentIds?: string[]; // Array of student IDs for group sessions
+  maxStudents?: number; // Maximum students for group sessions
   cancellationReason?: string;
   completionNotes?: string;
   followUpRequired?: boolean;

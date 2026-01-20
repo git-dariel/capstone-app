@@ -57,6 +57,7 @@ interface CalendarModalProps {
 
 interface AppointmentFormData {
   studentId: string;
+  studentIds: string[]; // Array of student IDs for group sessions
   counselorId: string;
   scheduleId: string;
   title: string;
@@ -74,6 +75,7 @@ interface AppointmentFormData {
   priority: "low" | "normal" | "high" | "urgent";
   location: string;
   duration: number;
+  maxStudents: number; // Maximum students for group sessions
 }
 
 interface ScheduleFormData {
@@ -103,6 +105,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
   const [appointmentData, setAppointmentData] = useState<AppointmentFormData>({
     studentId: student?.id || "",
+    studentIds: [], // Initialize empty array for group sessions
     counselorId: isGuidanceUser ? user?.id || "" : "",
     scheduleId: "",
     title: "",
@@ -112,6 +115,7 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
     priority: "normal",
     location: "",
     duration: 60,
+    maxStudents: 10, // Default max students for group sessions
   });
 
   const [scheduleData, setScheduleData] = useState<ScheduleFormData>({
@@ -244,8 +248,12 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
       newErrors.requestedDate = "Date and time is required";
     }
 
-    if (isGuidanceUser && !appointmentData.studentId) {
-      newErrors.studentId = "Student selection is required";
+    if (
+      isGuidanceUser &&
+      !appointmentData.studentId &&
+      appointmentData.studentIds.length === 0
+    ) {
+      newErrors.studentId = "At least one student is required";
     }
 
     if (isGuidanceUser && !appointmentData.counselorId) {
@@ -334,9 +342,17 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
       if (!validateAppointmentForm() || !onCreateAppointment) return;
 
       try {
+        // Prepare studentIds array based on whether it's a group session
+        const isGroupSession = appointmentData.studentIds.length > 0;
         const submitData: CreateAppointmentRequest = {
           ...appointmentData,
           requestedDate: new Date(appointmentData.requestedDate).toISOString(),
+          // Include studentIds if it's a group session
+          ...(isGroupSession && { studentIds: appointmentData.studentIds }),
+          // For backward compatibility, ensure studentId is set
+          studentId: isGroupSession
+            ? appointmentData.studentIds[0]
+            : appointmentData.studentId,
         };
 
         console.log("CalendarModal submitting appointment data:", submitData);
@@ -479,38 +495,203 @@ export const CalendarModal: React.FC<CalendarModalProps> = ({
 
             {/* Student Selection (only for guidance users) */}
             {isGuidanceUser && (
-              <div>
-                <FormSelect
-                  id="studentId"
-                  label="Student"
-                  value={appointmentData.studentId}
-                  onChange={(value) =>
-                    handleAppointmentChange("studentId", value)
-                  }
-                  options={[
-                    { value: "", label: "Please Select a Student" },
-                    ...(Array.isArray(studentUsers) ? studentUsers : []).map(
-                      (user, index) => {
-                        const firstName = user.person?.firstName || "";
-                        const lastName = user.person?.lastName || "";
-                        const fullName = `${firstName} ${lastName}`.trim();
-                        const displayName = fullName || "Unknown Student";
+              <div className="space-y-4">
+                {/* Toggle for Group Session */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="isGroupSession"
+                    checked={
+                      appointmentData.appointmentType === "group_counseling"
+                    }
+                    onChange={(e) => {
+                      handleAppointmentChange(
+                        "appointmentType",
+                        e.target.checked
+                          ? "group_counseling"
+                          : "general_information",
+                      );
+                      // Clear studentIds when switching modes
+                      if (!e.target.checked) {
+                        setAppointmentData((prev) => ({
+                          ...prev,
+                          studentIds: [],
+                        }));
+                      }
+                    }}
+                    disabled={loading}
+                    className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label
+                    htmlFor="isGroupSession"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Group Session (Multiple Students)
+                  </label>
+                </div>
 
-                        return {
-                          value: user.id, // Use user id directly since these are user records
-                          label: displayName,
-                          key: `user-${user.id}-${index}`, // Unique key for React
-                        };
-                      },
-                    ),
-                  ]}
-                  disabled={loading}
-                  required
-                />
-                {errors.studentId && (
-                  <p className="mt-1 text-sm text-red-600">
-                    {errors.studentId}
-                  </p>
+                {appointmentData.appointmentType === "group_counseling" ? (
+                  /* Multi-student Selection for Group Sessions */
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Students <span className="text-red-500">*</span>
+                      <span className="text-xs text-gray-500 font-normal ml-2">
+                        ({appointmentData.studentIds.length} of{" "}
+                        {appointmentData.maxStudents} selected)
+                      </span>
+                    </label>
+
+                    {/* Student multi-select */}
+                    <div className="space-y-2">
+                      <select
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        disabled={
+                          loading ||
+                          appointmentData.studentIds.length >=
+                            appointmentData.maxStudents
+                        }
+                        onChange={(e) => {
+                          const selectedId = e.target.value;
+                          if (
+                            selectedId &&
+                            !appointmentData.studentIds.includes(selectedId)
+                          ) {
+                            setAppointmentData((prev) => ({
+                              ...prev,
+                              studentIds: [...prev.studentIds, selectedId],
+                              studentId:
+                                prev.studentIds.length === 0
+                                  ? selectedId
+                                  : prev.studentId,
+                            }));
+                            e.target.value = ""; // Reset select
+                          }
+                        }}
+                        value=""
+                      >
+                        <option value="">
+                          {appointmentData.studentIds.length >=
+                          appointmentData.maxStudents
+                            ? "Maximum students reached"
+                            : "Add a student..."}
+                        </option>
+                        {(Array.isArray(studentUsers) ? studentUsers : [])
+                          .filter(
+                            (user) =>
+                              !appointmentData.studentIds.includes(user.id),
+                          )
+                          .map((user, index) => {
+                            const firstName = user.person?.firstName || "";
+                            const lastName = user.person?.lastName || "";
+                            const fullName = `${firstName} ${lastName}`.trim();
+                            const displayName = fullName || "Unknown Student";
+
+                            return (
+                              <option
+                                key={`user-${user.id}-${index}`}
+                                value={user.id}
+                              >
+                                {displayName}
+                              </option>
+                            );
+                          })}
+                      </select>
+
+                      {/* Selected students list */}
+                      {appointmentData.studentIds.length > 0 && (
+                        <div className="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+                          <div className="space-y-2">
+                            {appointmentData.studentIds.map((studentId) => {
+                              const student = (
+                                Array.isArray(studentUsers) ? studentUsers : []
+                              ).find((u) => u.id === studentId);
+                              const firstName =
+                                student?.person?.firstName || "";
+                              const lastName = student?.person?.lastName || "";
+                              const fullName =
+                                `${firstName} ${lastName}`.trim();
+                              const displayName = fullName || "Unknown Student";
+
+                              return (
+                                <div
+                                  key={studentId}
+                                  className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+                                >
+                                  <span className="text-sm text-gray-700">
+                                    {displayName}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setAppointmentData((prev) => ({
+                                        ...prev,
+                                        studentIds: prev.studentIds.filter(
+                                          (id) => id !== studentId,
+                                        ),
+                                        // Update primary studentId if removing the first one
+                                        studentId:
+                                          prev.studentIds[0] === studentId &&
+                                          prev.studentIds.length > 1
+                                            ? prev.studentIds[1]
+                                            : prev.studentId,
+                                      }));
+                                    }}
+                                    disabled={loading}
+                                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {errors.studentId && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.studentId}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  /* Single Student Selection */
+                  <div>
+                    <FormSelect
+                      id="studentId"
+                      label="Student"
+                      value={appointmentData.studentId}
+                      onChange={(value) =>
+                        handleAppointmentChange("studentId", value)
+                      }
+                      options={[
+                        { value: "", label: "Please Select a Student" },
+                        ...(Array.isArray(studentUsers)
+                          ? studentUsers
+                          : []
+                        ).map((user, index) => {
+                          const firstName = user.person?.firstName || "";
+                          const lastName = user.person?.lastName || "";
+                          const fullName = `${firstName} ${lastName}`.trim();
+                          const displayName = fullName || "Unknown Student";
+
+                          return {
+                            value: user.id,
+                            label: displayName,
+                            key: `user-${user.id}-${index}`,
+                          };
+                        }),
+                      ]}
+                      disabled={loading}
+                      required
+                    />
+                    {errors.studentId && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.studentId}
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             )}

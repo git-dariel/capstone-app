@@ -238,35 +238,89 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
 
           {/* Right Column - Participants & Actions */}
           <div className="space-y-6">
-            {/* Student Information */}
-            {appointment.student && (
+            {/* Student Information - Support both single student and multiple students (group sessions) */}
+            {(appointment as any).students &&
+            (appointment as any).students.length > 0 ? (
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                   <User className="w-4 h-4 mr-2 text-gray-500" />
-                  Student
+                  {(appointment as any).students.length > 1
+                    ? `Students (${(appointment as any).students.length})`
+                    : "Student"}
                 </h3>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-900">
-                    {appointment.student.person?.firstName}{" "}
-                    {appointment.student.person?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Student ID: {appointment.student.studentNumber}
-                  </p>
-                  {appointment.student.person?.email && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.student.person.email}
-                    </p>
-                  )}
-                  {appointment.student.person?.contactNumber && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.student.person.contactNumber}
-                    </p>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {(appointment as any).students.map(
+                    (student: any, index: number) => (
+                      <div
+                        key={student.id || index}
+                        className={
+                          index > 0 ? "pt-4 border-t border-gray-200" : ""
+                        }
+                      >
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {student.person?.firstName}{" "}
+                            {student.person?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Student ID: {student.studentNumber}
+                          </p>
+                          {student.person?.email && (
+                            <p className="text-sm text-gray-700 flex items-start">
+                              <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                              <span className="break-all">
+                                {student.person.email}
+                              </span>
+                            </p>
+                          )}
+                          {student.person?.contactNumber && (
+                            <p className="text-sm text-gray-700 flex items-start">
+                              <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                              <span className="break-all">
+                                {student.person.contactNumber}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ),
                   )}
                 </div>
               </div>
+            ) : (
+              appointment.student && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                    <User className="w-4 h-4 mr-2 text-gray-500" />
+                    Student
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-900">
+                      {appointment.student.person?.firstName}{" "}
+                      {appointment.student.person?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Student ID: {appointment.student.studentNumber}
+                    </p>
+                    {appointment.student.person?.email && (
+                      <p className="text-sm text-gray-700 flex items-start">
+                        <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <span className="break-all">
+                          {appointment.student.person.email}
+                        </span>
+                      </p>
+                    )}
+                    {appointment.student.person?.contactNumber && (
+                      <p className="text-sm text-gray-700 flex items-start">
+                        <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <span className="break-all">
+                          {appointment.student.person.contactNumber}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
             )}
 
             {/* Counselor Information */}
@@ -282,15 +336,19 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
                     {appointment.counselor.person?.lastName}
                   </p>
                   {appointment.counselor.person?.email && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.counselor.person.email}
+                    <p className="text-sm text-gray-700 flex items-start">
+                      <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-all">
+                        {appointment.counselor.person.email}
+                      </span>
                     </p>
                   )}
                   {appointment.counselor.person?.contactNumber && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.counselor.person.contactNumber}
+                    <p className="text-sm text-gray-700 flex items-start">
+                      <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-all">
+                        {appointment.counselor.person.contactNumber}
+                      </span>
                     </p>
                   )}
                 </div>

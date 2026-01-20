@@ -7,7 +7,6 @@ import {
   ScheduleModal,
   ScheduleViewModal,
   CalendarView,
-  CalendarModal,
   DateEventsDrawer,
   RequestAppointmentModal,
   PendingRequestsTable,
@@ -41,7 +40,6 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isScheduleViewModalOpen, setIsScheduleViewModalOpen] = useState(false);
-  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isDateEventsDrawerOpen, setIsDateEventsDrawerOpen] = useState(false);
   const [isRequestAppointmentModalOpen, setIsRequestAppointmentModalOpen] =
     useState(false);
@@ -52,9 +50,9 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [calendarModalMode, setCalendarModalMode] = useState<
-    "appointment" | "schedule"
-  >("appointment");
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(
+    null,
+  );
   const [appointmentModalMode, setAppointmentModalMode] = useState<
     "create" | "edit" | "view"
   >("create");
@@ -145,12 +143,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         (appointment: Appointment) => appointment.status === "pending",
       );
       setPendingRequests(pending);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to fetch pending requests:", err);
-      error(
-        "Error",
-        "Failed to fetch pending appointment requests. Please try again.",
-      );
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to fetch pending appointment requests. Please try again.";
+      error("Error", errorMessage);
     } finally {
       setPendingRequestsLoading(false);
     }
@@ -273,10 +273,16 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
     // For guidance users with 0 or 1 events, open create modal
     if (isGuidance) {
-      setCalendarModalMode(
-        activeTab === "schedules" && isGuidance ? "schedule" : "appointment",
-      );
-      setIsCalendarModalOpen(true);
+      if (activeTab === "schedules") {
+        // Open schedule modal with selected date
+        setSelectedCalendarDate(date);
+        setIsScheduleModalOpen(true);
+      } else {
+        // Open appointment modal with selected date
+        setSelectedCalendarDate(date);
+        setSelectedAppointment(null);
+        setIsAppointmentModalOpen(true);
+      }
     }
   };
 
@@ -301,37 +307,6 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
     // Then handle the event click
     handleCalendarEventClick(event);
-  };
-
-  const handleCreateFromCalendar = async (data: any) => {
-    try {
-      if (calendarModalMode === "appointment") {
-        await createAppointment(data);
-        success(
-          "Appointment Created",
-          "Your appointment has been successfully created.",
-        );
-        // Refresh appointments
-        if (isStudent) {
-          await fetchAppointmentsByStudentId(user?.id || "");
-        } else if (isGuidance) {
-          await fetchAppointmentsByCounselorId(user?.id || "");
-        }
-      } else {
-        await createSchedule(data);
-        success(
-          "Schedule Created",
-          "Your schedule has been successfully created.",
-        );
-        // Refresh schedules
-        await fetchSchedules();
-      }
-      setIsCalendarModalOpen(false);
-    } catch (err) {
-      console.error("Failed to create from calendar:", err);
-      error("Creation Failed", "Failed to create. Please try again.");
-      throw err;
-    }
   };
 
   // Appointment handlers
@@ -365,12 +340,36 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       }
 
       setIsRequestAppointmentModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit appointment request:", err);
-      error(
-        "Request Failed",
-        "Failed to submit appointment request. Please try again.",
-      );
+
+      // Extract detailed error message from API response
+      let errorMessage =
+        "Failed to submit appointment request. Please try again.";
+
+      if (err?.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+
+      // Show detailed conflict information if available
+      if (err?.response?.data?.conflictDetails) {
+        const conflict = err.response.data.conflictDetails;
+        errorMessage += `\n\nConflict Details:\n`;
+        errorMessage += `Date: ${new Date(conflict.date).toLocaleString()}\n`;
+        errorMessage += `Duration: ${conflict.duration} minutes\n`;
+        if (conflict.student) {
+          errorMessage += `Student: ${conflict.student}`;
+        }
+        if (conflict.counselor) {
+          errorMessage += `Counselor: ${conflict.counselor}`;
+        }
+      }
+
+      error("Request Failed", errorMessage);
       throw err;
     }
   };
@@ -389,12 +388,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       if (user?.id) {
         await fetchAppointmentsByCounselorId(user.id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to approve request:", err);
-      error(
-        "Approval Failed",
-        "Failed to approve appointment request. Please try again.",
-      );
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to approve appointment request. Please try again.";
+      error("Approval Failed", errorMessage);
     }
   };
 
@@ -414,12 +415,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       if (user?.id) {
         await fetchAppointmentsByCounselorId(user.id);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to deny request:", err);
-      error(
-        "Denial Failed",
-        "Failed to deny appointment request. Please try again.",
-      );
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to deny appointment request. Please try again.";
+      error("Denial Failed", errorMessage);
     }
   };
 
@@ -483,12 +486,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         await fetchAppointmentsByCounselorId(user?.id || "");
         await fetchSchedules(); // Refresh schedules for guidance
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to cancel appointment:", err);
-      error(
-        "Cancellation Failed",
-        "Failed to cancel appointment. Please try again.",
-      );
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to cancel appointment. Please try again.";
+      error("Cancellation Failed", errorMessage);
     }
   };
 
@@ -515,12 +520,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       } else if (isGuidance) {
         await fetchAppointmentsByCounselorId(user?.id || "");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to complete appointment:", err);
-      error(
-        "Completion Failed",
-        "Failed to mark appointment as completed. Please try again.",
-      );
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to mark appointment as completed. Please try again.";
+      error("Completion Failed", errorMessage);
     }
   };
 
@@ -533,8 +540,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       } else if (isGuidance) {
         await fetchAppointmentsByCounselorId(user?.id || "");
       }
-    } catch (error) {
-      console.error("Failed to delete appointment:", error);
+    } catch (err: any) {
+      console.error("Failed to delete appointment:", err);
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete appointment. Please try again.";
+      error("Delete Failed", errorMessage);
     }
   };
 
@@ -775,9 +788,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         await fetchAppointmentsByCounselorId(user?.id || "");
         await fetchSchedules();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to book appointment:", err);
-      error("Booking Failed", "Failed to book appointment. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to book appointment. Please try again.";
+      error("Booking Failed", errorMessage);
       throw err;
     }
   };
@@ -1086,11 +1104,15 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       {/* Modals */}
       <AppointmentModal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
+        onClose={() => {
+          setIsAppointmentModalOpen(false);
+          setSelectedCalendarDate(null);
+        }}
         onSubmit={handleSaveAppointment}
         appointment={selectedAppointment}
         loading={appointmentsLoading}
         mode={appointmentModalMode}
+        initialDate={selectedCalendarDate}
       />
 
       <AppointmentViewModal
@@ -1108,10 +1130,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       {isGuidance && (
         <ScheduleModal
           isOpen={isScheduleModalOpen}
-          onClose={() => setIsScheduleModalOpen(false)}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSelectedCalendarDate(null);
+          }}
           onSave={handleSaveSchedule}
           schedule={selectedSchedule}
           loading={schedulesLoading}
+          initialDate={selectedCalendarDate}
         />
       )}
 
@@ -1132,25 +1158,6 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         }
       />
 
-      <CalendarModal
-        isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        selectedDate={selectedDate}
-        onCreateAppointment={
-          calendarModalMode === "appointment"
-            ? handleCreateFromCalendar
-            : undefined
-        }
-        onCreateSchedule={
-          calendarModalMode === "schedule"
-            ? handleCreateFromCalendar
-            : undefined
-        }
-        loading={appointmentsLoading || schedulesLoading}
-        mode={calendarModalMode}
-      />
-
-      {/* Date Events Drawer */}
       <DateEventsDrawer
         isOpen={isDateEventsDrawerOpen}
         onClose={() => setIsDateEventsDrawerOpen(false)}

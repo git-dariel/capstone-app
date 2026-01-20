@@ -55,10 +55,12 @@ interface AppointmentModalProps {
   appointment?: Appointment | null;
   loading?: boolean;
   mode: "create" | "edit" | "view";
+  initialDate?: Date | null; // Pre-fill date from calendar
 }
 
 interface AppointmentFormData {
   studentId: string;
+  studentIds: string[]; // Array of student IDs for group sessions
   counselorId: string;
   scheduleId: string;
   title: string;
@@ -77,6 +79,7 @@ interface AppointmentFormData {
   priority: "low" | "normal" | "high" | "urgent";
   location: string;
   duration: number;
+  maxStudents: number; // Maximum students for group sessions
   cancellationReason: string;
   completionNotes: string;
   followUpRequired: boolean;
@@ -90,6 +93,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   appointment,
   loading = false,
   mode,
+  initialDate = null,
 }) => {
   // Enhanced close handler to ensure proper cleanup
   const handleClose = () => {
@@ -109,10 +113,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   const [studentSuggestions, setStudentSuggestions] = useState<Student[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [selectedStudents, setSelectedStudents] = useState<Student[]>([]); // Track selected students for group sessions
   const searchRef = useRef<HTMLDivElement>(null);
 
   const [formData, setFormData] = useState<AppointmentFormData>({
     studentId: "",
+    studentIds: [], // Initialize empty array for group sessions
     counselorId: "",
     scheduleId: "",
     title: "",
@@ -122,6 +128,7 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     priority: "normal",
     location: "",
     duration: 60,
+    maxStudents: 10, // Default max students for group sessions
     cancellationReason: "",
     completionNotes: "",
     followUpRequired: false,
@@ -138,8 +145,12 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   // Initialize form data when appointment changes
   useEffect(() => {
     if (appointment) {
+      const appointmentData = appointment as unknown as Record<string, unknown>;
       setFormData({
         studentId: appointment.studentId,
+        studentIds: Array.isArray(appointmentData.studentIds)
+          ? (appointmentData.studentIds as string[])
+          : [],
         counselorId: appointment.counselorId,
         scheduleId: appointment.scheduleId,
         title: appointment.title,
@@ -151,6 +162,10 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         priority: appointment.priority,
         location: appointment.location || "",
         duration: appointment.duration,
+        maxStudents:
+          typeof appointmentData.maxStudents === "number"
+            ? appointmentData.maxStudents
+            : 10,
         cancellationReason: appointment.cancellationReason || "",
         completionNotes: appointment.completionNotes || "",
         followUpRequired: appointment.followUpRequired || false,
@@ -158,25 +173,44 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           ? new Date(appointment.followUpDate).toISOString().slice(0, 16)
           : "",
       });
+
+      // Load selected students for group sessions
+      const studentsData = appointmentData.students;
+      if (Array.isArray(studentsData)) {
+        setSelectedStudents(studentsData as Student[]);
+      } else {
+        setSelectedStudents([]);
+      }
     } else {
       // Reset for create mode
       setFormData({
         studentId: isGuidanceUser ? "" : user?.id || "", // For students, use their user ID (not student record ID), for guidance users it will be empty
+        studentIds: [],
         counselorId: isGuidanceUser ? user?.id || "" : "", // For guidance users, set their ID as counselor
         scheduleId: "",
         title: "",
         description: "",
         appointmentType: "general_information",
-        requestedDate: "",
+        requestedDate: initialDate
+          ? new Date(
+              initialDate.getFullYear(),
+              initialDate.getMonth(),
+              initialDate.getDate(),
+              9,
+              0,
+            )
+              .toISOString()
+              .slice(0, 16)
+          : "",
         status: isGuidanceUser ? "confirmed" : "pending", // Auto-confirm for guidance users
         priority: "normal",
         location: "",
         duration: 60,
-        cancellationReason: "",
-        completionNotes: "",
         followUpRequired: false,
         followUpDate: "",
+        maxStudents: 10,
       });
+      setSelectedStudents([]);
     }
     setErrors({});
     setStudentSearchQuery("");
@@ -426,12 +460,23 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
         "Completion notes contains invalid characters (< > & are not allowed)";
     }
 
-    if (isGuidanceUser && !formData.studentId) {
-      newErrors.studentId = "Please select a student";
-    }
-
-    if (isGuidanceUser && !selectedStudent) {
-      newErrors.studentId = "Please search and select a student";
+    // Student validation - support both single and group sessions
+    if (isGuidanceUser) {
+      if (formData.appointmentType === "group_counseling") {
+        // Group session - check studentIds array
+        if (formData.studentIds.length === 0) {
+          newErrors.studentId =
+            "Please add at least one student to the group session";
+        }
+      } else {
+        // Single student session
+        if (!formData.studentId) {
+          newErrors.studentId = "Please select a student";
+        }
+        if (!selectedStudent) {
+          newErrors.studentId = "Please search and select a student";
+        }
+      }
     }
 
     // Schedule selection is optional - guidance can assign later
@@ -554,6 +599,9 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
     }
 
     try {
+      // Prepare studentIds array based on whether it's a group session
+      const isGroupSession = formData.appointmentType === "group_counseling";
+
       const submitData: CreateAppointmentRequest | UpdateAppointmentRequest = {
         ...formData,
         requestedDate: new Date(formData.requestedDate).toISOString(),
@@ -562,6 +610,16 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
           : undefined,
         // Only include scheduleId if it's selected
         ...(formData.scheduleId && { scheduleId: formData.scheduleId }),
+        // Include studentIds if it's a group session
+        ...(isGroupSession && {
+          studentIds: formData.studentIds,
+          maxStudents: formData.maxStudents,
+        }),
+        // For backward compatibility, ensure studentId is set
+        studentId:
+          isGroupSession && formData.studentIds.length > 0
+            ? formData.studentIds[0]
+            : formData.studentId,
       };
 
       console.log("=== SUBMITTING APPOINTMENT ===");
@@ -630,96 +688,302 @@ export const AppointmentModal: React.FC<AppointmentModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={getModalTitle()} size="xl">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Student Search with Autocomplete (only for guidance users) - MOVED TO TOP */}
+        {/* Student Selection - Support both single and multiple students */}
         {isGuidanceUser && (
-          <div ref={searchRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search student by name..."
-                  value={studentSearchQuery}
-                  onChange={(e) => setStudentSearchQuery(e.target.value)}
-                  onFocus={() => {
-                    if (studentSuggestions.length > 0) setShowSuggestions(true);
-                  }}
-                  disabled={loading || isViewMode}
-                  required
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
-                />
-              </div>
-
-              {/* Suggestions Dropdown */}
-              {showSuggestions && studentSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                  {studentSuggestions.map((student) => (
-                    <button
-                      key={student.id}
-                      type="button"
-                      onClick={() => handleSelectStudent(student)}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {student.person?.firstName}{" "}
-                            {student.person?.lastName}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {student.studentNumber} • {student.program}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* No results message */}
-              {showSuggestions &&
-                studentSearchQuery.length >= 2 &&
-                studentSuggestions.length === 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-sm text-gray-500">
-                    No students found
-                  </div>
-                )}
+          <div className="space-y-4">
+            {/* Toggle for Group Session */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isGroupSession"
+                checked={formData.appointmentType === "group_counseling"}
+                onChange={(e) => {
+                  handleInputChange(
+                    "appointmentType",
+                    e.target.checked
+                      ? "group_counseling"
+                      : "general_information",
+                  );
+                  // Clear studentIds when switching modes
+                  if (!e.target.checked) {
+                    setFormData((prev) => ({
+                      ...prev,
+                      studentIds: [],
+                    }));
+                    setSelectedStudents([]);
+                  }
+                }}
+                disabled={loading || isViewMode}
+                className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+              />
+              <label
+                htmlFor="isGroupSession"
+                className="text-sm font-medium text-gray-700"
+              >
+                Group Session (Multiple Students)
+              </label>
             </div>
 
-            {/* Selected Student Display */}
-            {selectedStudent && (
-              <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium text-blue-900">
-                      Selected: {selectedStudent.person?.firstName}{" "}
-                      {selectedStudent.person?.lastName}
+            {formData.appointmentType === "group_counseling" ? (
+              /* Multi-student Selection for Group Sessions */
+              <div ref={searchRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Students <span className="text-red-500">*</span>
+                  <span className="text-xs text-gray-500 font-normal ml-2">
+                    ({formData.studentIds.length} of {formData.maxStudents}{" "}
+                    selected)
+                  </span>
+                </label>
+
+                {/* Student search for adding */}
+                <div className="relative mb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder={
+                        formData.studentIds.length >= formData.maxStudents
+                          ? "Maximum students reached"
+                          : "Search to add student..."
+                      }
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                      onFocus={() => {
+                        if (studentSuggestions.length > 0)
+                          setShowSuggestions(true);
+                      }}
+                      disabled={
+                        loading ||
+                        isViewMode ||
+                        formData.studentIds.length >= formData.maxStudents
+                      }
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                    />
+                  </div>
+
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && studentSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {studentSuggestions
+                        .filter(
+                          (student) =>
+                            !formData.studentIds.includes(
+                              student.userId || student.id,
+                            ),
+                        )
+                        .map((student) => (
+                          <button
+                            key={student.id}
+                            type="button"
+                            onClick={() => {
+                              const studentUserId =
+                                student.userId || student.id;
+                              if (
+                                !formData.studentIds.includes(studentUserId)
+                              ) {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  studentIds: [
+                                    ...prev.studentIds,
+                                    studentUserId,
+                                  ],
+                                  studentId:
+                                    prev.studentIds.length === 0
+                                      ? studentUserId
+                                      : prev.studentId,
+                                }));
+                                setSelectedStudents((prev) => [
+                                  ...prev,
+                                  student,
+                                ]);
+                                setStudentSearchQuery("");
+                                setShowSuggestions(false);
+                              }
+                            }}
+                            className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {student.person?.firstName}{" "}
+                                  {student.person?.lastName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {student.studentNumber} • {student.program}
+                                </div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
                     </div>
-                    <div className="text-xs text-blue-700">
-                      {selectedStudent.studentNumber} •{" "}
-                      {selectedStudent.program}
+                  )}
+
+                  {/* No results message */}
+                  {showSuggestions &&
+                    studentSearchQuery.length >= 2 &&
+                    studentSuggestions.length === 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-sm text-gray-500">
+                        No students found
+                      </div>
+                    )}
+                </div>
+
+                {/* Selected students list */}
+                {formData.studentIds.length > 0 && (
+                  <div className="border border-gray-300 rounded-md p-3 max-h-48 overflow-y-auto">
+                    <div className="space-y-2">
+                      {selectedStudents.map((student) => {
+                        const studentUserId = student.userId || student.id;
+                        if (!formData.studentIds.includes(studentUserId))
+                          return null;
+
+                        return (
+                          <div
+                            key={student.id}
+                            className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md"
+                          >
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.person?.firstName}{" "}
+                                {student.person?.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {student.studentNumber} • {student.program}
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  studentIds: prev.studentIds.filter(
+                                    (id) => id !== studentUserId,
+                                  ),
+                                  studentId:
+                                    prev.studentIds[0] === studentUserId &&
+                                    prev.studentIds.length > 1
+                                      ? prev.studentIds[1]
+                                      : prev.studentId,
+                                }));
+                                setSelectedStudents((prev) =>
+                                  prev.filter(
+                                    (s) => (s.userId || s.id) !== studentUserId,
+                                  ),
+                                );
+                              }}
+                              disabled={loading || isViewMode}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedStudent(null);
-                      setStudentSearchQuery("");
-                      setFormData((prev) => ({ ...prev, studentId: "" }));
-                    }}
-                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  >
-                    Change
-                  </button>
-                </div>
-              </div>
-            )}
+                )}
 
-            {errors.studentId && (
-              <p className="mt-1 text-sm text-red-600">{errors.studentId}</p>
+                {errors.studentId && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.studentId}
+                  </p>
+                )}
+              </div>
+            ) : (
+              /* Single Student Selection */
+              <div ref={searchRef}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Student <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search student by name..."
+                      value={studentSearchQuery}
+                      onChange={(e) => setStudentSearchQuery(e.target.value)}
+                      onFocus={() => {
+                        if (studentSuggestions.length > 0)
+                          setShowSuggestions(true);
+                      }}
+                      disabled={loading || isViewMode}
+                      required
+                      className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+                    />
+                  </div>
+
+                  {/* Suggestions Dropdown */}
+                  {showSuggestions && studentSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                      {studentSuggestions.map((student) => (
+                        <button
+                          key={student.id}
+                          type="button"
+                          onClick={() => handleSelectStudent(student)}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {student.person?.firstName}{" "}
+                                {student.person?.lastName}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                {student.studentNumber} • {student.program}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* No results message */}
+                  {showSuggestions &&
+                    studentSearchQuery.length >= 2 &&
+                    studentSuggestions.length === 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg p-4 text-center text-sm text-gray-500">
+                        No students found
+                      </div>
+                    )}
+                </div>
+
+                {/* Selected Student Display */}
+                {selectedStudent && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium text-blue-900">
+                          Selected: {selectedStudent.person?.firstName}{" "}
+                          {selectedStudent.person?.lastName}
+                        </div>
+                        <div className="text-xs text-blue-700">
+                          {selectedStudent.studentNumber} •{" "}
+                          {selectedStudent.program}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedStudent(null);
+                          setStudentSearchQuery("");
+                          setFormData((prev) => ({ ...prev, studentId: "" }));
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {errors.studentId && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {errors.studentId}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         )}

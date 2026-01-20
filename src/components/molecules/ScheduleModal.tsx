@@ -19,6 +19,7 @@ interface ScheduleModalProps {
   onSave: (scheduleData: Partial<Schedule>) => Promise<void>;
   schedule?: Schedule | null;
   loading?: boolean;
+  initialDate?: Date | null; // Pre-fill date from calendar
 }
 
 interface FormData {
@@ -82,6 +83,7 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   onSave,
   schedule,
   loading = false,
+  initialDate = null,
 }) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,11 +116,19 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           notes: schedule.notes || "",
         });
       } else {
-        setFormData(initialFormData);
+        // Pre-fill with initialDate from calendar if available
+        const dateString = initialDate
+          ? new Date(initialDate).toISOString().slice(0, 10)
+          : "";
+        setFormData({
+          ...initialFormData,
+          startDate: dateString,
+          endDate: dateString,
+        });
       }
       setErrors({});
     }
-  }, [isOpen, schedule]);
+  }, [isOpen, schedule, initialDate]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

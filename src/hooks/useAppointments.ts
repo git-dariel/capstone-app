@@ -68,12 +68,18 @@ export const useAppointments = () => {
     }
   };
 
-  const fetchAppointmentById = async (id: string, params?: AppointmentQueryParams) => {
+  const fetchAppointmentById = async (
+    id: string,
+    params?: AppointmentQueryParams,
+  ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const appointment = await AppointmentService.getAppointmentById(id, params);
+      const appointment = await AppointmentService.getAppointmentById(
+        id,
+        params,
+      );
 
       setState((prev) => ({
         ...prev,
@@ -92,13 +98,16 @@ export const useAppointments = () => {
 
   const fetchAppointmentsByStudentId = async (
     studentId: string,
-    params?: AppointmentQueryParams
+    params?: AppointmentQueryParams,
   ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response: any = await AppointmentService.getAppointmentsByStudentId(studentId, params);
+      const response: any = await AppointmentService.getAppointmentsByStudentId(
+        studentId,
+        params,
+      );
 
       console.log("Student appointments response:", response);
 
@@ -114,7 +123,8 @@ export const useAppointments = () => {
       return response;
     } catch (error: any) {
       console.error("Error fetching student appointments:", error);
-      const errorMessage = error.message || "Failed to fetch student appointments";
+      const errorMessage =
+        error.message || "Failed to fetch student appointments";
       setError(errorMessage);
       setLoading(false);
       throw error;
@@ -123,18 +133,17 @@ export const useAppointments = () => {
 
   const fetchAppointmentsByCounselorId = async (
     counselorId: string,
-    params?: AppointmentQueryParams
+    params?: AppointmentQueryParams,
   ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response: any = await AppointmentService.getAppointmentsByCounselorId(
-        counselorId,
-        params
-      );
-
-      console.log("Counselor appointments response:", response);
+      const response: any =
+        await AppointmentService.getAppointmentsByCounselorId(
+          counselorId,
+          params,
+        );
 
       setState((prev) => ({
         ...prev,
@@ -148,19 +157,23 @@ export const useAppointments = () => {
       return response;
     } catch (error: any) {
       console.error("Error fetching counselor appointments:", error);
-      const errorMessage = error.message || "Failed to fetch counselor appointments";
+      const errorMessage =
+        error.message || "Failed to fetch counselor appointments";
       setError(errorMessage);
       setLoading(false);
       throw error;
     }
   };
 
-  const createAppointment = async (appointmentData: CreateAppointmentRequest) => {
+  const createAppointment = async (
+    appointmentData: CreateAppointmentRequest,
+  ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const newAppointment = await AppointmentService.createAppointment(appointmentData);
+      const newAppointment =
+        await AppointmentService.createAppointment(appointmentData);
 
       setState((prev) => ({
         ...prev,
@@ -179,20 +192,28 @@ export const useAppointments = () => {
     }
   };
 
-  const updateAppointment = async (id: string, appointmentData: UpdateAppointmentRequest) => {
+  const updateAppointment = async (
+    id: string,
+    appointmentData: UpdateAppointmentRequest,
+  ) => {
     setLoading(true);
     setError(null);
 
     try {
-      const updatedAppointment = await AppointmentService.updateAppointment(id, appointmentData);
+      const updatedAppointment = await AppointmentService.updateAppointment(
+        id,
+        appointmentData,
+      );
 
       setState((prev) => ({
         ...prev,
         appointments: prev.appointments.map((appointment) =>
-          appointment.id === id ? updatedAppointment : appointment
+          appointment.id === id ? updatedAppointment : appointment,
         ),
         currentAppointment:
-          prev.currentAppointment?.id === id ? updatedAppointment : prev.currentAppointment,
+          prev.currentAppointment?.id === id
+            ? updatedAppointment
+            : prev.currentAppointment,
         loading: false,
       }));
 
@@ -214,9 +235,12 @@ export const useAppointments = () => {
 
       setState((prev) => ({
         ...prev,
-        appointments: prev.appointments.filter((appointment) => appointment.id !== id),
+        appointments: prev.appointments.filter(
+          (appointment) => appointment.id !== id,
+        ),
         total: prev.total - 1,
-        currentAppointment: prev.currentAppointment?.id === id ? null : prev.currentAppointment,
+        currentAppointment:
+          prev.currentAppointment?.id === id ? null : prev.currentAppointment,
         loading: false,
       }));
 
