@@ -90,3 +90,4 @@ export { InventoryReminderModal } from "./InventoryReminderModal";
 export { ArchiveStudentsTable } from "./ArchiveStudentsTable";
 export { SeverityPieChart } from "./SeverityPieChart";
 export { GenderDistributionChart } from "./GenderDistributionChart";
+export { PredictionLoadingModal } from "./PredictionLoadingModal";
