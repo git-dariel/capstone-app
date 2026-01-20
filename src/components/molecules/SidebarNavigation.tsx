@@ -20,6 +20,7 @@ import {
   Heart,
   Bell,
   Archive,
+  Shield,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -49,7 +50,7 @@ const NavItem: React.FC<NavItemProps> = ({
         isMinimized ? "justify-center px-3 py-3" : "space-x-3 px-3 py-2",
         isActive
           ? "bg-primary-50 text-primary-700"
-          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
       )}
       title={isMinimized ? label : undefined}
     >
@@ -98,7 +99,9 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { unreadCount, requestNotificationPermission } = useNotifications({ autoFetch: true });
+  const { unreadCount, requestNotificationPermission } = useNotifications({
+    autoFetch: true,
+  });
   // Ensure permission to show native notifications and establish socket sync early
   useEffect(() => {
     requestNotificationPermission?.();
@@ -128,6 +131,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
   // Check if user is guidance counselor
   const isGuidance = user?.type === "guidance";
   const isStudent = user?.type === "student";
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const allNavigationItems = [
     {
@@ -154,7 +158,11 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       path: "/student-dashboard",
       studentOnly: true,
     },
-    { icon: <BookOpen className="w-5 h-5" />, label: "Resources", path: "/resources" },
+    {
+      icon: <BookOpen className="w-5 h-5" />,
+      label: "Resources",
+      path: "/resources",
+    },
     {
       icon: <Heart className="w-5 h-5" />,
       label: "Activities",
@@ -231,22 +239,37 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       guidanceOnly: true,
     },
     {
+      icon: <Shield className="w-5 h-5" />,
+      label: "Audit Logs",
+      path: "/audit-logs",
+      adminOnly: true,
+    },
+    {
       icon: <Clock className="w-5 h-5" />,
       label: "History",
       path: "/history",
       studentOnly: true,
     },
-    { icon: <HelpCircle className="w-5 h-5" />, label: "Help & Support", path: "/help-support" },
+    {
+      icon: <HelpCircle className="w-5 h-5" />,
+      label: "Help & Support",
+      path: "/help-support",
+    },
   ];
 
   // Filter navigation items based on user type
   const navigationItems = allNavigationItems.filter((item) => {
     if (item.guidanceOnly && !isGuidance) return false;
     if (item.studentOnly && !isStudent) return false;
+    if (item.adminOnly && !isAdmin) return false;
     return true;
   });
 
-  const bottomItems: any[] = [];
+  const bottomItems: Array<{
+    icon: React.ReactNode;
+    label: string;
+    path: string;
+  }> = [];
 
   const handleNavigation = (path: string) => {
     navigate(path);
@@ -264,7 +287,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           // Mobile styles - drawer (always full width on mobile)
           "fixed left-0 top-0 w-64 md:translate-x-0",
           isMobile ? (isOpen ? "translate-x-0" : "-translate-x-full") : "",
-          className
+          className,
         )}
       >
         {/* Mobile Header with Close Button */}
@@ -335,13 +358,16 @@ interface MobileMenuToggleProps {
   className?: string;
 }
 
-export const MobileMenuToggle: React.FC<MobileMenuToggleProps> = ({ onClick, className = "" }) => {
+export const MobileMenuToggle: React.FC<MobileMenuToggleProps> = ({
+  onClick,
+  className = "",
+}) => {
   return (
     <button
       onClick={onClick}
       className={cn(
         "md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors",
-        className
+        className,
       )}
       aria-label="Toggle menu"
     >

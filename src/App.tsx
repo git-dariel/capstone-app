@@ -6,6 +6,7 @@ import {
   ActivityTimerPage,
   AidFunctionPage,
   AppointmentsPage,
+  AuditLogsPage,
   ConsentPage,
   ConsentRecordsPage,
   ConsultantRecordsPage,
@@ -305,6 +306,16 @@ function App() {
             element={
               <ProtectedRoute>
                 <AidFunctionPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Audit Logs route - for admins and super admins only */}
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute>
+                <AuditLogsPage />
               </ProtectedRoute>
             }
           />

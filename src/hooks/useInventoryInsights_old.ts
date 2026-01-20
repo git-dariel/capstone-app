@@ -205,7 +205,7 @@ export const useInventoryInsights = () => {
 
     const currentLevel = state.insights.currentLevel;
     let nextLevel: "program" | "year" | "gender" | "students";
-    let newFilters = { ...state.insights.filters };
+    const newFilters = { ...state.insights.filters };
 
     if (currentLevel.level === "overview") {
       nextLevel = "program";

@@ -4,11 +4,21 @@ export type { ApiResponse, PaginatedResponse, QueryParams } from "./api.config";
 
 // Authentication Service
 export { AuthService } from "./auth.service";
-export type { LoginRequest, RegisterRequest, User, Student, AuthResponse } from "./auth.service";
+export type {
+  LoginRequest,
+  RegisterRequest,
+  User,
+  Student,
+  AuthResponse,
+} from "./auth.service";
 
 // User Service
 export { UserService } from "./user.service";
-export type { User as UserProfile, UpdateUserRequest, ExportFilters } from "./user.service";
+export type {
+  User as UserProfile,
+  UpdateUserRequest,
+  ExportFilters,
+} from "./user.service";
 
 // Student Service
 export { StudentService } from "./student.service";
@@ -29,7 +39,11 @@ export type {
 
 // Consent Service
 export { ConsentService } from "./consent.service";
-export type { ConsentFormData, ConsentResponse, GetConsentResponse } from "./consent.service";
+export type {
+  ConsentFormData,
+  ConsentResponse,
+  GetConsentResponse,
+} from "./consent.service";
 
 // Inventory Service
 export { InventoryService } from "./inventory.service";
@@ -46,7 +60,11 @@ export type {
 
 // Person Service
 export { PersonService } from "./person.service";
-export type { Person, CreatePersonRequest, UpdatePersonRequest } from "./person.service";
+export type {
+  Person,
+  CreatePersonRequest,
+  UpdatePersonRequest,
+} from "./person.service";
 
 // Assessment Services
 export { AnxietyService } from "./anxiety.service";
@@ -166,4 +184,17 @@ export type {
 
 // Guidance Dashboard Service
 export { GuidanceDashboardService } from "./guidance-dashboard.service";
-export type { StudentProgressInsight, StudentProgressOverview } from "./guidance-dashboard.service";
+export type {
+  StudentProgressInsight,
+  StudentProgressOverview,
+} from "./guidance-dashboard.service";
+
+// Audit Logs Service
+export { AuditLogsService } from "./audit-logs.service";
+export type {
+  AuditLogResponse,
+  AuditLogStatistics,
+  ExportAuditLogsRequest,
+  CleanupAuditLogsRequest,
+  CleanupAuditLogsResponse,
+} from "./audit-logs.service";

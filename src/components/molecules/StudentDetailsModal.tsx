@@ -1891,9 +1891,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                   { name: "stress", data: mlPredictions.stress },
                                 ].filter((c) => c.data);
 
-                                let highRiskConditions: { name: string; data: any }[] = [];
-                                let moderateRiskConditions: { name: string; data: any }[] = [];
-                                let lowRiskConditions: { name: string; data: any }[] = [];
+                                const highRiskConditions: { name: string; data: any }[] = [];
+                                const moderateRiskConditions: { name: string; data: any }[] = [];
+                                const lowRiskConditions: { name: string; data: any }[] = [];
 
                                 conditions.forEach((c) => {
                                   if (isConditionHighRisk(c.data)) {

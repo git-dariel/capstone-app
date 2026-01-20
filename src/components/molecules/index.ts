@@ -91,3 +91,6 @@ export { ArchiveStudentsTable } from "./ArchiveStudentsTable";
 export { SeverityPieChart } from "./SeverityPieChart";
 export { GenderDistributionChart } from "./GenderDistributionChart";
 export { PredictionLoadingModal } from "./PredictionLoadingModal";
+export { AuditLogsTable } from "./AuditLogsTable";
+export { AuditLogDetailsModal } from "./AuditLogDetailsModal";
+export { AuditLogStatsGrid } from "./AuditLogStatsGrid";

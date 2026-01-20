@@ -126,7 +126,7 @@ const getScoreInterpretation = (type: string, score: number, severity: string) =
   }
 
   // For anxiety, depression, stress
-  let interpretation = `Score of ${score}`;
+  const interpretation = `Score of ${score}`;
   let recommendation = "";
 
   if (severity.toLowerCase().includes("severe")) {

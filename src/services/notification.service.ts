@@ -157,7 +157,7 @@ export class NotificationService {
     params?: NotificationQueryParams
   ): Promise<NotificationPaginatedResponse> {
     try {
-      let queryParams: NotificationQueryParams = {
+      const queryParams: NotificationQueryParams = {
         type: "notification",
         ...params,
       };

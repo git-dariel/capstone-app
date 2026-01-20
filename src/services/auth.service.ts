@@ -176,7 +176,10 @@ export interface VerifyEmailResponse {
 export class AuthService {
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await HttpClient.post<AuthResponse>("/auth/login", credentials);
+      const response = await HttpClient.post<AuthResponse>(
+        "/auth/login",
+        credentials,
+      );
 
       // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
@@ -207,7 +210,7 @@ export class AuthService {
       }
 
       return authData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Clear any existing auth data on error
       TokenManager.removeUser();
       throw error;
@@ -216,7 +219,10 @@ export class AuthService {
 
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await HttpClient.post<AuthResponse>("/auth/register", userData);
+      const response = await HttpClient.post<AuthResponse>(
+        "/auth/register",
+        userData,
+      );
 
       // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
@@ -225,7 +231,9 @@ export class AuthService {
       // The response will only have emailVerificationRequired and otpSent flags
       if (authData.emailVerificationRequired) {
         // This is the new flow - pending registration created, OTP sent
-        console.log("Registration initiated successfully. OTP verification required.");
+        console.log(
+          "Registration initiated successfully. OTP verification required.",
+        );
         return authData;
       }
 
@@ -236,41 +244,49 @@ export class AuthService {
 
       // DON'T store any auth data during registration
       // User will need to sign in after registration
-      console.log("Registration successful, but not storing auth data. User needs to sign in.");
+      console.log(
+        "Registration successful, but not storing auth data. User needs to sign in.",
+      );
 
       return authData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Clear any existing auth data on error
       TokenManager.removeUser();
       throw error;
     }
   }
 
-  static async registerAdmin(userData: RegisterAdminRequest): Promise<AuthResponse> {
-    try {
-      const response = await HttpClient.post<AuthResponse>("/auth/register-admin", userData);
+  static async registerAdmin(
+    userData: RegisterAdminRequest,
+  ): Promise<AuthResponse> {
+    const response = await HttpClient.post<AuthResponse>(
+      "/auth/register-admin",
+      userData,
+    );
 
-      // The API returns the response directly, not wrapped in data property
-      const authData = response as unknown as AuthResponse;
+    // The API returns the response directly, not wrapped in data property
+    const authData = response as unknown as AuthResponse;
 
-      // Validate that we have a user object at minimum
-      if (!authData.user || !authData.user.id) {
-        throw new Error("Invalid user data in response");
-      }
-
-      // DON'T store any auth data during admin registration
-      // Admin registration is done by existing admin users
-      console.log("Admin registration successful");
-
-      return authData;
-    } catch (error: any) {
-      throw error;
+    // Validate that we have a user object at minimum
+    if (!authData.user || !authData.user.id) {
+      throw new Error("Invalid user data in response");
     }
+
+    // DON'T store any auth data during admin registration
+    // Admin registration is done by existing admin users
+    console.log("Admin registration successful");
+
+    return authData;
   }
 
-  static async registerFirstYearStudent(userData: FirstYearRegisterRequest): Promise<AuthResponse> {
+  static async registerFirstYearStudent(
+    userData: FirstYearRegisterRequest,
+  ): Promise<AuthResponse> {
     try {
-      const response = await HttpClient.post<AuthResponse>("/auth/register-regular-email", userData);
+      const response = await HttpClient.post<AuthResponse>(
+        "/auth/register-regular-email",
+        userData,
+      );
 
       // The API returns the response directly, not wrapped in data property
       const authData = response as unknown as AuthResponse;
@@ -279,7 +295,9 @@ export class AuthService {
       // The response will only have emailVerificationRequired and otpSent flags
       if (authData.emailVerificationRequired) {
         // This is the new flow - pending registration created, OTP sent
-        console.log("First-year student registration successful. OTP sent to email for verification.");
+        console.log(
+          "First-year student registration successful. OTP sent to email for verification.",
+        );
       }
 
       // Fallback validation for old flow (if emailVerificationRequired is not set)
@@ -293,11 +311,11 @@ export class AuthService {
       // DON'T store any auth data during registration
       // User will need to sign in after registration
       console.log(
-        "First-year student registration successful, but not storing auth data. User needs to verify email and sign in."
+        "First-year student registration successful, but not storing auth data. User needs to verify email and sign in.",
       );
 
       return authData;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Clear any existing auth data on error
       TokenManager.removeUser();
       throw error;
@@ -324,22 +342,24 @@ export class AuthService {
     return TokenManager.getStudent();
   }
 
-  static async verifyEmail(verificationData: VerifyEmailRequest): Promise<VerifyEmailResponse> {
-    try {
-      const response = await HttpClient.post<VerifyEmailResponse>("/auth/verify-email", verificationData);
-      return response as unknown as VerifyEmailResponse;
-    } catch (error: any) {
-      throw error;
-    }
+  static async verifyEmail(
+    verificationData: VerifyEmailRequest,
+  ): Promise<VerifyEmailResponse> {
+    const response = await HttpClient.post<VerifyEmailResponse>(
+      "/auth/verify-email",
+      verificationData,
+    );
+    return response as unknown as VerifyEmailResponse;
   }
 
-  static async resendOTP(resendData: ResendOTPRequest): Promise<{ message: string; otpSent: boolean }> {
-    try {
-      const response = await HttpClient.post<{ message: string; otpSent: boolean }>("/auth/resend-otp", resendData);
-      return response as unknown as { message: string; otpSent: boolean };
-    } catch (error: any) {
-      throw error;
-    }
+  static async resendOTP(
+    resendData: ResendOTPRequest,
+  ): Promise<{ message: string; otpSent: boolean }> {
+    const response = await HttpClient.post<{
+      message: string;
+      otpSent: boolean;
+    }>("/auth/resend-otp", resendData);
+    return response as unknown as { message: string; otpSent: boolean };
   }
 
   static isAuthenticated(): boolean {

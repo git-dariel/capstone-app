@@ -26,3 +26,4 @@ export { StudentConsultationRecordsContent } from "./StudentConsultationRecordsC
 export { ArchiveStudentsContent } from "./ArchiveStudentsContent";
 export { SimplifiedInsightsContent } from "./SimplifiedInsightsContent";
 export { SimplifiedInventoryInsightsContent } from "./SimplifiedInventoryInsightsContent";
+export { AuditLogsContent } from "./AuditLogsContent";

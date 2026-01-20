@@ -22,3 +22,4 @@ export { useInventoryInsights } from "./useInventoryInsights";
 export { useInventoryReminder } from "./useInventoryReminder";
 export { useSimplifiedInsights } from "./useSimplifiedInsights";
 export { useSimplifiedInventoryInsights } from "./useSimplifiedInventoryInsights";
+export { useAuditLogs } from "./useAuditLogs";
