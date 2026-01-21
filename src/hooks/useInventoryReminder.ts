@@ -43,7 +43,9 @@ export const useInventoryReminder = () => {
 
       // Check if we should show the reminder
       // Only show if needs update and user hasn't dismissed it recently
-      const lastDismissed = localStorage.getItem(`inventory-reminder-dismissed-${student.id}`);
+      const lastDismissed = localStorage.getItem(
+        `inventory-reminder-dismissed-${student.id}`,
+      );
       const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
       const shouldShow =
         reminderData.reminderInfo.needsUpdate &&
@@ -58,9 +60,9 @@ export const useInventoryReminder = () => {
         loading: false,
         showReminder: shouldShow,
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
       // If student doesn't have inventory yet, don't treat as error
-      if (err.message?.includes("not found")) {
+      if (err instanceof Error && err.message?.includes("not found")) {
         setState((prev) => ({
           ...prev,
           reminderInfo: null,
@@ -77,14 +79,20 @@ export const useInventoryReminder = () => {
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: err.message || "Failed to check inventory reminder",
+        error:
+          err instanceof Error
+            ? err.message
+            : "Failed to check inventory reminder",
       }));
     }
   }, [student?.id]);
 
   const dismissReminder = useCallback(() => {
     if (student?.id) {
-      localStorage.setItem(`inventory-reminder-dismissed-${student.id}`, Date.now().toString());
+      localStorage.setItem(
+        `inventory-reminder-dismissed-${student.id}`,
+        Date.now().toString(),
+      );
     }
     setState((prev) => ({ ...prev, showReminder: false }));
   }, [student?.id]);
