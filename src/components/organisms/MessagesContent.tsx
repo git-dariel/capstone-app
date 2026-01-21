@@ -21,7 +21,7 @@ export const MessagesContent: React.FC = () => {
     error,
     pagination,
     unreadCount,
-    socketConnected,
+    // socketConnected,
     loadConversation,
     loadMoreMessages,
     sendMessage,
@@ -197,7 +197,7 @@ export const MessagesContent: React.FC = () => {
                     </div>
                     <div className="mt-1">Unread</div>
                   </div>
-                  <div className="text-center">
+                  {/* <div className="text-center">
                     <div
                       className={cn(
                         "font-semibold text-base sm:text-lg",
@@ -207,7 +207,7 @@ export const MessagesContent: React.FC = () => {
                       {socketConnected ? "Connected" : "Offline"}
                     </div>
                     <div className="mt-1">Status</div>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             </div>

@@ -281,6 +281,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
       <div
         className={cn(
           "bg-white border-r border-gray-200 flex flex-col h-full transition-all duration-300 ease-in-out z-50",
+          "max-h-screen overflow-y-auto",
           // Desktop styles
           isMinimized ? "md:w-16" : "md:w-64",
           "md:relative md:transform-none",
@@ -303,7 +304,7 @@ export const SidebarNavigation: React.FC<SidebarNavigationProps> = ({
           </div>
         )}
 
-        <nav className="flex-1 px-4 py-6 relative">
+        <nav className="flex-1 px-4 py-6 relative overflow-y-auto">
           {/* Desktop Minimize Toggle Button */}
           {!isMobile && onToggleMinimize && (
             <button
