@@ -3,6 +3,8 @@ import { Button } from "@/components/ui";
 import { InventoryReminderModal } from "@/components/molecules";
 import { useAuth, useInventoryReminder } from "@/hooks";
 import { InventoryService, type GetInventoryResponse } from "@/services";
+import { sanitizeObject } from "@/utils/sanitization";
+import { hasErrors, inventoryValidationRules, sanitizeFormData, validateForm } from "@/utils/validation";
 import {
   Activity,
   AlertCircle,
@@ -18,8 +20,6 @@ import {
   Heart,
   Home,
   Loader2,
-  Plus,
-  Save,
   X,
   Zap,
 } from "lucide-react";
@@ -30,11 +30,32 @@ export const StudentInventoryContent: React.FC = () => {
   const [inventory, setInventory] = useState<GetInventoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [editingSection, setEditingSection] = useState<string | null>(null); // "all" when editing entire inventory
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState<any>({});
   const [selectedPredictionIndex, setSelectedPredictionIndex] = useState<number>(0);
   const [isPredictionDropdownOpen, setIsPredictionDropdownOpen] = useState(false);
+
+  const buildEditDataFromInventory = (data: GetInventoryResponse) => ({
+    height: data.height || "",
+    weight: data.weight || "",
+    coplexion: data.coplexion || "",
+    person_to_be_contacted_in_case_of_accident_or_illness: data.person_to_be_contacted_in_case_of_accident_or_illness
+      ? JSON.parse(JSON.stringify(data.person_to_be_contacted_in_case_of_accident_or_illness))
+      : {},
+    educational_background: data.educational_background
+      ? JSON.parse(JSON.stringify(data.educational_background))
+      : {},
+    nature_of_schooling: data.nature_of_schooling ? JSON.parse(JSON.stringify(data.nature_of_schooling)) : {},
+    home_and_family_background: data.home_and_family_background
+      ? JSON.parse(JSON.stringify(data.home_and_family_background))
+      : {},
+    health: data.health ? JSON.parse(JSON.stringify(data.health)) : {},
+    interest_and_hobbies: data.interest_and_hobbies
+      ? JSON.parse(JSON.stringify(data.interest_and_hobbies))
+      : {},
+    test_results: data.test_results ? JSON.parse(JSON.stringify(data.test_results)) : {},
+  });
 
   // Inventory reminder hook
   const { reminderInfo, showReminder, dismissReminder, refreshReminder } = useInventoryReminder();
@@ -56,11 +77,7 @@ export const StudentInventoryContent: React.FC = () => {
           setInventory(null);
         } else {
           setInventory(data);
-          setEditData({
-            height: data.height,
-            weight: data.weight,
-            coplexion: data.coplexion,
-          });
+          setEditData(buildEditDataFromInventory(data));
           setError(null);
         }
       } catch (err: any) {
@@ -91,52 +108,19 @@ export const StudentInventoryContent: React.FC = () => {
     );
   };
 
-  const handleEditClick = (section: string) => {
-    setEditingSection(section);
-    // Initialize edit data from current inventory
-    if (inventory) {
-      if (section === "physical") {
-        setEditData({
-          height: inventory.height,
-          weight: inventory.weight,
-          coplexion: inventory.coplexion,
-        });
-      } else if (section === "emergency") {
-        setEditData({
-          person_to_be_contacted_in_case_of_accident_or_illness:
-            inventory.person_to_be_contacted_in_case_of_accident_or_illness || {},
-        });
-      } else if (section === "educational") {
-        setEditData({
-          educational_background: inventory.educational_background || {},
-        });
-      } else if (section === "schooling") {
-        setEditData({
-          nature_of_schooling: inventory.nature_of_schooling || {},
-        });
-      } else if (section === "family") {
-        setEditData({
-          home_and_family_background: inventory.home_and_family_background || {},
-        });
-      } else if (section === "health") {
-        setEditData({
-          health: inventory.health || {},
-        });
-      } else if (section === "hobbies") {
-        setEditData({
-          interest_and_hobbies: inventory.interest_and_hobbies || {},
-        });
-      } else if (section === "testresults") {
-        setEditData({
-          test_results: inventory.test_results || {},
-        });
-      }
-    }
+  const handleEditClick = () => {
+    if (!inventory) return;
+    setEditData(buildEditDataFromInventory(inventory));
+    setEditingSection("all");
   };
 
   const handleCancel = () => {
+    if (inventory) {
+      setEditData(buildEditDataFromInventory(inventory));
+    } else {
+      setEditData({});
+    }
     setEditingSection(null);
-    setEditData({});
   };
 
   const handleSave = async () => {
@@ -146,15 +130,52 @@ export const StudentInventoryContent: React.FC = () => {
     setError(null);
 
     try {
+      const updateValidationRules = getInventoryUpdateValidationRules();
+
+      // Step 1: Apply field-specific sanitization (removes invalid chars based on rules)
+      let sanitizedFormData = sanitizeFormData(
+        editData as Record<string, unknown>,
+        updateValidationRules,
+      );
+
+      // Step 2: Deep sanitize entire object (extra safety layer against XSS/SQL injection)
+      sanitizedFormData = sanitizeObject(sanitizedFormData);
+
+      // Step 3: Validate sanitized data (blocks dangerous content)
+      const errors = validateForm(
+        sanitizedFormData as Record<string, unknown>,
+        updateValidationRules,
+      );
+      if (hasErrors(errors)) {
+        const errorEntries = Object.entries(errors);
+        const errorSummaries = errorEntries.slice(0, 3).map(([fieldKey, message]) => {
+          return `${getFriendlyFieldLabel(fieldKey)}: ${message}`;
+        });
+
+        const remainingCount = errorEntries.length - errorSummaries.length;
+        const summaryMessage =
+          errorSummaries.join(" | ") +
+          (remainingCount > 0
+            ? ` | +${remainingCount} more field${remainingCount > 1 ? "s" : ""} with issues`
+            : "");
+
+        setError(summaryMessage || "Please review the fields with validation errors.");
+        setIsSaving(false);
+        return;
+      }
+
+      // Keep UI state consistent with what we submit
+      setEditData(sanitizedFormData);
+
       // Update the inventory with edited data
-      await InventoryService.updateInventory(inventory.id, editData);
+      await InventoryService.updateInventory(inventory.id, sanitizedFormData);
 
       // Fetch the latest inventory data from server (to get updated prediction and all fields)
       const updated = await InventoryService.getInventoryByStudentId(student.id);
       if (updated) {
         setInventory(updated);
         setEditingSection(null);
-        setEditData({});
+        setEditData(buildEditDataFromInventory(updated));
         // Refresh reminder after update
         refreshReminder();
       }
@@ -172,6 +193,112 @@ export const StudentInventoryContent: React.FC = () => {
       month: "long",
       day: "numeric",
     });
+  };
+
+  const parseNumericValue = (value: string) => {
+    const numeric = parseFloat(value.replace(/[^\d.]/g, ""));
+    return isNaN(numeric) ? null : numeric;
+  };
+
+  const isRealisticHeight = (value: string) => {
+    if (!value) return true;
+    const lower = value.toLowerCase();
+
+    // Handle feet/inches (e.g., 5'7 or 5'10")
+    const ftInMatch = /(\d+)'[\s]*([\d.]*)/.exec(lower);
+    if (ftInMatch) {
+      const feet = parseFloat(ftInMatch[1]);
+      const inches = ftInMatch[2] ? parseFloat(ftInMatch[2]) : 0;
+      const cm = feet * 30.48 + inches * 2.54;
+      return cm >= 50 && cm <= 250;
+    }
+
+    const numeric = parseNumericValue(value);
+    if (numeric === null) return true;
+
+    // Treat explicit meters
+    if (lower.includes("m") && !lower.includes("cm")) {
+      const cm = numeric * 100;
+      return cm >= 50 && cm <= 250;
+    }
+
+    // Default: treat as centimeters if clearly cm or large number
+    const isCm = lower.includes("cm") || numeric > 10;
+    const cmValue = isCm ? numeric : numeric * 30.48; // if likely feet (e.g., "5.7")
+    return cmValue >= 50 && cmValue <= 250;
+  };
+
+  const isRealisticWeight = (value: string) => {
+    if (!value) return true;
+    const lower = value.toLowerCase();
+    const numeric = parseNumericValue(value);
+    if (numeric === null) return true;
+
+    const isLbs = lower.includes("lb") || lower.includes("pound");
+    const kg = isLbs ? numeric / 2.205 : numeric;
+
+    // Acceptable human weight range (kg)
+    return kg >= 20 && kg <= 500;
+  };
+
+  const getFriendlyFieldLabel = (fieldKey: string): string => {
+    const customLabels: Record<string, string> = {
+      height: "Height",
+      weight: "Weight",
+      coplexion: "Complexion",
+      "person_to_be_contacted_in_case_of_accident_or_illness.firstName":
+        "Emergency Contact - First Name",
+      "person_to_be_contacted_in_case_of_accident_or_illness.lastName":
+        "Emergency Contact - Last Name",
+      "person_to_be_contacted_in_case_of_accident_or_illness.middleName":
+        "Emergency Contact - Middle Name",
+      "home_and_family_background.father.firstName": "Father - First Name",
+      "home_and_family_background.father.lastName": "Father - Last Name",
+      "home_and_family_background.father.age": "Father - Age",
+      "home_and_family_background.mother.firstName": "Mother - First Name",
+      "home_and_family_background.mother.lastName": "Mother - Last Name",
+      "home_and_family_background.mother.age": "Mother - Age",
+      "home_and_family_background.number_of_children_in_the_family_including_yourself":
+        "Total Children (Including You)",
+      "home_and_family_background.number_of_brothers": "Number of Brothers",
+      "home_and_family_background.number_of_sisters": "Number of Sisters",
+      "home_and_family_background.number_of_brothers_or_sisters_employed":
+        "Working Brothers/Sisters",
+      "home_and_family_background.how_much_is_your_weekly_allowance":
+        "Weekly Allowance",
+      student_signature: "Student Signature",
+    };
+
+    if (customLabels[fieldKey]) return customLabels[fieldKey];
+
+    const parts = fieldKey.split(".");
+    const last = parts[parts.length - 1] || fieldKey;
+    return last
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
+
+  const isEditing = editingSection === "all";
+
+  const getInventoryUpdateValidationRules = () => {
+    // On update, we don't want to require the student signature again.
+    const { student_signature: _signatureRule, ...rest } = inventoryValidationRules;
+    const clonedRules: Record<string, typeof inventoryValidationRules[string]> = {};
+    Object.entries(rest).forEach(([key, rules]) => {
+      clonedRules[key] = [...rules];
+    });
+
+    // Add realistic bounds for height/weight
+    clonedRules.height = [
+      ...(clonedRules.height || []),
+      { custom: (val: string) => isRealisticHeight(val), message: "Height seems unrealistic." },
+    ];
+    clonedRules.weight = [
+      ...(clonedRules.weight || []),
+      { custom: (val: string) => isRealisticWeight(val), message: "Weight seems unrealistic." },
+    ];
+
+    return clonedRules;
   };
 
   // Loading state
@@ -245,17 +372,51 @@ export const StudentInventoryContent: React.FC = () => {
           <p className="text-gray-600 mt-1">View and update your personal inventory information</p>
         </div>
 
-        {/* Update Reminder Info */}
-        {reminderInfo && (
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
-            {reminderInfo.needsUpdate && (
-              <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-sm">
-                <Calendar className="w-4 h-4" />
-                <span>{reminderInfo.isOverdue ? "Update Overdue" : "Update Due Soon"}</span>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-3 md:gap-4">
+          {/* Update Reminder Info */}
+          {reminderInfo && reminderInfo.needsUpdate && (
+            <div className="flex items-center gap-2 px-3 py-1 rounded-lg bg-orange-50 border border-orange-200 text-orange-700 text-sm">
+              <Calendar className="w-4 h-4" />
+              <span>{reminderInfo.isOverdue ? "Update Overdue" : "Update Due Soon"}</span>
+            </div>
+          )}
+
+          {!isEditing ? (
+            <Button
+              onClick={handleEditClick}
+              variant="primary"
+              size="sm"
+              className="flex items-center space-x-2"
+            >
+              <Edit2 className="h-4 w-4" />
+              <span>Edit Inventory</span>
+            </Button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                size="sm"
+                disabled={isSaving}
+                className="flex items-center space-x-2"
+              >
+                <X className="h-4 w-4" />
+                <span>Cancel</span>
+              </Button>
+              <Button
+                onClick={handleSave}
+                variant="primary"
+                size="sm"
+                loading={isSaving}
+                disabled={isSaving}
+                className="flex items-center space-x-2"
+              >
+                {!isSaving && <Check className="h-4 w-4" />}
+                <span>{isSaving ? "Saving..." : "Save"}</span>
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Error Alert */}
@@ -301,20 +462,9 @@ export const StudentInventoryContent: React.FC = () => {
               <Activity className="w-5 h-5 text-primary-600" />
               <span>Physical Information</span>
             </h3>
-            {editingSection !== "physical" && (
-              <Button
-                onClick={() => handleEditClick("physical")}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Edit2 className="h-4 w-4" />
-                <span>Edit</span>
-              </Button>
-            )}
           </div>
 
-          {editingSection === "physical" ? (
+          {isEditing ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
@@ -346,27 +496,6 @@ export const StudentInventoryContent: React.FC = () => {
                 />
               </div>
 
-              <div className="flex gap-3 justify-end pt-4">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  disabled={isSaving}
-                  className="flex items-center space-x-2"
-                >
-                  <X className="h-4 w-4" />
-                  <span>Cancel</span>
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  variant="primary"
-                  loading={isSaving}
-                  disabled={isSaving}
-                  className="flex items-center space-x-2"
-                >
-                  {!isSaving && <Check className="h-4 w-4" />}
-                  <span>{isSaving ? "Saving..." : "Save"}</span>
-                </Button>
-              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -402,20 +531,9 @@ export const StudentInventoryContent: React.FC = () => {
                 <AlertCircle className="w-5 h-5 text-red-600" />
                 <span>Emergency Contact</span>
               </h3>
-              {editingSection !== "emergency" && (
-                <Button
-                  onClick={() => handleEditClick("emergency")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "emergency" ? (
+          {isEditing ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -582,25 +700,6 @@ export const StudentInventoryContent: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3 justify-end pt-4">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    variant="primary"
-                    loading={isSaving}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    {!isSaving && <Check className="h-4 w-4" />}
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
                 </div>
               </div>
             ) : (
@@ -678,20 +777,9 @@ export const StudentInventoryContent: React.FC = () => {
                 <BookOpen className="w-5 h-5 text-blue-600" />
                 <span>Educational Background</span>
               </h3>
-              {editingSection !== "educational" && (
-                <Button
-                  onClick={() => handleEditClick("educational")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "educational" ? (
+            {isEditing ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormSelect
@@ -815,25 +903,6 @@ export const StudentInventoryContent: React.FC = () => {
                 </div>
 
                 <div className="flex gap-3 justify-end pt-4">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    variant="primary"
-                    loading={isSaving}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    {!isSaving && <Check className="h-4 w-4" />}
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
                 </div>
               </div>
             ) : (
@@ -917,20 +986,9 @@ export const StudentInventoryContent: React.FC = () => {
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Nature of Schooling</h3>
-              {editingSection !== "schooling" && (
-                <Button
-                  onClick={() => handleEditClick("schooling")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "schooling" ? (
+          {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-3">
                   <label className="flex items-center space-x-3 cursor-pointer">
@@ -996,25 +1054,6 @@ export const StudentInventoryContent: React.FC = () => {
                 )}
 
                 <div className="flex gap-3 justify-end pt-4">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    variant="primary"
-                    loading={isSaving}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    {!isSaving && <Check className="h-4 w-4" />}
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
                 </div>
               </div>
             ) : (
@@ -1063,20 +1102,9 @@ export const StudentInventoryContent: React.FC = () => {
                 <Home className="w-5 h-5 text-green-600" />
                 <span>Home & Family Background</span>
               </h3>
-              {editingSection !== "family" && (
-                <Button
-                  onClick={() => handleEditClick("family")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "family" ? (
+            {isEditing ? (
               <div className="space-y-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <p className="text-sm text-blue-800">
@@ -1487,27 +1515,7 @@ export const StudentInventoryContent: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4 border-t">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    variant="primary"
-                    loading={isSaving}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    {!isSaving && <Check className="h-4 w-4" />}
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
-                </div>
+                <div className="pt-4 border-t" />
               </div>
             ) : (
               <div>
@@ -1666,20 +1674,9 @@ export const StudentInventoryContent: React.FC = () => {
                 <Heart className="w-5 h-5 text-pink-600" />
                 <span>Health Information</span>
               </h3>
-              {editingSection !== "health" && (
-                <Button
-                  onClick={() => handleEditClick("health")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "health" ? (
+            {isEditing ? (
               <div className="space-y-6">
                 {/* Physical Health Section */}
                 <div className="space-y-4 border-b pb-6">
@@ -1882,7 +1879,9 @@ export const StudentInventoryContent: React.FC = () => {
                               ...editData.health,
                               psychological: {
                                 ...editData.health?.psychological,
-                                when: e.target.value ? new Date(e.target.value) : null,
+                              when: e.target.value
+                                ? new Date(e.target.value + "T00:00:00.000Z").toISOString()
+                                : null,
                               },
                             },
                           })
@@ -1911,26 +1910,7 @@ export const StudentInventoryContent: React.FC = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-end pt-4">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
-                </div>
+                {/* Action Buttons (global controls in header) */}
               </div>
             ) : (
               <div>
@@ -2035,20 +2015,9 @@ export const StudentInventoryContent: React.FC = () => {
                 <Zap className="w-5 h-5 text-yellow-600" />
                 <span>Interest & Hobbies</span>
               </h3>
-              {editingSection !== "hobbies" && (
-                <Button
-                  onClick={() => handleEditClick("hobbies")}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center space-x-2"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-              )}
             </div>
 
-            {editingSection === "hobbies" ? (
+            {isEditing ? (
               <div className="space-y-6">
                 {/* Favorite Subjects Section */}
                 <div className="space-y-4 border-b pb-6">
@@ -2166,26 +2135,7 @@ export const StudentInventoryContent: React.FC = () => {
                     )}
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 justify-end pt-4">
-                  <Button
-                    onClick={handleCancel}
-                    variant="outline"
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <X className="h-4 w-4" />
-                    <span>Cancel</span>
-                  </Button>
-                  <Button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="flex items-center space-x-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    <span>{isSaving ? "Saving..." : "Save"}</span>
-                  </Button>
-                </div>
+                {/* Action Buttons handled globally in header */}
               </div>
             ) : (
               <div>
@@ -2258,20 +2208,9 @@ export const StudentInventoryContent: React.FC = () => {
               <ClipboardList className="w-5 h-5 text-purple-600" />
               <span>Test Results</span>
             </h3>
-            {editingSection !== "testresults" && (
-              <Button
-                onClick={() => handleEditClick("testresults")}
-                variant="outline"
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                <Edit2 className="h-4 w-4" />
-                <span>Edit</span>
-              </Button>
-            )}
           </div>
 
-          {editingSection === "testresults" ? (
+          {isEditing ? (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
@@ -2358,27 +2297,7 @@ export const StudentInventoryContent: React.FC = () => {
                 placeholder="Enter test description or additional notes"
               />
 
-              <div className="flex gap-3 justify-end pt-4 border-t">
-                <Button
-                  onClick={handleCancel}
-                  variant="outline"
-                  disabled={isSaving}
-                  className="flex items-center space-x-2"
-                >
-                  <X className="h-4 w-4" />
-                  <span>Cancel</span>
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  variant="primary"
-                  loading={isSaving}
-                  disabled={isSaving}
-                  className="flex items-center space-x-2"
-                >
-                  {!isSaving && <Check className="h-4 w-4" />}
-                  <span>{isSaving ? "Saving..." : "Save"}</span>
-                </Button>
-              </div>
+              <div className="pt-4 border-t" />
             </div>
           ) : (
             <div>
@@ -2425,15 +2344,6 @@ export const StudentInventoryContent: React.FC = () => {
                   <div className="text-xs text-gray-500 mb-4">
                     Test results will appear here once administered and recorded.
                   </div>
-                  <Button
-                    onClick={() => handleEditClick("testresults")}
-                    variant="outline"
-                    size="sm"
-                    className="flex items-center space-x-2 mx-auto"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Test Results</span>
-                  </Button>
                 </div>
               )}
             </div>
