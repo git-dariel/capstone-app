@@ -49,7 +49,7 @@ export const messages = {
   maxLength: (max: number) => `Must not exceed ${max} characters`,
   minValue: (min: number) => `Must be at least ${min}`,
   maxValue: (max: number) => `Must not exceed ${max}`,
-  invalidAge: "Age must be between 0 and 150",
+  invalidAge: "Please enter a realistic age (between 15 and 100)",
   invalidHeight: "Please enter a valid height (e.g., 5'7, 5'8\", 170cm, 5.7ft)",
   invalidWeight: "Please enter a valid weight (e.g., 150lbs, 70kg)",
   invalidPostalCode: "Please enter a valid postal/zip code",
@@ -218,8 +218,8 @@ export const inventoryValidationRules: ValidationRules = {
   "home_and_family_background.father.age": [
     { required: true, message: messages.required },
     { pattern: patterns.numeric, message: messages.invalidNumber },
-    { min: 0, message: messages.invalidAge },
-    { max: 150, message: messages.invalidAge },
+    { min: 15, message: messages.invalidAge },
+    { max: 100, message: messages.invalidAge },
     { sanitize: sanitizeNumber, message: "Number sanitized" },
   ],
 
@@ -241,8 +241,8 @@ export const inventoryValidationRules: ValidationRules = {
   "home_and_family_background.mother.age": [
     { required: true, message: messages.required },
     { pattern: patterns.numeric, message: messages.invalidNumber },
-    { min: 0, message: messages.invalidAge },
-    { max: 150, message: messages.invalidAge },
+    { min: 15, message: messages.invalidAge },
+    { max: 100, message: messages.invalidAge },
     { sanitize: sanitizeNumber, message: "Number sanitized" },
   ],
 
@@ -254,8 +254,8 @@ export const inventoryValidationRules: ValidationRules = {
   ],
   "home_and_family_background.guardian.age": [
     { pattern: patterns.numeric, message: messages.invalidNumber },
-    { min: 0, message: messages.invalidAge },
-    { max: 150, message: messages.invalidAge },
+    { min: 15, message: messages.invalidAge },
+    { max: 100, message: messages.invalidAge },
     { sanitize: sanitizeNumber, message: "Number sanitized" },
   ],
 
