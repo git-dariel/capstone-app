@@ -6,7 +6,7 @@ const getBaseURL = (): string => {
 
     // If running on localhost, use local API
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0") {
-      return "http://localhost:5001/api";
+      return "http://localhost:5000/api";
     }
   }
 
@@ -210,7 +210,7 @@ export class HttpClient {
         throw new Error(
           errorData.error ||
             errorData.message ||
-            `API request failed with status ${response.status}`
+            `API request failed with status ${response.status}`,
         );
       }
 
@@ -261,7 +261,7 @@ export class HttpClient {
         throw new Error(
           errorData.error ||
             errorData.message ||
-            `API request failed with status ${response.status}`
+            `API request failed with status ${response.status}`,
         );
       }
 

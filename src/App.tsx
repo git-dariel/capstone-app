@@ -19,6 +19,7 @@ import {
   InventoryRecordsPage,
   InventoryInsightsPage,
   LandingPage,
+  MaintenancePage,
   MentalHealthResultsPage,
   MessagesPage,
   NotFoundPage,
@@ -36,6 +37,12 @@ import {
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { useState } from "react";
 
+// ========== MAINTENANCE MODE CONFIGURATION ==========
+// Set this to true to enable maintenance mode
+// Set this to false to restore normal application access
+const MAINTENANCE_MODE = true;
+// ====================================================
+
 function App() {
   const [showSplash, setShowSplash] = useState(true);
 
@@ -48,13 +55,17 @@ function App() {
     return <SplashScreen onComplete={handleSplashComplete} duration={2000} />;
   }
 
+  // Show maintenance page if maintenance mode is enabled
+  if (MAINTENANCE_MODE) {
+    return <MaintenancePage />;
+  }
+
   return (
     <Router>
       <div className="App">
         <Routes>
-          {/* Default route - show landing page */}
+          Default route - show landing page
           <Route path="/" element={<LandingPage />} />
-
           {/* Public routes - redirect to home if already authenticated */}
           <Route
             path="/signin"
@@ -80,7 +91,6 @@ function App() {
               </PublicRoute>
             }
           />
-
           {/* Consent routes - protected but don't require consent completion */}
           <Route
             path="/consent"
@@ -98,7 +108,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Inventory routes - protected but don't require completion */}
           <Route
             path="/inventory"
@@ -116,7 +125,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Protected home page */}
           <Route
             path="/home"
@@ -126,7 +134,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Protected routes - require authentication */}
           <Route
             path="/dashboard"
@@ -288,7 +295,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Aid Function routes - for guidance counselors and admins */}
           <Route
             path="/aid-function"
@@ -298,7 +304,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Insights routes */}
           <Route
             path="/insights/:type"
@@ -308,7 +313,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* 404 Catch-all route - must be last */}
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
