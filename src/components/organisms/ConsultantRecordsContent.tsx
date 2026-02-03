@@ -1,25 +1,24 @@
 import React, { useState, useEffect } from "react";
 import {
   ConsultantRecordModal,
-  StackedConsultantCards,
   StudentRecordsModal,
   ConfirmationModal,
 } from "@/components/molecules";
 import { useStudents, useAuth } from "@/hooks";
 import type { ConsultantRecord } from "@/types/consultant-record.types";
 import { StudentService } from "@/services/student.service";
-import { Plus, Search, RefreshCw, Filter } from "lucide-react";
+import { Plus, Search, RefreshCw, FileText, User } from "lucide-react";
 import { Button } from "@/components/ui";
-import { LoadingScreen } from "@/components/atoms";
+import { LoadingScreen, Avatar } from "@/components/atoms";
 
 export const ConsultantRecordsContent: React.FC = () => {
   const { user } = useAuth();
   const { students, loading: studentsLoading, fetchStudents } = useStudents();
 
   const [records, setRecords] = useState<ConsultantRecord[]>([]);
-  const [filteredRecords, setFilteredRecords] = useState<ConsultantRecord[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStudent, setSelectedStudent] = useState<string>("all");
+  const [studentSearchTerm, setStudentSearchTerm] = useState("");
+  const [recordSearchTerm, setRecordSearchTerm] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,24 +34,25 @@ export const ConsultantRecordsContent: React.FC = () => {
 
   const isGuidanceUser = user?.type === "guidance";
 
-  // Fetch students on component mount
+  // Fetch students (server-side search)
   useEffect(() => {
-    const loadStudents = async () => {
+    if (!isGuidanceUser) return;
+
+    const timeout = setTimeout(async () => {
       try {
         await fetchStudents({
-          limit: 100,
+          limit: 10,
           fields:
             "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.avatar",
+          ...(studentSearchTerm.trim() ? { query: studentSearchTerm.trim() } : {}),
         });
       } catch (error) {
         console.error("Error loading students:", error);
       }
-    };
+    }, 350);
 
-    if (isGuidanceUser) {
-      loadStudents();
-    }
-  }, [isGuidanceUser]);
+    return () => clearTimeout(timeout);
+  }, [isGuidanceUser, studentSearchTerm]);
 
   // Extract consultant records from students
   useEffect(() => {
@@ -80,37 +80,48 @@ export const ConsultantRecordsContent: React.FC = () => {
 
       // Sort by consultation date (newest first)
       extractedRecords.sort(
-        (a, b) => new Date(b.consultationDate).getTime() - new Date(a.consultationDate).getTime()
+        (a, b) => new Date(b.consultationDate).getTime() - new Date(a.consultationDate).getTime(),
       );
 
       setRecords(extractedRecords);
     }
   }, [students]);
 
-  // Filter records based on search and student selection
-  useEffect(() => {
-    let filtered = records;
+  const filteredStudents = React.useMemo(() => students, [students]);
 
-    // Filter by search term
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+  const recordStatsByStudentId = React.useMemo(() => {
+    const stats: Record<string, { count: number; latestDate?: string }> = {};
+    records.forEach((record) => {
+      const existing = stats[record.studentId];
+      if (!existing) {
+        stats[record.studentId] = { count: 1, latestDate: record.consultationDate };
+        return;
+      }
+      existing.count += 1;
+      if (
+        record.consultationDate &&
+        (!existing.latestDate ||
+          new Date(record.consultationDate).getTime() > new Date(existing.latestDate).getTime())
+      ) {
+        existing.latestDate = record.consultationDate;
+      }
+    });
+    return stats;
+  }, [records]);
+
+  const selectedStudentRecords = React.useMemo(() => {
+    if (!selectedStudentId) return [];
+    let filtered = records.filter((record) => record.studentId === selectedStudentId);
+
+    if (recordSearchTerm) {
+      const searchLower = recordSearchTerm.toLowerCase();
       filtered = filtered.filter(
         (record) =>
           record.title.toLowerCase().includes(searchLower) ||
-          record.content.toLowerCase().includes(searchLower) ||
-          (record.student &&
-            `${record.student.person?.firstName} ${record.student.person?.lastName}`
-              .toLowerCase()
-              .includes(searchLower))
+          record.content.toLowerCase().includes(searchLower),
       );
     }
 
-    // Filter by selected student
-    if (selectedStudent !== "all") {
-      filtered = filtered.filter((record) => record.studentId === selectedStudent);
-    }
-
-    // Filter by date range
     if (startDate) {
       const startDateTime = new Date(startDate).getTime();
       filtered = filtered.filter((record) => {
@@ -127,14 +138,10 @@ export const ConsultantRecordsContent: React.FC = () => {
       });
     }
 
-    setFilteredRecords(filtered);
-  }, [records, searchTerm, selectedStudent, startDate, endDate]);
-
-  const handleCreateRecord = () => {
-    setEditingRecord(null);
-    setSelectedStudentForNewRecord("");
-    setIsModalOpen(true);
-  };
+    return filtered.sort(
+      (a, b) => new Date(b.consultationDate).getTime() - new Date(a.consultationDate).getTime(),
+    );
+  }, [records, selectedStudentId, recordSearchTerm, startDate, endDate]);
 
   const handleCreateRecordForStudent = (studentId: string) => {
     setEditingRecord(null);
@@ -203,7 +210,7 @@ export const ConsultantRecordsContent: React.FC = () => {
                 content: recordData.content,
                 createdAt: consultationDateTime,
               }
-            : note
+            : note,
         );
       } else {
         // Add new record
@@ -239,26 +246,9 @@ export const ConsultantRecordsContent: React.FC = () => {
     }
   };
 
-  // Group records by student
-  const groupedRecords = React.useMemo(() => {
-    const groups: { [studentId: string]: ConsultantRecord[] } = {};
-
-    filteredRecords.forEach((record) => {
-      if (!groups[record.studentId]) {
-        groups[record.studentId] = [];
-      }
-      groups[record.studentId].push(record);
-    });
-
-    // Sort records within each group by creation date (newest first)
-    Object.keys(groups).forEach((studentId) => {
-      groups[studentId].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-    });
-
-    return groups;
-  }, [filteredRecords]);
+  const selectedStudent = React.useMemo(() => {
+    return students.find((student) => student.id === selectedStudentId) || null;
+  }, [students, selectedStudentId]);
 
   const handleDeleteRecord = (record: ConsultantRecord) => {
     setRecordToDelete(record);
@@ -312,28 +302,19 @@ export const ConsultantRecordsContent: React.FC = () => {
     setRecordToDelete(null);
   };
 
-  const handleRefresh = async () => {
-    setLoading(true);
-    try {
-      await fetchStudents({
-        limit: 100,
-        fields:
-          "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender",
-      });
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      setError("Failed to refresh data. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const handleSelectStudent = (studentId: string) => {
+    setSelectedStudentId(studentId);
+    setRecordSearchTerm("");
+    setStartDate("");
+    setEndDate("");
   };
 
   if (!isGuidanceUser) {
@@ -361,65 +342,6 @@ export const ConsultantRecordsContent: React.FC = () => {
                 Manage consultation notes and records for students
               </p>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={handleRefresh}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
-
-              <Button
-                onClick={handleCreateRecord}
-                className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Add Record
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-500">Total Records</h3>
-            <p className="text-lg sm:text-2xl font-semibold text-gray-900 mt-1">{records.length}</p>
-          </div>
-
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-500">Active Students</h3>
-            <p className="text-lg sm:text-2xl font-semibold text-blue-600 mt-1">
-              {new Set(records.map((r) => r.studentId)).size}
-            </p>
-          </div>
-
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-500">This Month</h3>
-            <p className="text-lg sm:text-2xl font-semibold text-green-600 mt-1">
-              {
-                records.filter((r) => {
-                  const consultDate = new Date(r.consultationDate);
-                  const now = new Date();
-                  return (
-                    consultDate.getMonth() === now.getMonth() &&
-                    consultDate.getFullYear() === now.getFullYear()
-                  );
-                }).length
-              }
-            </p>
-          </div>
-
-          <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm border">
-            <h3 className="text-xs sm:text-sm font-medium text-gray-500">Filtered Results</h3>
-            <p className="text-lg sm:text-2xl font-semibold text-purple-600 mt-1">
-              {filteredRecords.length}
-            </p>
           </div>
         </div>
 
@@ -443,135 +365,327 @@ export const ConsultantRecordsContent: React.FC = () => {
           </div>
         )}
 
-        {/* Search and Filter Controls */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4">
-          <div className="flex flex-col gap-3">
-            {/* First Row: Search and Student Filter */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-              {/* Search Bar */}
-              <div className="relative flex-1">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
+          {/* Student Table */}
+          <div className="lg:col-span-2 space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Students</h2>
+                  <p className="text-xs text-gray-500">
+                    Select a student to view consultation records
+                  </p>
+                </div>
+                <div className="text-xs text-gray-500">{filteredStudents.length} found</div>
+              </div>
+              <div className="relative mt-3">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search records..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search students..."
+                  value={studentSearchTerm}
+                  onChange={(e) => setStudentSearchTerm(e.target.value)}
                   className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
                 />
               </div>
-
-              {/* Student Filter */}
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <select
-                  value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
-                  className="pl-10 pr-8 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 w-full sm:min-w-[200px]"
-                >
-                  <option value="all">All Students</option>
-                  {students.map((student) => (
-                    <option key={student.id} value={student.id}>
-                      {student.person?.firstName} {student.person?.lastName} ({student.program})
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
 
-            {/* Second Row: Date Filters */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-                <label htmlFor="startDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                  From:
-                </label>
-                <input
-                  type="date"
-                  id="startDate"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  max={endDate || new Date().toISOString().split('T')[0]}
-                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 flex-1 sm:flex-initial">
-                <label htmlFor="endDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                  To:
-                </label>
-                <input
-                  type="date"
-                  id="endDate"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  min={startDate}
-                  max={new Date().toISOString().split('T')[0]}
-                  className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-                />
-              </div>
-
-              {(startDate || endDate) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setStartDate("");
-                    setEndDate("");
-                  }}
-                  className="text-gray-600 hover:text-gray-800"
-                >
-                  Clear Dates
-                </Button>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              {studentsLoading ? (
+                <div className="p-6 text-center">
+                  <div className="flex items-center justify-center space-x-2 text-gray-600">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span>Loading students...</span>
+                  </div>
+                </div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="p-6 text-center text-gray-500 text-sm">No students found</div>
+              ) : (
+                <div className="max-h-[520px] overflow-y-auto overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Student
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Program & Year
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Records
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Latest
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {filteredStudents.slice(0, 10).map((student) => {
+                        const stats = recordStatsByStudentId[student.id];
+                        const isSelected = selectedStudentId === student.id;
+                        return (
+                          <tr
+                            key={student.id}
+                            className={`cursor-pointer transition-colors ${
+                              isSelected ? "bg-primary-50" : "hover:bg-gray-50"
+                            }`}
+                            onClick={() => handleSelectStudent(student.id)}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center space-x-3">
+                                <Avatar
+                                  src={student.person?.users?.[0]?.avatar}
+                                  fallback={(student.person?.firstName || "S").charAt(0)}
+                                  className="w-9 h-9"
+                                />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-gray-900 truncate">
+                                    {student.person?.firstName} {student.person?.lastName}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="text-sm text-gray-900">{student.program}</div>
+                              <div className="text-xs text-gray-500">Year {student.year}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-gray-900">{stats?.count ?? 0}</span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-500">
+                              {stats?.latestDate ? formatDate(stats.latestDate) : "—"}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-primary-600 hover:text-primary-800 hover:bg-primary-50"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleSelectStudent(student.id);
+                                }}
+                              >
+                                {isSelected ? "Selected" : "Select"}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
+          </div>
+
+          {/* Records Table */}
+          <div className="lg:col-span-3 space-y-4">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary-50 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-primary-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">
+                      {selectedStudent
+                        ? `${selectedStudent.person?.firstName} ${selectedStudent.person?.lastName}`
+                        : "No student selected"}
+                    </h2>
+                    <p className="text-xs text-gray-500">
+                      {selectedStudent
+                        ? `${selectedStudent.program} • Year ${selectedStudent.year}`
+                        : "Select a student from the table to view records"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() =>
+                      selectedStudent && handleCreateRecordForStudent(selectedStudent.id)
+                    }
+                    className="bg-primary-600 hover:bg-primary-700 text-white flex items-center gap-2"
+                    disabled={!selectedStudent}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Record
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {!selectedStudent ? (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                <div className="text-gray-500">
+                  <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Select a student</h3>
+                  <p className="text-sm">
+                    Consultation notes are hidden for privacy. Choose a student to view records.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div className="p-4 border-b border-gray-200">
+                  <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search records..."
+                        value={recordSearchTerm}
+                        onChange={(e) => setRecordSearchTerm(e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="startDate"
+                          className="text-sm font-medium text-gray-700 whitespace-nowrap"
+                        >
+                          From:
+                        </label>
+                        <input
+                          type="date"
+                          id="startDate"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                          max={endDate || new Date().toISOString().split("T")[0]}
+                          className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <label
+                          htmlFor="endDate"
+                          className="text-sm font-medium text-gray-700 whitespace-nowrap"
+                        >
+                          To:
+                        </label>
+                        <input
+                          type="date"
+                          id="endDate"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                          min={startDate}
+                          max={new Date().toISOString().split("T")[0]}
+                          className="px-3 py-2 border border-gray-200 rounded-lg bg-white text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
+                        />
+                      </div>
+
+                      {(startDate || endDate) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setStartDate("");
+                            setEndDate("");
+                          }}
+                          className="text-gray-600 hover:text-gray-800"
+                        >
+                          Clear Dates
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewAllRecords(selectedStudent.id)}
+                        className="text-primary-700 border-primary-200 hover:bg-primary-50"
+                      >
+                        View Notes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {selectedStudentRecords.length === 0 ? (
+                  <div className="p-8 text-center text-gray-500">
+                    <FileText className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                    <p className="text-sm">No consultation records found for this student.</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Title
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Consultation Date
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Updated
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 bg-white">
+                        {selectedStudentRecords.map((record) => (
+                          <tr
+                            key={record.id}
+                            className="hover:bg-gray-50 cursor-pointer"
+                            onClick={() => handleViewAllRecords(record.studentId)}
+                          >
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-gray-900 truncate">
+                                {record.title}
+                              </div>
+                              <div className="text-xs text-gray-500">Record ID: {record.id}</div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {formatDate(record.consultationDate)}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">
+                              {formatDate(record.updatedAt)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleEditRecord(record);
+                                  }}
+                                  className="text-gray-600 hover:text-primary-600"
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleDeleteRecord(record);
+                                  }}
+                                  className="text-gray-600 hover:text-red-600"
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Records Grid */}
-        {studentsLoading ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="flex items-center justify-center space-x-2 text-gray-600">
-              <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>Loading consultant records...</span>
-            </div>
-          </div>
-        ) : filteredRecords.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <div className="text-gray-500">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <Plus className="w-8 h-8 text-gray-400" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Records Found</h3>
-              <p className="text-sm mb-4">
-                {searchTerm || selectedStudent !== "all"
-                  ? "Try adjusting your search or filter criteria"
-                  : "Start by creating your first consultant record"}
-              </p>
-              {!searchTerm && selectedStudent === "all" && (
-                <Button
-                  onClick={handleCreateRecord}
-                  className="bg-primary-600 hover:bg-primary-700 text-white"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add First Record
-                </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-            {Object.entries(groupedRecords).map(([studentId, studentRecords]) => (
-              <StackedConsultantCards
-                key={studentId}
-                records={studentRecords}
-                onEdit={handleEditRecord}
-                onCreateNew={handleCreateRecordForStudent}
-                onDelete={handleDeleteRecord}
-                onViewAll={handleViewAllRecords}
-                formatDate={formatDate}
-              />
-            ))}
-          </div>
-        )}
 
         {/* Modal */}
         <ConsultantRecordModal
