@@ -4,7 +4,12 @@ import { InventoryReminderModal } from "@/components/molecules";
 import { useAuth, useInventoryReminder } from "@/hooks";
 import { InventoryService, type GetInventoryResponse } from "@/services";
 import { sanitizeObject } from "@/utils/sanitization";
-import { hasErrors, inventoryValidationRules, sanitizeFormData, validateForm } from "@/utils/validation";
+import {
+  hasErrors,
+  inventoryValidationRules,
+  sanitizeFormData,
+  validateForm,
+} from "@/utils/validation";
 import {
   Activity,
   AlertCircle,
@@ -40,13 +45,16 @@ export const StudentInventoryContent: React.FC = () => {
     height: data.height || "",
     weight: data.weight || "",
     coplexion: data.coplexion || "",
-    person_to_be_contacted_in_case_of_accident_or_illness: data.person_to_be_contacted_in_case_of_accident_or_illness
-      ? JSON.parse(JSON.stringify(data.person_to_be_contacted_in_case_of_accident_or_illness))
-      : {},
+    person_to_be_contacted_in_case_of_accident_or_illness:
+      data.person_to_be_contacted_in_case_of_accident_or_illness
+        ? JSON.parse(JSON.stringify(data.person_to_be_contacted_in_case_of_accident_or_illness))
+        : {},
     educational_background: data.educational_background
       ? JSON.parse(JSON.stringify(data.educational_background))
       : {},
-    nature_of_schooling: data.nature_of_schooling ? JSON.parse(JSON.stringify(data.nature_of_schooling)) : {},
+    nature_of_schooling: data.nature_of_schooling
+      ? JSON.parse(JSON.stringify(data.nature_of_schooling))
+      : {},
     home_and_family_background: data.home_and_family_background
       ? JSON.parse(JSON.stringify(data.home_and_family_background))
       : {},
@@ -104,7 +112,7 @@ export const StudentInventoryContent: React.FC = () => {
     if (!inventory?.mentalHealthPredictions) return [];
 
     return [...inventory.mentalHealthPredictions].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   };
 
@@ -264,8 +272,7 @@ export const StudentInventoryContent: React.FC = () => {
       "home_and_family_background.number_of_sisters": "Number of Sisters",
       "home_and_family_background.number_of_brothers_or_sisters_employed":
         "Working Brothers/Sisters",
-      "home_and_family_background.how_much_is_your_weekly_allowance":
-        "Weekly Allowance",
+      "home_and_family_background.how_much_is_your_weekly_allowance": "Weekly Allowance",
       student_signature: "Student Signature",
     };
 
@@ -273,9 +280,7 @@ export const StudentInventoryContent: React.FC = () => {
 
     const parts = fieldKey.split(".");
     const last = parts[parts.length - 1] || fieldKey;
-    return last
-      .replace(/_/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+    return last.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
   };
 
   const isEditing = editingSection === "all";
@@ -283,7 +288,7 @@ export const StudentInventoryContent: React.FC = () => {
   const getInventoryUpdateValidationRules = () => {
     // On update, we don't want to require the student signature again.
     const { student_signature: _signatureRule, ...rest } = inventoryValidationRules;
-    const clonedRules: Record<string, typeof inventoryValidationRules[string]> = {};
+    const clonedRules: Record<string, (typeof inventoryValidationRules)[string]> = {};
     Object.entries(rest).forEach(([key, rules]) => {
       clonedRules[key] = [...rules];
     });
@@ -495,7 +500,6 @@ export const StudentInventoryContent: React.FC = () => {
                   ]}
                 />
               </div>
-
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -533,7 +537,7 @@ export const StudentInventoryContent: React.FC = () => {
               </h3>
             </div>
 
-          {isEditing ? (
+            {isEditing ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
@@ -699,8 +703,7 @@ export const StudentInventoryContent: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4">
-                </div>
+                <div className="flex gap-3 justify-end pt-4"></div>
               </div>
             ) : (
               <div>
@@ -902,8 +905,7 @@ export const StudentInventoryContent: React.FC = () => {
                   />
                 </div>
 
-                <div className="flex gap-3 justify-end pt-4">
-                </div>
+                <div className="flex gap-3 justify-end pt-4"></div>
               </div>
             ) : (
               <div>
@@ -988,7 +990,7 @@ export const StudentInventoryContent: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900">Nature of Schooling</h3>
             </div>
 
-          {isEditing ? (
+            {isEditing ? (
               <div className="space-y-4">
                 <div className="space-y-3">
                   <label className="flex items-center space-x-3 cursor-pointer">
@@ -1053,8 +1055,7 @@ export const StudentInventoryContent: React.FC = () => {
                   />
                 )}
 
-                <div className="flex gap-3 justify-end pt-4">
-                </div>
+                <div className="flex gap-3 justify-end pt-4"></div>
               </div>
             ) : (
               <div>
@@ -1879,9 +1880,9 @@ export const StudentInventoryContent: React.FC = () => {
                               ...editData.health,
                               psychological: {
                                 ...editData.health?.psychological,
-                              when: e.target.value
-                                ? new Date(e.target.value + "T00:00:00.000Z").toISOString()
-                                : null,
+                                when: e.target.value
+                                  ? new Date(e.target.value + "T00:00:00.000Z").toISOString()
+                                  : null,
                               },
                             },
                           })
@@ -2129,7 +2130,7 @@ export const StudentInventoryContent: React.FC = () => {
                             >
                               {hobby}
                             </span>
-                          )
+                          ),
                         )}
                       </div>
                     )}
@@ -2500,12 +2501,12 @@ export const StudentInventoryContent: React.FC = () => {
                                             "Critical"
                                               ? "bg-red-100 text-red-700"
                                               : prediction.mentalHealthPredictions.priority ===
-                                                "High"
-                                              ? "bg-orange-100 text-orange-700"
-                                              : prediction.mentalHealthPredictions.priority ===
-                                                "Moderate"
-                                              ? "bg-yellow-100 text-yellow-700"
-                                              : "bg-green-100 text-green-700"
+                                                  "High"
+                                                ? "bg-orange-100 text-orange-700"
+                                                : prediction.mentalHealthPredictions.priority ===
+                                                    "Moderate"
+                                                  ? "bg-yellow-100 text-yellow-700"
+                                                  : "bg-green-100 text-green-700"
                                           }`}
                                         >
                                           {prediction.mentalHealthPredictions.priority}
@@ -2571,7 +2572,8 @@ export const StudentInventoryContent: React.FC = () => {
                           </div>
 
                           {/* Machine Learning Predictions Section */}
-                          {selectedPrediction.mlPredictions ? (
+                          {inventory.showMlPredictionsToStudent &&
+                          selectedPrediction.mlPredictions ? (
                             <div className="mb-6 border-t pt-6">
                               <div className="flex items-center space-x-2 mb-4">
                                 <Zap className="w-5 h-5 text-purple-600" />
@@ -2781,13 +2783,13 @@ export const StudentInventoryContent: React.FC = () => {
                                         isHighRisk
                                           ? "bg-red-50 border-red-200"
                                           : conditionData.riskLevel
-                                              ?.toLowerCase()
-                                              .includes("moderate") ||
-                                            conditionData.prediction
-                                              ?.toLowerCase()
-                                              .includes("moderate")
-                                          ? "bg-yellow-50 border-yellow-200"
-                                          : "bg-blue-50 border-blue-200"
+                                                ?.toLowerCase()
+                                                .includes("moderate") ||
+                                              conditionData.prediction
+                                                ?.toLowerCase()
+                                                .includes("moderate")
+                                            ? "bg-yellow-50 border-yellow-200"
+                                            : "bg-blue-50 border-blue-200"
                                       }`}
                                     >
                                       <div className="flex items-center justify-between mb-3">
@@ -2796,13 +2798,13 @@ export const StudentInventoryContent: React.FC = () => {
                                             isHighRisk
                                               ? "text-red-900"
                                               : conditionData.riskLevel
-                                                  ?.toLowerCase()
-                                                  .includes("moderate") ||
-                                                conditionData.prediction
-                                                  ?.toLowerCase()
-                                                  .includes("moderate")
-                                              ? "text-yellow-900"
-                                              : "text-blue-900"
+                                                    ?.toLowerCase()
+                                                    .includes("moderate") ||
+                                                  conditionData.prediction
+                                                    ?.toLowerCase()
+                                                    .includes("moderate")
+                                                ? "text-yellow-900"
+                                                : "text-blue-900"
                                           }`}
                                         >
                                           {conditionName}
@@ -2812,13 +2814,13 @@ export const StudentInventoryContent: React.FC = () => {
                                             isHighRisk
                                               ? "bg-red-100 text-red-800"
                                               : conditionData.riskLevel
-                                                  ?.toLowerCase()
-                                                  .includes("moderate") ||
-                                                conditionData.prediction
-                                                  ?.toLowerCase()
-                                                  .includes("moderate")
-                                              ? "bg-yellow-100 text-yellow-800"
-                                              : "bg-green-100 text-green-800"
+                                                    ?.toLowerCase()
+                                                    .includes("moderate") ||
+                                                  conditionData.prediction
+                                                    ?.toLowerCase()
+                                                    .includes("moderate")
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : "bg-green-100 text-green-800"
                                           }`}
                                         >
                                           {conditionData.riskLevel || conditionData.prediction}
@@ -2833,13 +2835,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Risk Percentage
@@ -2849,13 +2851,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-900 bg-red-100"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-900 bg-yellow-100"
-                                                : "text-blue-900 bg-blue-100"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
                                             }`}
                                           >
                                             {riskPercentage}
@@ -2871,13 +2873,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Explanation
@@ -2887,13 +2889,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-900 bg-red-100"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-900 bg-yellow-100"
-                                                : "text-blue-900 bg-blue-100"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
                                             }`}
                                           >
                                             {conditionData.explanation}
@@ -2909,13 +2911,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Model Basis
@@ -2925,13 +2927,13 @@ export const StudentInventoryContent: React.FC = () => {
                                               isHighRisk
                                                 ? "text-red-800 bg-red-100"
                                                 : conditionData.riskLevel
-                                                    ?.toLowerCase()
-                                                    .includes("moderate") ||
-                                                  conditionData.prediction
-                                                    ?.toLowerCase()
-                                                    .includes("moderate")
-                                                ? "text-yellow-800 bg-yellow-100"
-                                                : "text-blue-800 bg-blue-100"
+                                                      ?.toLowerCase()
+                                                      .includes("moderate") ||
+                                                    conditionData.prediction
+                                                      ?.toLowerCase()
+                                                      .includes("moderate")
+                                                  ? "text-yellow-800 bg-yellow-100"
+                                                  : "text-blue-800 bg-blue-100"
                                             }`}
                                           >
                                             {conditionData.modelBasis}
@@ -2957,7 +2959,7 @@ export const StudentInventoryContent: React.FC = () => {
                                                   >
                                                     {factor}
                                                   </li>
-                                                )
+                                                ),
                                               )}
                                             </ul>
                                           </div>
@@ -2981,7 +2983,7 @@ export const StudentInventoryContent: React.FC = () => {
                                                   >
                                                     {rec}
                                                   </li>
-                                                )
+                                                ),
                                               )}
                                             </ul>
                                           </div>
@@ -3024,6 +3026,7 @@ export const StudentInventoryContent: React.FC = () => {
                             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 text-center">
                               <p className="text-sm text-gray-600">
                                 Machine learning predictions are not available for this assessment.
+                                Please wait to review your results until they are provided.
                               </p>
                             </div>
                           )}

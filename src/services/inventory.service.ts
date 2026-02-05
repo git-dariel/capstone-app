@@ -7,6 +7,7 @@ export interface InventoryFormData {
   height: string;
   weight: string;
   coplexion: string;
+  showMlPredictionsToStudent?: boolean;
   person_to_be_contacted_in_case_of_accident_or_illness: {
     firstName: string;
     lastName: string;
@@ -376,6 +377,7 @@ export interface GetInventoryResponse {
   updatedAt: string;
   predictionGenerated?: boolean;
   predictionUpdatedAt?: string;
+  showMlPredictionsToStudent?: boolean;
   // Person to be contacted
   person_to_be_contacted_in_case_of_accident_or_illness?: {
     firstName: string;
@@ -604,7 +606,7 @@ export class InventoryService {
    * Get all inventories with pagination and filtering (for guidance users)
    */
   static async getAllInventories(
-    filters: InventoryFilters = {}
+    filters: InventoryFilters = {},
   ): Promise<GetAllInventoriesResponse> {
     const searchParams = new URLSearchParams();
 
@@ -616,12 +618,12 @@ export class InventoryService {
 
     try {
       const response = await HttpClient.get<GetAllInventoriesResponse>(
-        `/inventory?${searchParams.toString()}`
+        `/inventory?${searchParams.toString()}`,
       );
       return response;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to fetch inventories"
+        error.response?.data?.error || error.message || "Failed to fetch inventories",
       );
     }
   }
@@ -646,7 +648,7 @@ export class InventoryService {
       // Don't use fields parameter - we need all nested data including mlPredictions
       // The backend will use include which properly includes all nested fields
       const response = await HttpClient.get<GetInventoryResponse>(
-        `/inventory/student/${studentId}`
+        `/inventory/student/${studentId}`,
       );
       return response;
     } catch (error: any) {
@@ -675,12 +677,12 @@ export class InventoryService {
    */
   static async updateInventory(
     inventoryId: string,
-    data: Partial<InventoryFormData>
+    data: Partial<InventoryFormData>,
   ): Promise<GetInventoryResponse> {
     try {
       const response = await HttpClient.patch<GetInventoryResponse>(
         `/inventory/${inventoryId}`,
-        data
+        data,
       );
       return response;
     } catch (error: any) {
@@ -712,17 +714,17 @@ export class InventoryService {
       leastFavoriteSubject?: string;
       academicOrganizations?: string;
       organizationPosition?: string;
-    }
+    },
   ): Promise<MentalHealthPrediction> {
     try {
       const response = await HttpClient.post<{ prediction: MentalHealthPrediction }>(
         `/inventory/${studentId}/predict`,
-        overrideData || {}
+        overrideData || {},
       );
       return response.prediction;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to get mental health prediction"
+        error.response?.data?.error || error.message || "Failed to get mental health prediction",
       );
     }
   }
@@ -744,7 +746,7 @@ export class InventoryService {
       return response;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to get stored prediction"
+        error.response?.data?.error || error.message || "Failed to get stored prediction",
       );
     }
   }
@@ -770,7 +772,7 @@ export class InventoryService {
       return response;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to get reminder information"
+        error.response?.data?.error || error.message || "Failed to get reminder information",
       );
     }
   }

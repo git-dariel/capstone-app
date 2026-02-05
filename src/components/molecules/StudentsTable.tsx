@@ -3,7 +3,7 @@ import { Button } from "@/components/ui";
 import { useStudents } from "@/hooks";
 import type { Student } from "@/services/student.service";
 import { AlertCircle, Edit, Loader2, Search, Trash2 } from "lucide-react";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { ConfirmationModal } from "./ConfirmationModal";
 import { StudentDetailsModal } from "./StudentDetailsModal";
 
@@ -47,6 +47,11 @@ interface StudentsTableProps {
   onView?: (student: Student) => void;
   onCreate?: () => void;
   onDeleteConfirm?: (id: string) => Promise<void>;
+  onSearch?: (query: string) => void;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export const StudentsTable: React.FC<StudentsTableProps> = ({
@@ -57,14 +62,17 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   onDelete,
   onView,
   onDeleteConfirm,
+  onSearch,
+  total,
+  page,
+  totalPages,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [displayCount, setDisplayCount] = useState(10);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const tableRef = useRef<HTMLDivElement>(null);
 
   // Use prop data if provided, otherwise fall back to hook
   const {
@@ -83,7 +91,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   useEffect(() => {
     if (!propStudents) {
       fetchStudents({
-        limit: 100,
+        limit: 10,
         fields:
           "id,studentNumber,program,year,notes,createdAt,updatedAt,person.firstName,person.lastName,person.email,person.contactNumber,person.gender,person.users.id,person.users.avatar,person.users.anxietyAssessments,person.users.depressionAssessments,person.users.stressAssessments,person.users.suicideAssessments",
       }).catch(console.error);
@@ -166,6 +174,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
 
   // Filter students based on search term
   const filteredStudents = useMemo(() => {
+    if (onSearch) return allStudents;
     if (!searchTerm) return allStudents;
     return allStudents.filter((student) => {
       const searchLower = searchTerm.toLowerCase();
@@ -192,32 +201,34 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
         student.notes.some(
           (note) =>
             (note.title && note.title.toLowerCase().includes(searchLower)) ||
-            (note.content && note.content.toLowerCase().includes(searchLower))
+            (note.content && note.content.toLowerCase().includes(searchLower)),
         );
 
       return basicMatch || assessmentMatch || notesMatch;
     });
   }, [searchTerm, allStudents]);
 
-  // Get students to display (limited by displayCount)
-  const students = useMemo(() => {
-    return filteredStudents.slice(0, displayCount);
-  }, [filteredStudents, displayCount]);
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    onSearch(searchTerm.trim());
+  };
 
-  // Infinite scroll handler
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 5) {
-      if (displayCount < filteredStudents.length) {
-        setDisplayCount((prev) => Math.min(prev + 10, filteredStudents.length));
-      }
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
     }
   };
 
-  // Reset display count when search term changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      onSearch("");
+    }
+  };
+
+  const students = filteredStudents;
 
   const handleEdit = (studentData: StudentTableData) => {
     const originalStudent = apiStudents.find((s) => s.id === studentData.id);
@@ -340,7 +351,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
         </div>
         <div
           className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
-            level
+            level,
           )}`}
         >
           {formatSeverityLabel(level)}
@@ -360,7 +371,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
               <p className="text-sm text-gray-500">
                 {loading
                   ? "Loading students..."
-                  : `Showing ${students.length} of ${filteredStudents.length} students`}
+                  : `Showing ${students.length} of ${total ?? filteredStudents.length} students`}
               </p>
             </div>
           </div>
@@ -372,18 +383,25 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
               type="text"
               placeholder="Search by name, program, year, email, notes, or assessment..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
               disabled={loading}
             />
+            {onSearch && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                disabled={loading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Search
+              </button>
+            )}
           </div>
         </div>
 
-        <div
-          ref={tableRef}
-          className="overflow-x-auto max-h-96 overflow-y-auto"
-          onScroll={handleScroll}
-        >
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
           {error ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center space-x-2 text-red-600">
@@ -485,7 +503,9 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
 
                       {/* Consultation Records */}
                       <div className="space-y-1">
-                        <div className="text-xs font-medium text-gray-600">Consultation Records</div>
+                        <div className="text-xs font-medium text-gray-600">
+                          Consultation Records
+                        </div>
                         {student.notes && student.notes.length > 0 ? (
                           <>
                             {student.notes.length === 1 ? (
@@ -656,6 +676,31 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
             </>
           )}
         </div>
+        {totalPages && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+            <div className="text-xs sm:text-sm text-gray-600">
+              Page {page ?? 1} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) <= 1}
+                onClick={() => onPageChange?.((page ?? 1) - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) >= totalPages}
+                onClick={() => onPageChange?.((page ?? 1) + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

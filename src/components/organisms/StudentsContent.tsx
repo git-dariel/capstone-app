@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   StudentsTable,
   StudentDrawer,
@@ -27,6 +27,7 @@ export const StudentsContent: React.FC = () => {
   const [modalError, setModalError] = useState<string | null>(null);
   const [isUpdatingYearLevels, setIsUpdatingYearLevels] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { user } = useAuth();
   const { success, error: toastError, toasts, removeToast } = useToast();
@@ -41,12 +42,16 @@ export const StudentsContent: React.FC = () => {
     error,
     clearError,
     fetchStudents,
+    total,
+    page,
+    totalPages,
   } = useStudents();
 
   // Fetch students on component mount
   useEffect(() => {
     fetchStudents({
-      limit: 100,
+      limit: 10,
+      page: 1,
       fields: STUDENT_FIELDS,
     }).catch(console.error);
   }, []);
@@ -58,7 +63,8 @@ export const StudentsContent: React.FC = () => {
 
       // Refetch all students with full assessment data to ensure the table shows correct information
       await fetchStudents({
-        limit: 100,
+        limit: 10,
+        page: 1,
         fields: STUDENT_FIELDS,
       });
 
@@ -76,7 +82,8 @@ export const StudentsContent: React.FC = () => {
 
       // Refetch all students with full assessment data to ensure the table shows correct information
       await fetchStudents({
-        limit: 100,
+        limit: 10,
+        page: 1,
         fields: STUDENT_FIELDS,
       });
 
@@ -132,24 +139,58 @@ export const StudentsContent: React.FC = () => {
 
       success(
         "Year Levels Updated",
-        `Successfully updated ${result.updated} student(s). ${result.skipped} student(s) were already up to date.`
+        `Successfully updated ${result.updated} student(s). ${result.skipped} student(s) were already up to date.`,
       );
 
       // Refresh student list to show updated year levels
       await fetchStudents({
-        limit: 100,
+        limit: 10,
+        page: 1,
         fields: STUDENT_FIELDS,
       });
     } catch (error: any) {
       toastError(
         "Update Failed",
-        error.message || "Failed to update student year levels. Please try again."
+        error.message || "Failed to update student year levels. Please try again.",
       );
     } finally {
       setIsUpdatingYearLevels(false);
       setShowConfirmDialog(false);
     }
   };
+
+  const handleSearchStudents = useCallback(
+    async (query: string) => {
+      setSearchQuery(query);
+      try {
+        await fetchStudents({
+          limit: 10,
+          page: 1,
+          fields: STUDENT_FIELDS,
+          ...(query ? { query } : {}),
+        });
+      } catch (error) {
+        console.error("Failed to search students:", error);
+      }
+    },
+    [fetchStudents],
+  );
+
+  const handlePageChange = useCallback(
+    async (nextPage: number) => {
+      try {
+        await fetchStudents({
+          limit: 10,
+          page: nextPage,
+          fields: STUDENT_FIELDS,
+          ...(searchQuery ? { query: searchQuery } : {}),
+        });
+      } catch (error) {
+        console.error("Failed to change page:", error);
+      }
+    },
+    [fetchStudents, searchQuery],
+  );
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-6">
@@ -193,7 +234,8 @@ export const StudentsContent: React.FC = () => {
             onUploadSuccess={() => {
               // Refresh students list after successful upload
               fetchStudents({
-                limit: 100,
+                limit: 10,
+                page: 1,
                 fields: STUDENT_FIELDS,
               }).catch(console.error);
             }}
@@ -249,6 +291,11 @@ export const StudentsContent: React.FC = () => {
           onDelete={handleDeleteFromTable}
           onCreate={handleOpenCreateModal}
           onDeleteConfirm={handleDeleteStudent}
+          onSearch={handleSearchStudents}
+          total={total}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
         />
       </div>
 

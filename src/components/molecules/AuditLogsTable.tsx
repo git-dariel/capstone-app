@@ -45,6 +45,7 @@ interface AuditLogsTableProps {
   currentPage?: number;
   totalPages?: number;
   onPageChange?: (page: number) => void;
+  onSearch?: (query: string) => void;
 }
 
 export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
@@ -59,12 +60,13 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   currentPage = 1,
   totalPages = 0,
   onPageChange,
+  onSearch,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [displayCount, setDisplayCount] = useState(50);
-  const [sortBy, setSortBy] = useState<
-    "timestamp" | "action" | "riskLevel" | "module"
-  >("timestamp");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"timestamp" | "action" | "riskLevel" | "module">(
+    "timestamp",
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [filterRiskLevel, setFilterRiskLevel] = useState<string>("");
   const [filterModule, setFilterModule] = useState<string>("");
@@ -99,8 +101,8 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
   const filteredData = useMemo(() => {
     let filtered = tableData;
 
-    // Search filter
-    if (searchTerm) {
+    // Search filter (client-side only when server search not provided)
+    if (!onSearch && searchTerm) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (log) =>
@@ -150,22 +152,32 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
     });
 
     return filtered;
-  }, [
-    tableData,
-    searchTerm,
-    filterRiskLevel,
-    filterModule,
-    filterUserType,
-    sortBy,
-    sortOrder,
-  ]);
+  }, [tableData, searchTerm, filterRiskLevel, filterModule, filterUserType, sortBy, sortOrder]);
 
-  // Paginated data for display
-  const paginatedData = useMemo(() => {
-    const startIndex = 0;
-    const endIndex = Math.min(displayCount, filteredData.length);
-    return filteredData.slice(startIndex, endIndex);
-  }, [filteredData, displayCount]);
+  const paginatedData = filteredData;
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -233,7 +245,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
       {/* Table Header with Controls */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex flex-col lg:flex-row gap-4">
-          {/* Search and Display Count */}
+          {/* Search */}
           <div className="flex flex-1 gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -241,20 +253,21 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 type="text"
                 placeholder="Search audit logs..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
               />
+              {onSearch && (
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  disabled={loading}
+                >
+                  Search
+                </button>
+              )}
             </div>
-            <select
-              value={displayCount}
-              onChange={(e) => setDisplayCount(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white min-w-[80px]"
-            >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={200}>200</option>
-            </select>
           </div>
 
           {/* Action Buttons */}
@@ -279,9 +292,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 disabled={loading}
                 className="flex items-center gap-1"
               >
-                <RefreshCw
-                  className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
-                />
+                <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
             )}
@@ -315,9 +326,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Risk Level
-                </label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Risk Level</label>
                 <select
                   value={filterRiskLevel}
                   onChange={(e) => setFilterRiskLevel(e.target.value)}
@@ -331,9 +340,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  Module
-                </label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Module</label>
                 <select
                   value={filterModule}
                   onChange={(e) => setFilterModule(e.target.value)}
@@ -349,9 +356,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  User Type
-                </label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">User Type</label>
                 <select
                   value={filterUserType}
                   onChange={(e) => setFilterUserType(e.target.value)}
@@ -367,12 +372,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
               </div>
             </div>
             <div className="flex justify-end mt-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="text-gray-600"
-              >
+              <Button variant="outline" size="sm" onClick={clearFilters} className="text-gray-600">
                 Clear Filters
               </Button>
             </div>
@@ -382,15 +382,14 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
         {/* Results Count */}
         <div className="mt-4 flex items-center justify-between text-sm text-gray-600">
           <span>
-            Showing {paginatedData.length} of {filteredData.length} audit logs
+            Showing {paginatedData.length} of {onSearch ? totalCount : filteredData.length} audit
+            logs
             {totalCount > 0 && ` (${totalCount} total)`}
           </span>
-          {(searchTerm ||
+          {((onSearch ? searchQuery : searchTerm) ||
             filterRiskLevel ||
             filterModule ||
-            filterUserType) && (
-            <span className="text-blue-600">Filtered results</span>
-          )}
+            filterUserType) && <span className="text-blue-600">Filtered results</span>}
         </div>
       </div>
 
@@ -404,9 +403,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
         ) : paginatedData.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No audit logs found
-            </h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No audit logs found</h3>
             <p className="text-gray-600">
               {searchTerm || filterRiskLevel || filterModule || filterUserType
                 ? "Try adjusting your search or filter criteria"
@@ -425,9 +422,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     Timestamp
                     <ChevronDown
                       className={`w-3 h-3 transition-transform ${
-                        sortBy === "timestamp" && sortOrder === "desc"
-                          ? "rotate-180"
-                          : ""
+                        sortBy === "timestamp" && sortOrder === "desc" ? "rotate-180" : ""
                       }`}
                     />
                   </div>
@@ -440,9 +435,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     Action
                     <ChevronDown
                       className={`w-3 h-3 transition-transform ${
-                        sortBy === "action" && sortOrder === "desc"
-                          ? "rotate-180"
-                          : ""
+                        sortBy === "action" && sortOrder === "desc" ? "rotate-180" : ""
                       }`}
                     />
                   </div>
@@ -458,9 +451,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     Module
                     <ChevronDown
                       className={`w-3 h-3 transition-transform ${
-                        sortBy === "module" && sortOrder === "desc"
-                          ? "rotate-180"
-                          : ""
+                        sortBy === "module" && sortOrder === "desc" ? "rotate-180" : ""
                       }`}
                     />
                   </div>
@@ -476,9 +467,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     Risk Level
                     <ChevronDown
                       className={`w-3 h-3 transition-transform ${
-                        sortBy === "riskLevel" && sortOrder === "desc"
-                          ? "rotate-180"
-                          : ""
+                        sortBy === "riskLevel" && sortOrder === "desc" ? "rotate-180" : ""
                       }`}
                     />
                   </div>
@@ -504,9 +493,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                     <div className="flex items-center gap-2">
                       {getActionIcon(log.isSystemAction, log.isSecurityLog)}
                       <span className="font-medium text-gray-900">
-                        {log.action
-                          .replace(/_/g, " ")
-                          .replace(/\b\w/g, (l) => l.toUpperCase())}
+                        {log.action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                       </span>
                       {log.hasChanges && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -527,9 +514,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                         log.module,
                       )}`}
                     >
-                      {log.module
-                        .replace(/-/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {log.module.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-sm text-gray-900 max-w-xs">
@@ -545,8 +530,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                           log.riskLevel,
                         )}`}
                       >
-                        {log.riskLevel.charAt(0).toUpperCase() +
-                          log.riskLevel.slice(1)}
+                        {log.riskLevel.charAt(0).toUpperCase() + log.riskLevel.slice(1)}
                       </span>
                     </div>
                   </td>
@@ -555,9 +539,7 @@ export const AuditLogsTable: React.FC<AuditLogsTableProps> = ({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          onView(auditLogs.find((al) => al.id === log.id)!)
-                        }
+                        onClick={() => onView(auditLogs.find((al) => al.id === log.id)!)}
                         className="flex items-center gap-1"
                       >
                         <Eye className="w-3 h-3" />

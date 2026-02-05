@@ -28,6 +28,10 @@ export const SimplifiedInsightsContent: React.FC = () => {
     error,
     filters,
     totalCount,
+    studentTotal,
+    studentPage,
+    studentTotalPages,
+    studentQuery,
     isProgramSelected,
     fetchInsights,
     selectProgram,
@@ -143,6 +147,24 @@ export const SimplifiedInsightsContent: React.FC = () => {
     } else {
       selectProgram(program);
     }
+  };
+
+  const handleStudentSearch = (query: string) => {
+    if (!selectedProgram) return;
+    selectProgram(selectedProgram, undefined, {
+      page: 1,
+      limit: 10,
+      query,
+    });
+  };
+
+  const handleStudentPageChange = (nextPage: number) => {
+    if (!selectedProgram) return;
+    selectProgram(selectedProgram, undefined, {
+      page: nextPage,
+      limit: 10,
+      query: studentQuery,
+    });
   };
 
   const handleYearChange = (year: string) => {
@@ -454,7 +476,7 @@ export const SimplifiedInsightsContent: React.FC = () => {
                       <div>
                         <p className="text-xs text-gray-600">Total Students</p>
                         <p className="text-xl font-bold text-blue-600">
-                          {studentList.length}
+                          {studentTotal}
                         </p>
                       </div>
                       <Users className="w-8 h-8 text-blue-600 opacity-50" />
@@ -523,9 +545,15 @@ export const SimplifiedInsightsContent: React.FC = () => {
 
               {/* Student List */}
               <AssessmentStudentList
+                key={selectedProgram}
                 students={studentList}
                 loading={loading}
                 title={`Students in ${selectedProgram} - ${getAssessmentTitle()}`}
+                total={studentTotal}
+                page={studentPage}
+                totalPages={studentTotalPages}
+                onSearch={handleStudentSearch}
+                onPageChange={handleStudentPageChange}
               />
             </>
           ) : (

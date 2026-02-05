@@ -26,6 +26,7 @@ export const ConsentRecordsContent: React.FC = () => {
   const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
   const [viewingConsent, setViewingConsent] = useState<GetConsentResponse | null>(null);
   const [currentPageState, setCurrentPageState] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const isGuidanceUser = user?.type === "guidance";
   const isStudentUser = user?.type === "student";
@@ -38,9 +39,10 @@ export const ConsentRecordsContent: React.FC = () => {
           // Guidance users can see all consents
           await fetchConsents({
             page: currentPageState,
-            limit: 20,
+            limit: 10,
             fields: CONSENT_FIELDS,
             order: "desc",
+            ...(searchQuery ? { query: searchQuery } : {}),
           });
         } else if (isStudentUser && student?.id) {
           // Students can only see their own consent
@@ -56,7 +58,7 @@ export const ConsentRecordsContent: React.FC = () => {
     };
 
     loadData();
-  }, [currentPageState, isGuidanceUser, isStudentUser, student?.id]);
+  }, [currentPageState, isGuidanceUser, isStudentUser, student?.id, searchQuery]);
 
   const handleViewConsent = (consent: GetConsentResponse) => {
     setViewingConsent(consent);
@@ -76,9 +78,10 @@ export const ConsentRecordsContent: React.FC = () => {
     if (isGuidanceUser) {
       await fetchConsents({
         page: currentPageState,
-        limit: 20,
+        limit: 10,
         fields: CONSENT_FIELDS,
         order: "desc",
+        ...(searchQuery ? { query: searchQuery } : {}),
       });
     } else if (isStudentUser && student?.id) {
       const consent = await getConsentByStudentId(student.id);
@@ -90,6 +93,11 @@ export const ConsentRecordsContent: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPageState(page);
+  };
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query.trim());
+    setCurrentPageState(1);
   };
 
   // Student view - show their own consent
@@ -206,6 +214,8 @@ export const ConsentRecordsContent: React.FC = () => {
           loading={loading}
           error={error}
           onView={handleViewConsent}
+          total={totalConsents}
+          onSearch={handleSearch}
         />
       </div>
 

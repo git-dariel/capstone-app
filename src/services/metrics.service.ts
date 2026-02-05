@@ -6,6 +6,7 @@ export interface MetricFilter {
   endDate?: string | Date;
   page?: number;
   limit?: number;
+  query?: string;
   program?: string;
   yearLevel?: string;
   gender?: string;
@@ -77,7 +78,7 @@ export class MetricsService {
   static async fetchDashboardMetrics(
     data: string[],
     filter?: MetricFilter,
-    methodParams?: Record<string, any>
+    methodParams?: Record<string, any>,
   ): Promise<MetricResponse> {
     try {
       const response = await HttpClient.post<MetricResponse>("/metrics/student/dashboard", {
@@ -95,7 +96,7 @@ export class MetricsService {
   // Method to fetch guidance dashboard metrics
   static async fetchGuidanceDashboardMetrics(
     data: string[],
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<MetricResponse> {
     try {
       const response = await HttpClient.post<MetricResponse>("/metrics/guidance/dashboard", {
@@ -146,7 +147,7 @@ export class MetricsService {
 
   // Get students by program
   static async getStudentsByProgram(
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<{ program: string; count: number }[]> {
     const request: MetricRequest = {
       model: "Student",
@@ -160,7 +161,7 @@ export class MetricsService {
 
   // Get students by year level
   static async getStudentsByYear(
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<{ year: string; count: number }[]> {
     const request: MetricRequest = {
       model: "Student",
@@ -175,7 +176,7 @@ export class MetricsService {
   // Get total count for a specific assessment type
   static async getTotalCount(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<number> {
     let model: string;
     let metricKey: string;
@@ -205,7 +206,7 @@ export class MetricsService {
   // Get assessments by program
   static async getByProgram(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<ProgramMetric[]> {
     let model: string;
     let metricKey: string;
@@ -235,7 +236,7 @@ export class MetricsService {
   // Get assessments by academic year
   static async getByYear(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<YearMetric[]> {
     let model: string;
     let metricKey: string;
@@ -265,7 +266,7 @@ export class MetricsService {
   // Get assessments by gender
   static async getByGender(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ): Promise<GenderMetric[]> {
     let model: string;
     let metricKey: string;
@@ -307,7 +308,7 @@ export class MetricsService {
   // Get comprehensive metrics for overview (program breakdown)
   static async getOverviewMetrics(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ) {
     const programData = await this.getByProgram(assessmentType, filter);
     const total = programData.reduce((sum, item) => sum + item.count, 0);
@@ -338,7 +339,7 @@ export class MetricsService {
   // Get year metrics for drilldown
   static async getYearMetrics(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ) {
     const yearData = await this.getByYear(assessmentType, filter);
     const total = yearData.reduce((sum, item) => sum + item.count, 0);
@@ -360,7 +361,7 @@ export class MetricsService {
   // Get gender metrics for drilldown
   static async getGenderMetrics(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ) {
     const genderData = await this.getByGender(assessmentType, filter);
     const total = genderData.reduce((sum, item) => sum + item.count, 0);
@@ -387,7 +388,7 @@ export class MetricsService {
   // Get student list for assessments
   static async getAssessmentStudentList(
     assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
-    filter?: MetricFilter
+    filter?: MetricFilter,
   ) {
     let model: string;
     let metricKey: string;
@@ -411,7 +412,24 @@ export class MetricsService {
     };
 
     const response = await this.fetchMetrics(request);
-    return response.data[0]?.[metricKey] || [];
+    const data = response.data[0]?.[metricKey];
+
+    if (data && typeof data === "object" && "students" in data) {
+      return data as {
+        students: any[];
+        total: number;
+        page: number;
+        totalPages: number;
+      };
+    }
+
+    const students = Array.isArray(data) ? data : [];
+    return {
+      students,
+      total: students.length,
+      page: filter?.page || 1,
+      totalPages: students.length ? 1 : 0,
+    };
   }
 
   // Retake Request Metrics

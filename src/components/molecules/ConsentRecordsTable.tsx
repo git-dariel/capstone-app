@@ -23,6 +23,8 @@ interface ConsentRecordsTableProps {
   loading?: boolean;
   error?: string | null;
   onView?: (consent: GetConsentResponse) => void;
+  total?: number;
+  onSearch?: (query: string) => void;
 }
 
 const formatLabel = (value: string) => {
@@ -32,14 +34,24 @@ const formatLabel = (value: string) => {
     .join(" ");
 };
 
-export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consents = [], loading = false, error = null, onView }) => {
+export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({
+  consents = [],
+  loading = false,
+  error = null,
+  onView,
+  total,
+  onSearch,
+}) => {
   const [localSearchQuery, setLocalSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Transform consent data for table display
   const tableData: ConsentTableData[] = useMemo(() => {
     return consents.map((consent) => ({
       id: consent.id,
-      studentName: consent.student ? `${consent.student.person.firstName} ${consent.student.person.lastName}` : "N/A",
+      studentName: consent.student
+        ? `${consent.student.person.firstName} ${consent.student.person.lastName}`
+        : "N/A",
       studentNumber: consent.student?.studentNumber || "N/A",
       program: consent.student?.program || "N/A",
       year: consent.student?.year || "N/A",
@@ -54,6 +66,7 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
 
   // Filter data based on search query
   const filteredData = useMemo(() => {
+    if (onSearch) return tableData;
     if (!localSearchQuery) return tableData;
 
     const query = localSearchQuery.toLowerCase();
@@ -64,13 +77,31 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
         item.program.toLowerCase().includes(query) ||
         item.email.toLowerCase().includes(query) ||
         item.referred.toLowerCase().includes(query) ||
-        item.what_brings_you_to_guidance?.toLowerCase().includes(query)
+        item.what_brings_you_to_guidance?.toLowerCase().includes(query),
     );
-  }, [tableData, localSearchQuery]);
+  }, [tableData, localSearchQuery, onSearch]);
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = localSearchQuery.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setLocalSearchQuery(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -105,7 +136,9 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load consent records</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Failed to load consent records
+              </h3>
               <p className="text-gray-500">{error}</p>
             </div>
           </div>
@@ -121,7 +154,11 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
           <div>
             <h2 className="text-lg font-medium text-gray-900">Consent Records</h2>
-            <p className="text-sm text-gray-500">{loading ? "Loading consent records..." : `Showing ${filteredData.length} of ${filteredData.length} records`}</p>
+            <p className="text-sm text-gray-500">
+              {loading
+                ? "Loading consent records..."
+                : `Showing ${filteredData.length} of ${onSearch ? total || 0 : filteredData.length} records`}
+            </p>
           </div>
         </div>
 
@@ -130,12 +167,23 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name, student number, program, stress level, performance..."
+            placeholder="Search by name, student number, program, email, or guidance reason..."
             value={localSearchQuery}
             onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
             className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             disabled={loading}
           />
+          {onSearch && (
+            <button
+              type="button"
+              onClick={handleSearchSubmit}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+              disabled={loading}
+            >
+              Search
+            </button>
+          )}
         </div>
       </div>
 
@@ -160,7 +208,9 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
             <div className="text-center text-gray-500">
               <FileText className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-sm">No consent records found</p>
-              {localSearchQuery && <p className="text-xs mt-1">Try adjusting your search terms</p>}
+              {(onSearch ? searchQuery : localSearchQuery) && (
+                <p className="text-xs mt-1">Try adjusting your search terms</p>
+              )}
             </div>
           </div>
         ) : (
@@ -170,7 +220,11 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
               {filteredData.map((consent) => {
                 const originalConsent = consents.find((c) => c.id === consent.id)!;
                 return (
-                  <div key={consent.id} className="p-4 hover:bg-gray-50 transition-colors touch-manipulation" onClick={() => onView?.(originalConsent)}>
+                  <div
+                    key={consent.id}
+                    className="p-4 hover:bg-gray-50 transition-colors touch-manipulation"
+                    onClick={() => onView?.(originalConsent)}
+                  >
                     {/* Card Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-start space-x-3 flex-1 min-w-0">
@@ -184,7 +238,9 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
                           className="w-10 h-10 flex-shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-medium text-gray-900 truncate">{consent.studentName}</h3>
+                          <h3 className="text-sm font-medium text-gray-900 truncate">
+                            {consent.studentName}
+                          </h3>
                           <p className="text-sm text-gray-500">{consent.studentNumber}</p>
                           <p className="text-xs text-gray-400">
                             {consent.program} • Year {consent.year}
@@ -219,15 +275,21 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
                       {/* What brings to guidance */}
                       {consent.what_brings_you_to_guidance && (
                         <div className="space-y-1">
-                          <div className="text-xs font-medium text-gray-600">What brings to guidance:</div>
+                          <div className="text-xs font-medium text-gray-600">
+                            What brings to guidance:
+                          </div>
                           <div className="bg-primary-50 border border-primary-200 rounded-md px-2 py-1">
-                            <div className="text-xs text-primary-700 line-clamp-2">{consent.what_brings_you_to_guidance}</div>
+                            <div className="text-xs text-primary-700 line-clamp-2">
+                              {consent.what_brings_you_to_guidance}
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {/* Date */}
-                      <div className="text-xs text-gray-400">Submitted: {formatDate(consent.createdAt)}</div>
+                      <div className="text-xs text-gray-400">
+                        Submitted: {formatDate(consent.createdAt)}
+                      </div>
                     </div>
                   </div>
                 );
@@ -239,18 +301,33 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
               <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Program & Year</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred By</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Submitted</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Student
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Program & Year
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Referred By
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Date Submitted
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredData.map((consent) => {
                     const originalConsent = consents.find((c) => c.id === consent.id)!;
                     return (
-                      <tr key={consent.id} className="hover:bg-gray-50 cursor-pointer transition-colors group relative" onClick={() => onView?.(originalConsent)} title="Click to view consent details">
+                      <tr
+                        key={consent.id}
+                        className="hover:bg-gray-50 cursor-pointer transition-colors group relative"
+                        onClick={() => onView?.(originalConsent)}
+                        title="Click to view consent details"
+                      >
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <Avatar
@@ -263,7 +340,9 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
                               className="w-8 h-8 mr-3"
                             />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{consent.studentName}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {consent.studentName}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -274,7 +353,9 @@ export const ConsentRecordsTable: React.FC<ConsentRecordsTableProps> = ({ consen
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{consent.referred}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(consent.createdAt)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate(consent.createdAt)}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           {onView && (
                             <Button

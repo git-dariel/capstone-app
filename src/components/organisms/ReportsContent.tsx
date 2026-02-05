@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   AnxietyAssessmentTable,
   DepressionAssessmentTable,
@@ -8,58 +8,11 @@ import {
   ExportFilterDropdown,
   StudentProgressTable,
 } from "@/components/molecules";
-import { useAnxiety, useDepression, useStress, useSuicide, useChecklist } from "@/hooks";
 import { UserService } from "@/services";
 import type { ExportFilters } from "@/services";
 
 export const ReportsContent: React.FC = () => {
-  const { fetchAssessments: fetchAnxiety } = useAnxiety();
-  const { fetchAssessments: fetchDepression } = useDepression();
-  const { fetchAssessments: fetchStress } = useStress();
-  const { fetchAssessments: fetchSuicide } = useSuicide();
-  const { fetchChecklists: fetchChecklist } = useChecklist();
   const [isExporting, setIsExporting] = useState(false);
-
-  // Automatically fetch all assessments when component mounts
-  useEffect(() => {
-    const fetchAllAssessments = async () => {
-      try {
-        const fetchPromises = [
-          fetchAnxiety({
-            limit: 100,
-            fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
-          }),
-          fetchDepression({
-            limit: 100,
-            fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
-          }),
-          fetchStress({
-            limit: 100,
-            fields:
-              "id,userId,totalScore,severityLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
-          }),
-          fetchSuicide({
-            limit: 100,
-            fields:
-              "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
-          }),
-          fetchChecklist({
-            limit: 100,
-            fields:
-              "id,userId,checklist_analysis.riskLevel,checklist_analysis.totalProblemsChecked,date_completed,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
-          }),
-        ];
-
-        await Promise.all(fetchPromises);
-      } catch (error) {
-        console.error("Error fetching assessments:", error);
-      }
-    };
-
-    fetchAllAssessments();
-  }, []); // Empty dependency array to run only once on mount
 
   const handleExportCsv = async (filters: ExportFilters) => {
     setIsExporting(true);

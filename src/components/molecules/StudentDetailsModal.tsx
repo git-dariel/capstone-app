@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/atoms";
-import { Avatar } from "@/components/atoms";
+import { Avatar, ToastContainer } from "@/components/atoms";
 import type { Student } from "@/services/student.service";
 import { StudentService } from "@/services/student.service";
 import type { GetInventoryResponse } from "@/services/inventory.service";
@@ -57,7 +57,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   onClose,
   student,
 }) => {
-  const { addToast } = useToast();
+  const { addToast, toasts, removeToast } = useToast();
 
   const [expandedSections, setExpandedSections] = useState<ExpandedSections>({
     studentDetails: true,
@@ -77,6 +77,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [isUpdatingPredictionVisibility, setIsUpdatingPredictionVisibility] = useState(false);
 
   // Local student state for real-time updates
   const [currentStudentData, setCurrentStudentData] = useState<Student | null>(student || null);
@@ -93,7 +94,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   // Consultation notes management
   const [isAddingConsultationNote, setIsAddingConsultationNote] = useState(false);
   const [editingConsultationNoteIndex, setEditingConsultationNoteIndex] = useState<number | null>(
-    null
+    null,
   );
   const [newConsultationNoteData, setNewConsultationNoteData] = useState({
     title: "",
@@ -176,7 +177,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
         // Sort by date descending
         assessments.sort(
-          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
+          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime(),
         );
         setAssessmentHistory(assessments);
       } catch (err) {
@@ -293,6 +294,44 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     }
   };
 
+  const handleTogglePredictionVisibility = async () => {
+    if (!inventoryData?.id) return;
+
+    try {
+      setIsUpdatingPredictionVisibility(true);
+      const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
+        showMlPredictionsToStudent: !inventoryData.showMlPredictionsToStudent,
+      });
+      let finalInventory = updatedInventory;
+      if (student?.id) {
+        const freshInventory = await InventoryService.getInventoryByStudentId(student.id);
+        if (freshInventory) {
+          finalInventory = freshInventory;
+          setInventoryData(freshInventory);
+        } else {
+          setInventoryData(updatedInventory);
+        }
+      } else {
+        setInventoryData(updatedInventory);
+      }
+      addToast({
+        type: "success",
+        title: "Visibility Updated",
+        message: finalInventory.showMlPredictionsToStudent
+          ? "ML predictions are now visible to the student."
+          : "ML predictions are now hidden from the student.",
+      });
+    } catch (error: any) {
+      addToast({
+        type: "error",
+        title: "Update Failed",
+        message: error.message || "Failed to update prediction visibility.",
+      });
+    } finally {
+      setIsUpdatingPredictionVisibility(false);
+    }
+  };
+
   // Significant Notes Management Functions
   const handleAddNote = async () => {
     if (!inventoryData?.id || !newNoteData.incident.trim()) {
@@ -358,7 +397,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   const handleEditNote = async (
     noteId: string,
-    updatedData: { date?: string; incident?: string; remarks?: string }
+    updatedData: { date?: string; incident?: string; remarks?: string },
   ) => {
     if (!inventoryData?.id || !updatedData.incident?.trim()) {
       addToast({
@@ -374,7 +413,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
       const updatedNotes =
         inventoryData.significantNotes?.map((note) =>
-          note.id === noteId ? { ...note, ...updatedData } : note
+          note.id === noteId ? { ...note, ...updatedData } : note,
         ) || [];
 
       const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
@@ -526,7 +565,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   const handleEditConsultationNote = async (
     noteIndex: number,
-    updatedData: { title?: string; content?: string }
+    updatedData: { title?: string; content?: string },
   ) => {
     if (!currentStudentData?.id) return;
 
@@ -631,7 +670,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
     // Sort by createdAt date (most recent first) and return the first one
     const sortedPredictions = [...inventoryData.mentalHealthPredictions].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return sortedPredictions[0];
@@ -642,6 +681,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="full">
       <div className="space-y-4 h-full overflow-y-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
         {/* Student Header Card - Mobile Responsive */}
         <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5 md:gap-6">
@@ -766,15 +806,15 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           (c) =>
                             c.name === "depression" &&
                             !isHighRisk(c.data) &&
-                            !isModerateRisk(c.data)
+                            !isModerateRisk(c.data),
                         ) ||
                         conditions.find(
                           (c) =>
-                            c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                            c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data),
                         ) ||
                         conditions.find(
                           (c) =>
-                            c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                            c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
                         );
                     } else {
                       // Equal counts - prioritize high > moderate > low
@@ -786,7 +826,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                       } else if (moderateRiskCount > 0) {
                         selectedCondition =
                           conditions.find(
-                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
                           ) ||
                           conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
                           conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
@@ -877,7 +917,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                       ) {
                         selectedCondition =
                           conditions.find(
-                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
                           ) ||
                           conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
                           conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
@@ -887,15 +927,17 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                             (c) =>
                               c.name === "depression" &&
                               !isHighRisk(c.data) &&
-                              !isModerateRisk(c.data)
+                              !isModerateRisk(c.data),
                           ) ||
                           conditions.find(
                             (c) =>
-                              c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                              c.name === "anxiety" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
                           ) ||
                           conditions.find(
                             (c) =>
-                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
                           );
                       } else {
                         // Equal counts - prioritize high > moderate > low
@@ -907,10 +949,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         } else if (moderateRiskCount > 0) {
                           selectedCondition =
                             conditions.find(
-                              (c) => c.name === "depression" && isModerateRisk(c.data)
+                              (c) => c.name === "depression" && isModerateRisk(c.data),
                             ) ||
                             conditions.find(
-                              (c) => c.name === "anxiety" && isModerateRisk(c.data)
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data),
                             ) ||
                             conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
                         } else {
@@ -996,7 +1038,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                       ) {
                         selectedCondition =
                           conditions.find(
-                            (c) => c.name === "depression" && isModerateRisk(c.data)
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
                           ) ||
                           conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
                           conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
@@ -1006,15 +1048,17 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                             (c) =>
                               c.name === "depression" &&
                               !isHighRisk(c.data) &&
-                              !isModerateRisk(c.data)
+                              !isModerateRisk(c.data),
                           ) ||
                           conditions.find(
                             (c) =>
-                              c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                              c.name === "anxiety" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
                           ) ||
                           conditions.find(
                             (c) =>
-                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data)
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
                           );
                       } else {
                         // Equal counts - prioritize high > moderate > low
@@ -1026,10 +1070,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                         } else if (moderateRiskCount > 0) {
                           selectedCondition =
                             conditions.find(
-                              (c) => c.name === "depression" && isModerateRisk(c.data)
+                              (c) => c.name === "depression" && isModerateRisk(c.data),
                             ) ||
                             conditions.find(
-                              (c) => c.name === "anxiety" && isModerateRisk(c.data)
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data),
                             ) ||
                             conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
                         } else {
@@ -1486,7 +1530,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                     >
                                       {hobby}
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -1728,11 +1772,11 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           {assessment.severityLevel || assessment.riskLevel ? (
                             <span
                               className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getSeverityColor(
-                                assessment.severityLevel || assessment.riskLevel
+                                assessment.severityLevel || assessment.riskLevel,
                               )}`}
                             >
                               {formatSeverityLabel(
-                                assessment.severityLevel || assessment.riskLevel || "Unknown"
+                                assessment.severityLevel || assessment.riskLevel || "Unknown",
                               )}
                             </span>
                           ) : null}
@@ -1753,10 +1797,41 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   isExpanded={expandedSections.mentalHealthPredictions}
                   onToggle={() => toggleSection("mentalHealthPredictions")}
                 >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Student visibility is currently
+                      <span
+                        className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
+                          inventoryData.showMlPredictionsToStudent
+                            ? "bg-green-100 text-green-800 border-green-300"
+                            : "bg-gray-100 text-gray-700 border-gray-300"
+                        }`}
+                      >
+                        {inventoryData.showMlPredictionsToStudent ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTogglePredictionVisibility}
+                      disabled={isUpdatingPredictionVisibility}
+                      className={
+                        inventoryData.showMlPredictionsToStudent
+                          ? "border-green-300 text-green-700 hover:bg-green-50"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }
+                    >
+                      {isUpdatingPredictionVisibility
+                        ? "Updating..."
+                        : inventoryData.showMlPredictionsToStudent
+                          ? "Hide from Student"
+                          : "Show to Student"}
+                    </Button>
+                  </div>
                   <div className="space-y-4">
                     {[...inventoryData.mentalHealthPredictions]
                       .sort(
-                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
                       )
                       .map((prediction, index) => (
                         <div
@@ -1996,8 +2071,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                         isHighRisk
                                           ? "bg-red-50 border-red-200"
                                           : isModerateRisk
-                                          ? "bg-yellow-50 border-yellow-200"
-                                          : "bg-blue-50 border-blue-200"
+                                            ? "bg-yellow-50 border-yellow-200"
+                                            : "bg-blue-50 border-blue-200"
                                       }`}
                                     >
                                       <div className="flex items-center justify-between mb-2">
@@ -2006,8 +2081,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                             isHighRisk
                                               ? "text-red-900"
                                               : isModerateRisk
-                                              ? "text-yellow-900"
-                                              : "text-blue-900"
+                                                ? "text-yellow-900"
+                                                : "text-blue-900"
                                           }`}
                                         >
                                           {conditionName}
@@ -2017,8 +2092,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                             isHighRisk
                                               ? "bg-red-100 text-red-800"
                                               : isModerateRisk
-                                              ? "bg-yellow-100 text-yellow-800"
-                                              : "bg-green-100 text-green-800"
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : "bg-green-100 text-green-800"
                                           }`}
                                         >
                                           {conditionData.riskLevel || conditionData.prediction}
@@ -2033,8 +2108,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : isModerateRisk
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Risk Percentage
@@ -2044,8 +2119,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-900 bg-red-100"
                                                 : isModerateRisk
-                                                ? "text-yellow-900 bg-yellow-100"
-                                                : "text-blue-900 bg-blue-100"
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
                                             }`}
                                           >
                                             {riskPercentage}
@@ -2061,8 +2136,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : isModerateRisk
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Explanation
@@ -2072,8 +2147,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-900 bg-red-100"
                                                 : isModerateRisk
-                                                ? "text-yellow-900 bg-yellow-100"
-                                                : "text-blue-900 bg-blue-100"
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
                                             }`}
                                           >
                                             {conditionData.explanation}
@@ -2089,8 +2164,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-700"
                                                 : isModerateRisk
-                                                ? "text-yellow-700"
-                                                : "text-blue-700"
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
                                             }`}
                                           >
                                             Model Basis
@@ -2100,8 +2175,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                               isHighRisk
                                                 ? "text-red-800 bg-red-100"
                                                 : isModerateRisk
-                                                ? "text-yellow-800 bg-yellow-100"
-                                                : "text-blue-800 bg-blue-100"
+                                                  ? "text-yellow-800 bg-yellow-100"
+                                                  : "text-blue-800 bg-blue-100"
                                             }`}
                                           >
                                             {conditionData.modelBasis}
@@ -2127,7 +2202,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                                   >
                                                     {factor}
                                                   </li>
-                                                )
+                                                ),
                                               )}
                                             </ul>
                                           </div>
@@ -2151,7 +2226,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                                   >
                                                     {rec}
                                                   </li>
-                                                )
+                                                ),
                                               )}
                                             </ul>
                                           </div>

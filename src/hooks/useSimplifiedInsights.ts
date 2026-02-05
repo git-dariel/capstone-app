@@ -1,19 +1,9 @@
 import { useCallback, useState } from "react";
 import { MetricsService, type MetricFilter } from "@/services";
-import type {
-  ChartFilters,
-  InsightData,
-  StudentDetails,
-} from "@/types/insights";
+import type { ChartFilters, InsightData, StudentDetails } from "@/types/insights";
 
 interface UseSimplifiedInsightsState {
-  assessmentType:
-    | "anxiety"
-    | "depression"
-    | "stress"
-    | "suicide"
-    | "checklist"
-    | null;
+  assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist" | null;
   programData: InsightData[];
   availablePrograms: string[];
   selectedProgram: string | null;
@@ -22,6 +12,10 @@ interface UseSimplifiedInsightsState {
   error: string | null;
   filters: ChartFilters;
   totalCount: number;
+  studentTotal: number;
+  studentPage: number;
+  studentTotalPages: number;
+  studentQuery: string;
 }
 
 export const useSimplifiedInsights = () => {
@@ -35,6 +29,10 @@ export const useSimplifiedInsights = () => {
     error: null,
     filters: {},
     totalCount: 0,
+    studentTotal: 0,
+    studentPage: 1,
+    studentTotalPages: 0,
+    studentQuery: "",
   });
 
   /**
@@ -53,15 +51,7 @@ export const useSimplifiedInsights = () => {
 
         if (filters.year && filters.month) {
           const startDate = new Date(filters.year, filters.month - 1, 1);
-          const endDate = new Date(
-            filters.year,
-            filters.month,
-            0,
-            23,
-            59,
-            59,
-            999,
-          );
+          const endDate = new Date(filters.year, filters.month, 0, 23, 59, 59, 999);
           metricFilter.startDate = startDate.toISOString();
           metricFilter.endDate = endDate.toISOString();
         } else if (filters.year) {
@@ -82,19 +72,13 @@ export const useSimplifiedInsights = () => {
         }
 
         // Fetch program-level data
-        const overviewData = await MetricsService.getOverviewMetrics(
-          type,
-          metricFilter,
-        );
+        const overviewData = await MetricsService.getOverviewMetrics(type, metricFilter);
 
         // Extract unique programs from the data
         const programs = overviewData.data.map((item) => item.label);
 
         // Calculate total count
-        const total = overviewData.data.reduce(
-          (sum, item) => sum + item.value,
-          0,
-        );
+        const total = overviewData.data.reduce((sum, item) => sum + item.value, 0);
 
         setState({
           assessmentType: type,
@@ -106,10 +90,13 @@ export const useSimplifiedInsights = () => {
           error: null,
           filters,
           totalCount: total,
+          studentTotal: 0,
+          studentPage: 1,
+          studentTotalPages: 0,
+          studentQuery: "",
         });
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to fetch insights";
+        const errorMessage = error instanceof Error ? error.message : "Failed to fetch insights";
         setState((prev) => ({
           ...prev,
           loading: false,
@@ -125,8 +112,16 @@ export const useSimplifiedInsights = () => {
    * Select a program and automatically fetch students under that program
    */
   const selectProgram = useCallback(
-    async (program: string, filterOverrides?: ChartFilters) => {
+    async (
+      program: string,
+      filterOverrides?: ChartFilters,
+      options?: { page?: number; limit?: number; query?: string },
+    ) => {
       if (!state.assessmentType) return;
+
+      const page = options?.page ?? 1;
+      const limit = options?.limit ?? 10;
+      const query = options?.query?.trim() ?? "";
 
       setState((prev) => ({
         ...prev,
@@ -141,24 +136,15 @@ export const useSimplifiedInsights = () => {
         // Create filter for API call
         const metricFilter: MetricFilter = {
           program: program,
+          page,
+          limit,
+          ...(query ? { query } : {}),
         };
 
         // Apply date filters if they exist
         if (activeFilters.year && activeFilters.month) {
-          const startDate = new Date(
-            activeFilters.year,
-            activeFilters.month - 1,
-            1,
-          );
-          const endDate = new Date(
-            activeFilters.year,
-            activeFilters.month,
-            0,
-            23,
-            59,
-            59,
-            999,
-          );
+          const startDate = new Date(activeFilters.year, activeFilters.month - 1, 1);
+          const endDate = new Date(activeFilters.year, activeFilters.month, 0, 23, 59, 59, 999);
           metricFilter.startDate = startDate.toISOString();
           metricFilter.endDate = endDate.toISOString();
         } else if (activeFilters.year) {
@@ -179,7 +165,7 @@ export const useSimplifiedInsights = () => {
         }
 
         // Fetch students for the selected program and assessment type
-        const studentList = await MetricsService.getAssessmentStudentList(
+        const studentResponse = await MetricsService.getAssessmentStudentList(
           state.assessmentType,
           metricFilter,
         );
@@ -187,7 +173,11 @@ export const useSimplifiedInsights = () => {
         setState((prev) => ({
           ...prev,
           selectedProgram: program,
-          studentList: studentList,
+          studentList: studentResponse.students || [],
+          studentTotal: studentResponse.total || 0,
+          studentPage: studentResponse.page || page,
+          studentTotalPages: studentResponse.totalPages || 0,
+          studentQuery: query,
           loading: false,
         }));
       } catch (error) {
@@ -210,6 +200,10 @@ export const useSimplifiedInsights = () => {
       ...prev,
       selectedProgram: null,
       studentList: [],
+      studentTotal: 0,
+      studentPage: 1,
+      studentTotalPages: 0,
+      studentQuery: "",
     }));
   }, []);
 
@@ -238,13 +232,18 @@ export const useSimplifiedInsights = () => {
 
       // If a program was selected, re-fetch students with updated filters
       if (currentProgram) {
-        await selectProgram(currentProgram, mergedFilters);
+        await selectProgram(currentProgram, mergedFilters, {
+          page: 1,
+          limit: 10,
+          query: state.studentQuery,
+        });
       }
     },
     [
       state.assessmentType,
       state.filters,
       state.selectedProgram,
+      state.studentQuery,
       fetchInsights,
       selectProgram,
     ],
@@ -268,6 +267,10 @@ export const useSimplifiedInsights = () => {
     error: state.error,
     filters: state.filters,
     totalCount: state.totalCount,
+    studentTotal: state.studentTotal,
+    studentPage: state.studentPage,
+    studentTotalPages: state.studentTotalPages,
+    studentQuery: state.studentQuery,
 
     // Computed
     hasStudents: state.studentList.length > 0,

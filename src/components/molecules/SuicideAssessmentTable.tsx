@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Search, AlertCircle } from "lucide-react";
 import { Avatar, LoadingScreen } from "@/components/atoms";
 import { cn } from "@/lib/utils";
@@ -20,16 +20,24 @@ interface SuicideAssessment {
 
 export const SuicideAssessmentTable: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [displayCount, setDisplayCount] = useState(10);
-  const tableRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Use the suicide hook to fetch data
-  const { assessments: apiAssessments, loading, error, fetchAssessments } = useSuicide();
+  const {
+    assessments: apiAssessments,
+    loading,
+    error,
+    fetchAssessments,
+    total,
+    page,
+    totalPages,
+  } = useSuicide();
 
   // Fetch assessments on component mount
   useEffect(() => {
     fetchAssessments({
-      limit: 100,
+      limit: 10,
+      page: 1,
       fields:
         "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
     }).catch(console.error);
@@ -64,35 +72,61 @@ export const SuicideAssessmentTable: React.FC = () => {
 
   // Filter assessments based on search term
   const filteredAssessments = useMemo(() => {
+    if (searchQuery) return allAssessments;
     if (!searchTerm) return allAssessments;
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.riskLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.year.toLowerCase().includes(searchTerm.toLowerCase())
+        assessment.year.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [searchTerm, allAssessments]);
 
-  // Get assessments to display (limited by displayCount)
-  const assessments = useMemo(() => {
-    return filteredAssessments.slice(0, displayCount);
-  }, [filteredAssessments, displayCount]);
+  const assessments = filteredAssessments;
 
-  // Infinite scroll handler
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 5) {
-      if (displayCount < filteredAssessments.length) {
-        setDisplayCount((prev) => Math.min(prev + 10, filteredAssessments.length));
-      }
+  const handleSearchSubmit = () => {
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    fetchAssessments({
+      limit: 10,
+      page: 1,
+      fields:
+        "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+      ...(query ? { query } : {}),
+    }).catch(console.error);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
     }
   };
 
-  // Reset display count when search term changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (value.trim() === "") {
+      setSearchQuery("");
+      fetchAssessments({
+        limit: 10,
+        page: 1,
+        fields:
+          "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+      }).catch(console.error);
+    }
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    fetchAssessments({
+      limit: 10,
+      page: nextPage,
+      fields:
+        "id,userId,riskLevel,assessmentDate,createdAt,updatedAt,user.avatar,user.person.firstName,user.person.lastName,user.person.contactNumber,user.person.students.program,user.person.students.year",
+      ...(searchQuery ? { query: searchQuery } : {}),
+    }).catch(console.error);
+  };
 
   const getRiskColor = (riskLevel: SuicideRiskLevel) => {
     switch (riskLevel) {
@@ -120,7 +154,7 @@ export const SuicideAssessmentTable: React.FC = () => {
             <p className="text-sm text-gray-500">
               {loading
                 ? "Loading assessments..."
-                : `Showing ${assessments.length} of ${filteredAssessments.length} students`}
+                : `Showing ${assessments.length} of ${total || filteredAssessments.length} students`}
             </p>
           </div>
         </div>
@@ -132,18 +166,23 @@ export const SuicideAssessmentTable: React.FC = () => {
             type="text"
             placeholder="Search students, program, year, or risk level..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
+            onChange={handleSearchChange}
+            onKeyDown={handleSearchKeyDown}
+            className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-20 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             disabled={loading}
           />
+          <button
+            type="button"
+            onClick={handleSearchSubmit}
+            disabled={loading}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+          >
+            Search
+          </button>
         </div>
       </div>
 
-      <div
-        ref={tableRef}
-        className="overflow-x-auto max-h-96 overflow-y-auto"
-        onScroll={handleScroll}
-      >
+      <div className="overflow-x-auto max-h-96 overflow-y-auto">
         {error ? (
           <div className="flex items-center justify-center py-8">
             <div className="flex items-center space-x-2 text-red-600">
@@ -152,9 +191,9 @@ export const SuicideAssessmentTable: React.FC = () => {
             </div>
           </div>
         ) : loading ? (
-          <LoadingScreen 
-            isLoading={true} 
-            message="Loading suicide assessments..." 
+          <LoadingScreen
+            isLoading={true}
+            message="Loading suicide assessments..."
             size="md"
             className="py-8"
           />
@@ -193,7 +232,7 @@ export const SuicideAssessmentTable: React.FC = () => {
                     <span
                       className={cn(
                         "inline-flex px-2 py-1 text-xs font-semibold rounded-full flex-shrink-0 ml-2",
-                        getRiskColor(assessment.riskLevel)
+                        getRiskColor(assessment.riskLevel),
                       )}
                     >
                       {formatRiskLevel(assessment.riskLevel)}
@@ -262,7 +301,7 @@ export const SuicideAssessmentTable: React.FC = () => {
                         <span
                           className={cn(
                             "inline-flex px-2 py-1 text-xs font-semibold rounded-full",
-                            getRiskColor(assessment.riskLevel)
+                            getRiskColor(assessment.riskLevel),
                           )}
                         >
                           {formatRiskLevel(assessment.riskLevel)}
@@ -288,6 +327,31 @@ export const SuicideAssessmentTable: React.FC = () => {
           </>
         )}
       </div>
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
