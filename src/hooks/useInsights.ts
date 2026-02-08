@@ -190,7 +190,7 @@ export const useInsights = () => {
                   }
                 : null,
               navigationStack: [...prev.navigationStack, nextLevel],
-              studentList: studentList,
+              studentList: studentList.students || [],
               loading: false,
             }));
             return;
