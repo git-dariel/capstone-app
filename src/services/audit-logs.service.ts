@@ -113,13 +113,13 @@ export class AuditLogsService {
       limit?: number;
       totalPages: number;
     }>(this.BASE_PATH, params);
-    
+
     // Transform response to match expected interface
     return {
       data: response.data || response.auditLogs || [],
       total: response.total || 0,
       page: response.page || 1,
-      limit: response.limit || 50,
+      limit: response.limit || 10,
       totalPages: response.totalPages || 0,
     };
   }
@@ -144,7 +144,7 @@ export class AuditLogsService {
       `${this.BASE_PATH}/statistics`,
       params as QueryParams,
     );
-    
+
     // Transform response to match expected interface
     return {
       data: response as AuditLogStatistics,
@@ -209,11 +209,7 @@ export class AuditLogsService {
       actor,
       riskLevel: log.riskLevel || "low",
       module: log.module || "system",
-      hasChanges: !!(
-        log.beforeValues ||
-        log.afterValues ||
-        log.changedFields?.length
-      ),
+      hasChanges: !!(log.beforeValues || log.afterValues || log.changedFields?.length),
     };
   }
 
@@ -246,10 +242,7 @@ export class AuditLogsService {
       CONSENT_WITHDRAWN: "Consent Withdrawn",
     };
 
-    return (
-      actionMap[action] ||
-      action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    );
+    return actionMap[action] || action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   }
 
   // Helper method to generate description if not provided
@@ -260,9 +253,7 @@ export class AuditLogsService {
     if (log.changedFields && log.changedFields.length > 0) {
       const fields = log.changedFields.slice(0, 3).join(", ");
       const additional =
-        log.changedFields.length > 3
-          ? ` and ${log.changedFields.length - 3} more`
-          : "";
+        log.changedFields.length > 3 ? ` and ${log.changedFields.length - 3} more` : "";
       return `${action} - Modified: ${fields}${additional}`;
     }
 

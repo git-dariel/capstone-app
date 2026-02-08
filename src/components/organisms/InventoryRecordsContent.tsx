@@ -18,16 +18,53 @@ export const InventoryRecordsContent: React.FC = () => {
   const navigate = useNavigate();
   const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { inventories, loading, error, fetchInventories } = useInventory();
+  const {
+    inventories,
+    loading,
+    error,
+    fetchInventories,
+    totalInventories,
+    currentPage,
+    totalPages,
+  } = useInventory();
 
   // Fetch inventories on component mount
   useEffect(() => {
     fetchInventories({
-      limit: 100,
+      limit: 10,
+      page: 1,
       fields: INVENTORY_FIELDS,
     }).catch(console.error);
   }, [fetchInventories]);
+
+  const handleSearchInventories = async (query: string) => {
+    setSearchQuery(query);
+    try {
+      await fetchInventories({
+        limit: 10,
+        page: 1,
+        fields: INVENTORY_FIELDS,
+        ...(query ? { query } : {}),
+      });
+    } catch (error) {
+      console.error("Failed to search inventories:", error);
+    }
+  };
+
+  const handlePageChange = async (page: number) => {
+    try {
+      await fetchInventories({
+        limit: 10,
+        page,
+        fields: INVENTORY_FIELDS,
+        ...(searchQuery ? { query: searchQuery } : {}),
+      });
+    } catch (error) {
+      console.error("Failed to change inventory page:", error);
+    }
+  };
 
   const handleViewInventory = (inventory: GetInventoryResponse) => {
     // Extract student data from inventory
@@ -134,6 +171,11 @@ export const InventoryRecordsContent: React.FC = () => {
           loading={loading}
           error={error}
           onView={handleViewInventory}
+          onSearch={handleSearchInventories}
+          total={totalInventories}
+          page={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
         />
       </div>
 

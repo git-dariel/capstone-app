@@ -11,6 +11,11 @@ interface PendingRequestsTableProps {
   onDeny?: (request: Appointment) => void;
   onView?: (request: Appointment) => void;
   searchable?: boolean;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onSearch?: (query: string) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
@@ -20,50 +25,81 @@ export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
   onDeny,
   onView,
   searchable = false,
+  total,
+  page = 1,
+  totalPages = 0,
+  onSearch,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "priority" | "student">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Filter and sort requests
-  const filteredRequests = requests
-    .filter((request) => {
-      if (!searchTerm) return true;
-      const student =
-        `${request.student?.person?.firstName} ${request.student?.person?.lastName}`.toLowerCase();
-      const title = request.title?.toLowerCase() || "";
-      const description = request.description?.toLowerCase() || "";
-      const type = request.appointmentType.toLowerCase();
+  const filteredRequests = (
+    onSearch
+      ? requests
+      : requests.filter((request) => {
+          if (!searchTerm) return true;
+          const student =
+            `${request.student?.person?.firstName} ${request.student?.person?.lastName}`.toLowerCase();
+          const title = request.title?.toLowerCase() || "";
+          const description = request.description?.toLowerCase() || "";
+          const type = request.appointmentType.toLowerCase();
 
-      return (
-        student.includes(searchTerm.toLowerCase()) ||
-        title.includes(searchTerm.toLowerCase()) ||
-        description.includes(searchTerm.toLowerCase()) ||
-        type.includes(searchTerm.toLowerCase())
-      );
-    })
-    .sort((a, b) => {
-      let comparison = 0;
+          return (
+            student.includes(searchTerm.toLowerCase()) ||
+            title.includes(searchTerm.toLowerCase()) ||
+            description.includes(searchTerm.toLowerCase()) ||
+            type.includes(searchTerm.toLowerCase())
+          );
+        })
+  ).sort((a, b) => {
+    let comparison = 0;
 
-      switch (sortBy) {
-        case "date":
-          comparison = new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime();
-          break;
-        case "priority":
-          const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
-          comparison =
-            (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
-            (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
-          break;
-        case "student":
-          const studentA = `${a.student?.person?.firstName} ${a.student?.person?.lastName}`;
-          const studentB = `${b.student?.person?.firstName} ${b.student?.person?.lastName}`;
-          comparison = studentA.localeCompare(studentB);
-          break;
-      }
+    switch (sortBy) {
+      case "date":
+        comparison = new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime();
+        break;
+      case "priority":
+        const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
+        comparison =
+          (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
+          (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
+        break;
+      case "student":
+        const studentA = `${a.student?.person?.firstName} ${a.student?.person?.lastName}`;
+        const studentB = `${b.student?.person?.firstName} ${b.student?.person?.lastName}`;
+        comparison = studentA.localeCompare(studentB);
+        break;
+    }
 
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
 
   const handleSort = (column: "date" | "priority" | "student") => {
     if (sortBy === column) {
@@ -126,9 +162,20 @@ export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
                 type="text"
                 placeholder="Search by student, title, type, or description..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
                 className="pl-10"
               />
+              {onSearch && (
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  disabled={loading}
+                >
+                  Search
+                </button>
+              )}
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-sm text-gray-500">Sort by:</span>
@@ -160,7 +207,7 @@ export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
             <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No pending requests</h3>
             <p className="text-gray-500">
-              {searchTerm
+              {(onSearch ? searchQuery : searchTerm)
                 ? "No requests match your search criteria."
                 : "All appointment requests have been processed."}
             </p>
@@ -256,7 +303,7 @@ export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(
-                        request.priority || "normal"
+                        request.priority || "normal",
                       )}`}
                     >
                       {request.priority || "normal"}
@@ -314,12 +361,39 @@ export const PendingRequestsTable: React.FC<PendingRequestsTableProps> = ({
         <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div className="text-sm text-gray-500">
-              Showing {filteredRequests.length} of {requests.length} pending requests
+              Showing {filteredRequests.length} of {onSearch ? total || 0 : requests.length} pending
+              requests
             </div>
             <div className="text-sm text-gray-500">
               {filteredRequests.filter((r) => r.priority === "urgent").length} urgent •{" "}
               {filteredRequests.filter((r) => r.priority === "high").length} high priority
             </div>
+          </div>
+        </div>
+      )}
+
+      {onPageChange && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
           </div>
         </div>
       )}

@@ -26,11 +26,11 @@ interface StudentProgressTableProps {
 
 export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ className = "" }) => {
   const [students, setStudents] = useState<StudentProgressInsight[]>([]);
-  const [filteredStudents, setFilteredStudents] = useState<StudentProgressInsight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalStudents, setTotalStudents] = useState(0);
@@ -40,15 +40,15 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
 
   const STUDENTS_PER_PAGE = 10;
 
-  const loadStudentProgress = async (page: number = 1) => {
+  const loadStudentProgress = async (page: number = 1, query: string = "") => {
     try {
       setLoading(true);
       const overview = await GuidanceDashboardService.getStudentProgressOverview(
         page,
-        STUDENTS_PER_PAGE
+        STUDENTS_PER_PAGE,
+        query || undefined,
       );
       setStudents(overview.students);
-      setFilteredStudents(overview.students);
       setSummary(overview.summary);
       setCurrentPage(overview.pagination.page);
       setTotalPages(overview.pagination.totalPages);
@@ -67,31 +67,34 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
   // Handle page changes
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages && !loading) {
-      loadStudentProgress(page);
+      loadStudentProgress(page, searchQuery);
       setExpandedRows(new Set()); // Clear expanded rows when changing pages
     }
   };
 
-  // Filter students based on search term (client-side within current page)
-  useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredStudents(students);
-      return;
+  const handleSearchSubmit = () => {
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    loadStudentProgress(1, query);
+    setExpandedRows(new Set());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
     }
+  };
 
-    const filtered = students.filter((student) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        student.studentName.toLowerCase().includes(searchLower) ||
-        student.studentNumber?.toLowerCase().includes(searchLower) ||
-        student.program.toLowerCase().includes(searchLower) ||
-        student.year.toString().toLowerCase().includes(searchLower) ||
-        student.riskLevel.toLowerCase().includes(searchLower)
-      );
-    });
-
-    setFilteredStudents(filtered);
-  }, [searchTerm, students]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (value.trim() === "") {
+      setSearchQuery("");
+      loadStudentProgress(1, "");
+      setExpandedRows(new Set());
+    }
+  };
 
   const toggleRowExpansion = (studentId: string) => {
     const newExpandedRows = new Set(expandedRows);
@@ -208,11 +211,20 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search students on current page..."
+                placeholder="Search students by name, program, year, or risk level..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-[500px]"
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                className="pl-10 pr-24 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-full md:w-[500px]"
               />
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                disabled={loading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Search
+              </button>
             </div>
           </div>
         </div>
@@ -242,8 +254,8 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStudents && filteredStudents.length > 0 ? (
-                filteredStudents.map((student) => (
+              {students && students.length > 0 ? (
+                students.map((student) => (
                   <React.Fragment key={student.studentId}>
                     {/* Main Row */}
                     <tr
@@ -287,7 +299,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                       <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center px-2 py-0.5 md:px-2.5 rounded-full text-xs font-medium border ${getRiskBadgeColor(
-                            student.riskLevel
+                            student.riskLevel,
                           )}`}
                         >
                           {student.riskLevel.toUpperCase()}
@@ -405,7 +417,7 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
                                           </span>
                                           <span
                                             className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${getSeverityBadgeColor(
-                                              insight.severity
+                                              insight.severity,
                                             )}`}
                                           >
                                             {insight.severity}
@@ -448,12 +460,10 @@ export const StudentProgressTable: React.FC<StudentProgressTableProps> = ({ clas
             <p className="text-gray-500">No student progress data available</p>
           </div>
         )}
-
-        {students && students.length > 0 && filteredStudents.length === 0 && (
+        {students && students.length === 0 && searchQuery && (
           <div className="text-center py-8">
             <Search className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500">No students found matching your search</p>
-            <p className="text-xs text-gray-400 mt-1">Search is limited to the current page</p>
           </div>
         )}
       </div>

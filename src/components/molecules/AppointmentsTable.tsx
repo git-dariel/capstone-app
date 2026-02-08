@@ -16,6 +16,11 @@ interface AppointmentsTableProps {
   showActions?: boolean;
   searchable?: boolean;
   userType?: "student" | "guidance";
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onSearch?: (query: string) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
@@ -30,76 +35,92 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   showActions = true,
   searchable = true,
   userType = "student",
+  total,
+  page = 1,
+  totalPages = 0,
+  onSearch,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [appointmentToDelete, setAppointmentToDelete] =
-    useState<Appointment | null>(null);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
   const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
-  const [appointmentToComplete, setAppointmentToComplete] =
-    useState<Appointment | null>(null);
+  const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [appointmentToCancel, setAppointmentToCancel] =
-    useState<Appointment | null>(null);
-  const [sortBy, setSortBy] = useState<
-    "date" | "priority" | "student" | "status"
-  >("date");
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+  const [sortBy, setSortBy] = useState<"date" | "priority" | "student" | "status">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   // Filter and sort appointments based on search term and sort options
-  const filteredAppointments = appointments
-    .filter((appointment) => {
-      const searchText = searchTerm.toLowerCase();
-      return (
-        appointment.title.toLowerCase().includes(searchText) ||
-        appointment.description?.toLowerCase().includes(searchText) ||
-        appointment.student?.person.firstName
-          .toLowerCase()
-          .includes(searchText) ||
-        appointment.student?.person.lastName
-          .toLowerCase()
-          .includes(searchText) ||
-        appointment.counselor?.person.firstName
-          .toLowerCase()
-          .includes(searchText) ||
-        appointment.counselor?.person.lastName
-          .toLowerCase()
-          .includes(searchText) ||
-        appointment.appointmentType.toLowerCase().includes(searchText) ||
-        appointment.status.toLowerCase().includes(searchText)
-      );
-    })
-    .sort((a, b) => {
-      let comparison = 0;
+  const filteredAppointments = (
+    onSearch
+      ? appointments
+      : appointments.filter((appointment) => {
+          const searchText = searchTerm.toLowerCase();
+          return (
+            appointment.title.toLowerCase().includes(searchText) ||
+            appointment.description?.toLowerCase().includes(searchText) ||
+            appointment.student?.person.firstName.toLowerCase().includes(searchText) ||
+            appointment.student?.person.lastName.toLowerCase().includes(searchText) ||
+            appointment.counselor?.person.firstName.toLowerCase().includes(searchText) ||
+            appointment.counselor?.person.lastName.toLowerCase().includes(searchText) ||
+            appointment.appointmentType.toLowerCase().includes(searchText) ||
+            appointment.status.toLowerCase().includes(searchText)
+          );
+        })
+  ).sort((a, b) => {
+    let comparison = 0;
 
-      switch (sortBy) {
-        case "date": {
-          comparison =
-            new Date(a.requestedDate).getTime() -
-            new Date(b.requestedDate).getTime();
-          break;
-        }
-        case "priority": {
-          const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
-          comparison =
-            (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
-            (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
-          break;
-        }
-        case "student": {
-          const studentA = `${a.student?.person?.firstName} ${a.student?.person?.lastName}`;
-          const studentB = `${b.student?.person?.firstName} ${b.student?.person?.lastName}`;
-          comparison = studentA.localeCompare(studentB);
-          break;
-        }
-        case "status": {
-          comparison = a.status.localeCompare(b.status);
-          break;
-        }
+    switch (sortBy) {
+      case "date": {
+        comparison = new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime();
+        break;
       }
+      case "priority": {
+        const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
+        comparison =
+          (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
+          (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
+        break;
+      }
+      case "student": {
+        const studentA = `${a.student?.person?.firstName} ${a.student?.person?.lastName}`;
+        const studentB = `${b.student?.person?.firstName} ${b.student?.person?.lastName}`;
+        comparison = studentA.localeCompare(studentB);
+        break;
+      }
+      case "status": {
+        comparison = a.status.localeCompare(b.status);
+        break;
+      }
+    }
 
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
+    return sortOrder === "asc" ? comparison : -comparison;
+  });
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
 
   // Note: handleSort can be used for table header click handlers if needed
   // Currently using dropdown for sorting, but keeping function for future enhancement
@@ -179,24 +200,31 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                 type="text"
                 placeholder="Search appointments..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
                 className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
               />
               <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Search className="h-4 w-4" />
               </div>
+              {onSearch && (
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  disabled={loading}
+                >
+                  Search
+                </button>
+              )}
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-500 whitespace-nowrap">
-                Sort by:
-              </span>
+              <span className="text-sm text-gray-500 whitespace-nowrap">Sort by:</span>
               <select
                 value={`${sortBy}-${sortOrder}`}
                 onChange={(e) => {
                   const [column, order] = e.target.value.split("-");
-                  setSortBy(
-                    column as "date" | "priority" | "student" | "status",
-                  );
+                  setSortBy(column as "date" | "priority" | "student" | "status");
                   setSortOrder(order as "asc" | "desc");
                 }}
                 className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400"
@@ -212,6 +240,10 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
               </select>
             </div>
           </div>
+          <div className="mt-3 text-xs text-gray-500">
+            Showing {filteredAppointments.length} of{" "}
+            {onSearch ? total || 0 : filteredAppointments.length} appointments
+          </div>
         </div>
       )}
 
@@ -219,29 +251,20 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       <div className="block md:hidden">
         {filteredAppointments.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm
+            {(onSearch ? searchQuery : searchTerm)
               ? "No appointments match your search."
               : "No appointments found."}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
             {filteredAppointments.map((appointment) => {
-              const statusInfo = AppointmentService.getStatusDisplayInfo(
-                appointment.status,
-              );
-              const priorityInfo = AppointmentService.getPriorityDisplayInfo(
-                appointment.priority,
-              );
-              const typeInfo = AppointmentService.getTypeDisplayInfo(
-                appointment.appointmentType,
-              );
-              const canCancel =
-                AppointmentService.canCancelAppointment(appointment);
+              const statusInfo = AppointmentService.getStatusDisplayInfo(appointment.status);
+              const priorityInfo = AppointmentService.getPriorityDisplayInfo(appointment.priority);
+              const typeInfo = AppointmentService.getTypeDisplayInfo(appointment.appointmentType);
+              const canCancel = AppointmentService.canCancelAppointment(appointment);
               const canReschedule =
-                AppointmentService.canRescheduleAppointment(appointment) &&
-                userType === "guidance";
-              const canComplete =
-                appointment.status === "confirmed" && userType === "guidance";
+                AppointmentService.canRescheduleAppointment(appointment) && userType === "guidance";
+              const canComplete = appointment.status === "confirmed" && userType === "guidance";
               const canEdit = userType === "guidance";
               const canDelete = userType === "guidance";
 
@@ -254,9 +277,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   {/* Card Header */}
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center flex-1 min-w-0">
-                      <span className="mr-2 flex-shrink-0">
-                        {typeInfo.icon}
-                      </span>
+                      <span className="mr-2 flex-shrink-0">{typeInfo.icon}</span>
                       <div className="min-w-0 flex-1">
                         <h3 className="text-sm font-medium text-gray-900 truncate">
                           {appointment.title}
@@ -279,9 +300,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center text-sm">
                       <span className="text-gray-500 w-20 flex-shrink-0">
-                        {(appointment as any).students?.length > 1
-                          ? "Students:"
-                          : "Student:"}
+                        {(appointment as any).students?.length > 1 ? "Students:" : "Student:"}
                       </span>
                       <span className="text-gray-900 truncate">
                         {(appointment as any).students?.length > 0
@@ -293,9 +312,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                     </div>
 
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">
-                        Counselor:
-                      </span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">Counselor:</span>
                       <span className="text-gray-900 truncate">
                         {appointment.counselor?.person.firstName}{" "}
                         {appointment.counselor?.person.lastName}
@@ -303,22 +320,14 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                     </div>
 
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">
-                        Date:
-                      </span>
-                      <span className="text-gray-900">
-                        {formatDate(appointment.requestedDate)}
-                      </span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">Date:</span>
+                      <span className="text-gray-900">{formatDate(appointment.requestedDate)}</span>
                     </div>
 
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center">
-                        <span className="text-gray-500 w-20 flex-shrink-0">
-                          Duration:
-                        </span>
-                        <span className="text-gray-900">
-                          {appointment.duration} min
-                        </span>
+                        <span className="text-gray-500 w-20 flex-shrink-0">Duration:</span>
+                        <span className="text-gray-900">{appointment.duration} min</span>
                       </div>
                       {appointment.priority !== "normal" && (
                         <span
@@ -435,33 +444,24 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredAppointments.length === 0 ? (
               <tr>
-                <td
-                  colSpan={showActions ? 7 : 6}
-                  className="px-4 py-8 text-center text-gray-500"
-                >
-                  {searchTerm
+                <td colSpan={showActions ? 7 : 6} className="px-4 py-8 text-center text-gray-500">
+                  {(onSearch ? searchQuery : searchTerm)
                     ? "No appointments match your search."
                     : "No appointments found."}
                 </td>
               </tr>
             ) : (
               filteredAppointments.map((appointment) => {
-                const statusInfo = AppointmentService.getStatusDisplayInfo(
-                  appointment.status,
-                );
+                const statusInfo = AppointmentService.getStatusDisplayInfo(appointment.status);
                 const priorityInfo = AppointmentService.getPriorityDisplayInfo(
                   appointment.priority,
                 );
-                const typeInfo = AppointmentService.getTypeDisplayInfo(
-                  appointment.appointmentType,
-                );
-                const canCancel =
-                  AppointmentService.canCancelAppointment(appointment);
+                const typeInfo = AppointmentService.getTypeDisplayInfo(appointment.appointmentType);
+                const canCancel = AppointmentService.canCancelAppointment(appointment);
                 const canReschedule =
                   AppointmentService.canRescheduleAppointment(appointment) &&
                   userType === "guidance";
-                const canComplete =
-                  appointment.status === "confirmed" && userType === "guidance";
+                const canComplete = appointment.status === "confirmed" && userType === "guidance";
                 const canEdit = userType === "guidance";
                 const canDelete = userType === "guidance";
 
@@ -476,9 +476,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <div className="flex items-center">
                           <span className="mr-2">{typeInfo.icon}</span>
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
-                              {appointment.title}
-                            </p>
+                            <p className="text-sm font-medium text-gray-900">{appointment.title}</p>
                             {appointment.description && (
                               <p className="text-sm text-gray-500 line-clamp-1">
                                 {appointment.description}
@@ -496,29 +494,17 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               <p className="text-sm font-medium text-gray-900">
                                 {(appointment as any).students.length} students
                               </p>
-                              <p className="text-sm text-gray-500">
-                                Group Session
-                              </p>
+                              <p className="text-sm text-gray-500">Group Session</p>
                             </div>
                           ) : (
                             <div>
                               <p className="text-sm font-medium text-gray-900">
-                                {
-                                  (appointment as any).students[0]?.person
-                                    ?.firstName
-                                }{" "}
-                                {
-                                  (appointment as any).students[0]?.person
-                                    ?.lastName
-                                }
+                                {(appointment as any).students[0]?.person?.firstName}{" "}
+                                {(appointment as any).students[0]?.person?.lastName}
                               </p>
-                              {(appointment as any).students[0]
-                                ?.studentNumber && (
+                              {(appointment as any).students[0]?.studentNumber && (
                                 <p className="text-sm text-gray-500">
-                                  {
-                                    (appointment as any).students[0]
-                                      .studentNumber
-                                  }
+                                  {(appointment as any).students[0].studentNumber}
                                 </p>
                               )}
                             </div>
@@ -549,9 +535,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <p className="text-sm text-gray-900">
                           {formatDate(appointment.requestedDate)}
                         </p>
-                        <p className="text-sm text-gray-500">
-                          {appointment.duration} min
-                        </p>
+                        <p className="text-sm text-gray-500">{appointment.duration} min</p>
                       </div>
                     </td>
                     <td className="px-4 py-4">
@@ -648,6 +632,32 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
           </tbody>
         </table>
       </div>
+
+      {onPageChange && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

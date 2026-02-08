@@ -44,9 +44,7 @@ interface UseAuditLogsReturn extends UseAuditLogsState {
     format: string;
     recordCount: number;
   }>;
-  cleanupAuditLogs: (
-    request: CleanupAuditLogsRequest,
-  ) => Promise<CleanupAuditLogsResponse>;
+  cleanupAuditLogs: (request: CleanupAuditLogsRequest) => Promise<CleanupAuditLogsResponse>;
 
   // Utility methods
   clearError: () => void;
@@ -55,11 +53,7 @@ interface UseAuditLogsReturn extends UseAuditLogsState {
 }
 
 export const useAuditLogs = (): UseAuditLogsReturn => {
-  const {
-    error: showErrorToast,
-    success: showSuccessToast,
-    info: showInfoToast,
-  } = useToast();
+  const { error: showErrorToast, success: showSuccessToast, info: showInfoToast } = useToast();
 
   const [state, setState] = useState<UseAuditLogsState>({
     auditLogs: [],
@@ -72,7 +66,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
     totalCount: 0,
     currentPage: 1,
     totalPages: 0,
-    limit: 50,
+    limit: 10,
   });
 
   const [lastFetchParams, setLastFetchParams] = useState<QueryParams>({});
@@ -107,7 +101,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
 
         const defaultParams = {
           page: 1,
-          limit: 50,
+          limit: 10,
           sort: "-timestamp",
           ...params,
         };
@@ -120,11 +114,10 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
           totalCount: response.total || 0,
           currentPage: response.page || 1,
           totalPages: response.totalPages || 0,
-          limit: response.limit || 50,
+          limit: response.limit || 10,
         }));
       } catch (error: unknown) {
-        const errorMessage =
-          (error as Error)?.message || "Failed to fetch audit logs";
+        const errorMessage = (error as Error)?.message || "Failed to fetch audit logs";
         setError(errorMessage);
         showErrorToast(errorMessage);
         console.error("Error fetching audit logs:", error);
@@ -145,8 +138,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
         const response = await AuditLogsService.getAuditLogById(id);
         setState((prev) => ({ ...prev, auditLog: response.data }));
       } catch (error: unknown) {
-        const errorMessage =
-          (error as Error)?.message || "Failed to fetch audit log details";
+        const errorMessage = (error as Error)?.message || "Failed to fetch audit log details";
         setError(errorMessage);
         showErrorToast(errorMessage);
         console.error("Error fetching audit log:", error);
@@ -172,8 +164,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
         const response = await AuditLogsService.getAuditLogStatistics(params);
         setState((prev) => ({ ...prev, statistics: response.data }));
       } catch (error: unknown) {
-        const errorMessage =
-          (error as Error)?.message || "Failed to fetch audit log statistics";
+        const errorMessage = (error as Error)?.message || "Failed to fetch audit log statistics";
         setError(errorMessage);
         showErrorToast(errorMessage);
         console.error("Error fetching statistics:", error);
@@ -220,8 +211,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
 
         return response.data;
       } catch (error: unknown) {
-        const errorMessage =
-          (error as Error)?.message || "Failed to export audit logs";
+        const errorMessage = (error as Error)?.message || "Failed to export audit logs";
         setError(errorMessage);
         showErrorToast(errorMessage);
         throw error;
@@ -257,8 +247,7 @@ export const useAuditLogs = (): UseAuditLogsReturn => {
 
         return response.data;
       } catch (error: unknown) {
-        const errorMessage =
-          (error as Error)?.message || "Failed to cleanup audit logs";
+        const errorMessage = (error as Error)?.message || "Failed to cleanup audit logs";
         setError(errorMessage);
         showErrorToast(errorMessage);
         throw error;

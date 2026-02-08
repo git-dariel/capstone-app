@@ -38,23 +38,27 @@ export interface Student {
         severityLevel: "minimal" | "mild" | "moderate" | "severe";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       depressionAssessments?: Array<{
         id: string;
         severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       stressAssessments?: Array<{
         id: string;
         severityLevel: "low" | "moderate" | "high";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       suicideAssessments?: Array<{
         id: string;
         riskLevel: "low" | "moderate" | "high";
         assessmentDate: string;
+        showResultToStudent?: boolean;
       }>;
     }>;
   };

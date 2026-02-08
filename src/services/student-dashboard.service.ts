@@ -30,11 +30,12 @@ export interface PersonalSummary {
 export interface AssessmentHistoryItem {
   id: string;
   totalScore: number | null;
-  severityLevel: string;
+  severityLevel: string | null;
   assessmentDate: string;
   createdAt: string;
   type: "anxiety" | "stress" | "depression" | "suicide" | "checklist";
-  requiresIntervention?: boolean;
+  requiresIntervention?: boolean | null;
+  showResultToStudent?: boolean;
 }
 
 export interface AssessmentTrend {
@@ -276,8 +277,9 @@ export class StudentDashboardService {
           }
 
           // Check for high severity levels based on latest assessment
+          const isVisible = latestAssessment.showResultToStudent !== false;
           const severityLevel = latestAssessment.severityLevel || latestAssessment.riskLevel;
-          if (severityLevel === "critical" || severityLevel === "Critical") {
+          if (isVisible && (severityLevel === "critical" || severityLevel === "Critical")) {
             insights.push({
               type: "warning",
               assessmentType: type,
@@ -286,7 +288,7 @@ export class StudentDashboardService {
               recommendation:
                 "Please contact your guidance counselor or emergency services immediately.",
             });
-          } else if (severityLevel === "severe" || severityLevel === "Severe") {
+          } else if (isVisible && (severityLevel === "severe" || severityLevel === "Severe")) {
             insights.push({
               type: "warning",
               assessmentType: type,
@@ -294,7 +296,7 @@ export class StudentDashboardService {
               severity: "high",
               recommendation: "Please contact your guidance counselor immediately for support.",
             });
-          } else if (severityLevel === "moderate" || severityLevel === "Moderate") {
+          } else if (isVisible && (severityLevel === "moderate" || severityLevel === "Moderate")) {
             insights.push({
               type: "warning",
               assessmentType: type,
@@ -451,6 +453,9 @@ export class StudentDashboardService {
               });
             }
           } else if (type === "checklist") {
+            if (latestAssessment.showResultToStudent === false) {
+              continue;
+            }
             const riskLevel = latestAssessment.severityLevel || latestAssessment.riskLevel;
             if (riskLevel === "critical" || riskLevel === "Critical") {
               insights.push({
@@ -488,6 +493,9 @@ export class StudentDashboardService {
               });
             }
           } else {
+            if (latestAssessment.showResultToStudent === false) {
+              continue;
+            }
             // For scored assessments (anxiety, stress, depression)
             const severityLevel = latestAssessment.severityLevel;
             if (severityLevel === "critical" || severityLevel === "Critical") {
@@ -568,30 +576,35 @@ export class StudentDashboardService {
           totalScore: 12,
           severityLevel: "Moderate",
           assessmentDate: new Date().toISOString(),
+          showResultToStudent: true,
         },
         stress: {
           id: "2",
           totalScore: 18,
           severityLevel: "Moderate",
           assessmentDate: new Date(Date.now() - 86400000).toISOString(),
+          showResultToStudent: true,
         },
         depression: {
           id: "3",
           totalScore: 16,
           severityLevel: "Moderate",
           assessmentDate: new Date(Date.now() - 172800000).toISOString(),
+          showResultToStudent: true,
         },
         suicide: {
           id: "4",
           riskLevel: "Low",
           requires_immediate_intervention: false,
           assessmentDate: new Date(Date.now() - 259200000).toISOString(),
+          showResultToStudent: true,
         },
         checklist: {
           id: "5",
           totalProblemsChecked: 25,
           riskLevel: "moderate",
           assessmentDate: new Date(Date.now() - 345600000).toISOString(),
+          showResultToStudent: true,
         },
       },
       userProfile: {
@@ -620,6 +633,7 @@ export class StudentDashboardService {
         assessmentDate: now.toISOString(),
         createdAt: now.toISOString(),
         type: "anxiety",
+        showResultToStudent: true,
       },
       {
         id: "2",
@@ -628,6 +642,7 @@ export class StudentDashboardService {
         assessmentDate: new Date(now.getTime() - 86400000).toISOString(),
         createdAt: new Date(now.getTime() - 86400000).toISOString(),
         type: "stress",
+        showResultToStudent: true,
       },
       {
         id: "3",
@@ -636,6 +651,7 @@ export class StudentDashboardService {
         assessmentDate: new Date(now.getTime() - 172800000).toISOString(),
         createdAt: new Date(now.getTime() - 172800000).toISOString(),
         type: "depression",
+        showResultToStudent: true,
       },
       {
         id: "4",
@@ -645,6 +661,7 @@ export class StudentDashboardService {
         createdAt: new Date(now.getTime() - 259200000).toISOString(),
         type: "suicide",
         requiresIntervention: false,
+        showResultToStudent: true,
       },
       {
         id: "5",
@@ -653,6 +670,7 @@ export class StudentDashboardService {
         assessmentDate: new Date(now.getTime() - 345600000).toISOString(),
         createdAt: new Date(now.getTime() - 345600000).toISOString(),
         type: "checklist",
+        showResultToStudent: true,
       },
     ];
   }

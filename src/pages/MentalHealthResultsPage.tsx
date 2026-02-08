@@ -4,16 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/atoms";
 import { useAuth } from "@/hooks";
 import { InventoryService, type GetInventoryResponse } from "@/services";
+import catSmile from "@/assets/cat-smile.gif";
 
 export const MentalHealthResultsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { student } = useAuth();
+  const { student, user } = useAuth();
   const [inventory, setInventory] = useState<GetInventoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const isStudentUser = user?.type === "student";
+
   // Fetch student's inventory
   useEffect(() => {
+    if (isStudentUser) {
+      setLoading(false);
+      return;
+    }
+
     const fetchInventory = async () => {
       if (!student?.id) {
         setError("Student ID not found");
@@ -40,7 +48,39 @@ export const MentalHealthResultsPage: React.FC = () => {
     };
 
     fetchInventory();
-  }, [student?.id]);
+  }, [student?.id, isStudentUser]);
+
+  if (isStudentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-10">
+        <div className="bg-white/90 backdrop-blur p-6 sm:p-8 md:p-10 rounded-3xl shadow-xl border border-primary-100 max-w-md sm:max-w-lg w-full text-center">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto rounded-3xl bg-primary-50 border border-primary-100 flex items-center justify-center mb-5 sm:mb-6">
+            <img
+              src={catSmile}
+              alt="Smiling cat"
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 object-contain"
+            />
+          </div>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
+            Thanks for waiting!
+          </h2>
+          <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4">
+            Your assessment prediction will be validated first by the guidance counselor. Please
+            wait for their decision before your results are released.
+          </p>
+          <div className="bg-primary-50 border border-primary-200 rounded-xl px-4 py-2 text-xs sm:text-sm md:text-base text-primary-800 mb-6">
+            We’ll notify you once the review is complete.
+          </div>
+          <Button
+            onClick={() => navigate("/student-dashboard")}
+            className="bg-primary-700 hover:bg-primary-800 text-white px-6 py-3 rounded-xl font-medium w-full sm:w-auto"
+          >
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   // Helper function to get sorted predictions (latest first by timestamp)
   const getSortedPredictions = () => {
@@ -51,7 +91,7 @@ export const MentalHealthResultsPage: React.FC = () => {
     return [...inventory.mentalHealthPredictions].sort(
       (a, b) =>
         new Date(b.createdAt || b.predictionDate || 0).getTime() -
-        new Date(a.createdAt || a.predictionDate || 0).getTime()
+        new Date(a.createdAt || a.predictionDate || 0).getTime(),
     );
   };
 
@@ -463,9 +503,9 @@ export const MentalHealthResultsPage: React.FC = () => {
                 mlData.isHighRisk
                   ? "bg-red-50 border-red-200"
                   : mlData.conditionData.riskLevel?.toLowerCase().includes("moderate") ||
-                    mlData.conditionData.prediction?.toLowerCase().includes("moderate")
-                  ? "bg-yellow-50 border-yellow-200"
-                  : "bg-blue-50 border-blue-200"
+                      mlData.conditionData.prediction?.toLowerCase().includes("moderate")
+                    ? "bg-yellow-50 border-yellow-200"
+                    : "bg-blue-50 border-blue-200"
               }`}
             >
               <div className="text-center py-3 sm:py-4">
@@ -477,9 +517,9 @@ export const MentalHealthResultsPage: React.FC = () => {
                     mlData.isHighRisk
                       ? "text-red-600"
                       : mlData.conditionData.riskLevel?.toLowerCase().includes("moderate") ||
-                        mlData.conditionData.prediction?.toLowerCase().includes("moderate")
-                      ? "text-yellow-600"
-                      : "text-blue-600"
+                          mlData.conditionData.prediction?.toLowerCase().includes("moderate")
+                        ? "text-yellow-600"
+                        : "text-blue-600"
                   }`}
                 >
                   {mlData.conditionName}
@@ -489,9 +529,9 @@ export const MentalHealthResultsPage: React.FC = () => {
                     mlData.isHighRisk
                       ? "text-red-600"
                       : mlData.conditionData.riskLevel?.toLowerCase().includes("moderate") ||
-                        mlData.conditionData.prediction?.toLowerCase().includes("moderate")
-                      ? "text-yellow-600"
-                      : "text-blue-600"
+                          mlData.conditionData.prediction?.toLowerCase().includes("moderate")
+                        ? "text-yellow-600"
+                        : "text-blue-600"
                   }`}
                 >
                   Risk Level: {mlData.conditionData.riskLevel || mlData.conditionData.prediction}
@@ -562,7 +602,7 @@ export const MentalHealthResultsPage: React.FC = () => {
                       <div className="flex-shrink-0 w-2 h-2 bg-green-400 rounded-full mt-2"></div>
                       <div className="ml-3 text-xs sm:text-sm text-green-800">{recommendation}</div>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   AlertCircle,
@@ -40,6 +40,11 @@ interface InventoryRecordsTableProps {
   loading?: boolean;
   error?: string | null;
   onView?: (inventory: GetInventoryResponse) => void;
+  onSearch?: (query: string) => void;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
@@ -47,10 +52,13 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
   loading: propLoading,
   error: propError,
   onView,
+  onSearch,
+  total,
+  page,
+  totalPages,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [displayCount, setDisplayCount] = useState(10);
-  const tableRef = useRef<HTMLDivElement>(null);
 
   // Use prop data if provided, otherwise fall back to hook
   const {
@@ -221,6 +229,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
 
   // Filter and search logic
   const filteredData = useMemo(() => {
+    if (onSearch) return tableData;
     if (!searchTerm) return tableData;
 
     const searchLower = searchTerm.toLowerCase();
@@ -232,14 +241,11 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         inventory.email.toLowerCase().includes(searchLower) ||
         inventory.height.toLowerCase().includes(searchLower) ||
         inventory.weight.toLowerCase().includes(searchLower) ||
-        inventory.complexion.toLowerCase().includes(searchLower)
+        inventory.complexion.toLowerCase().includes(searchLower),
     );
   }, [tableData, searchTerm]);
 
-  // Pagination logic
-  const paginatedData = useMemo(() => {
-    return filteredData.slice(0, displayCount);
-  }, [filteredData, displayCount]);
+  const paginatedData = filteredData;
 
   const getPerformanceIcon = (outlook?: "improved" | "same" | "declined") => {
     switch (outlook) {
@@ -282,20 +288,25 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
     }
   };
 
-  // Infinite scroll handler
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 5) {
-      if (displayCount < filteredData.length) {
-        setDisplayCount((prev) => Math.min(prev + 10, filteredData.length));
-      }
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    onSearch(searchTerm.trim());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
     }
   };
 
-  // Reset display count when search term changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      onSearch("");
+    }
+  };
 
   const handleView = (inventoryData: InventoryTableData) => {
     const originalInventory = apiInventories.find((inv) => inv.id === inventoryData.id);
@@ -323,7 +334,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
           {getPerformanceIcon(inventory.academicPerformanceOutlook)}
           <span
             className={`ml-2 text-xs font-medium capitalize ${getPerformanceColor(
-              inventory.academicPerformanceOutlook
+              inventory.academicPerformanceOutlook,
             )}`}
           >
             {inventory.academicPerformanceOutlook || "N/A"}
@@ -331,7 +342,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         </div>
         <span
           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
-            inventory.riskLevel
+            inventory.riskLevel,
           )}`}
         >
           {inventory.riskLevel || "N/A"}
@@ -353,7 +364,9 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
               <p className="text-sm text-gray-500">
                 {loading
                   ? "Loading inventory records..."
-                  : `Showing ${paginatedData.length} of ${filteredData.length} inventory records`}
+                  : `Showing ${paginatedData.length} of ${
+                      total ?? filteredData.length
+                    } inventory records`}
               </p>
             </div>
           </div>
@@ -365,18 +378,25 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
               type="text"
               placeholder="Search by name, program, year, email, or physical info..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-20 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
               disabled={loading}
             />
+            {onSearch && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                disabled={loading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Search
+              </button>
+            )}
           </div>
         </div>
 
-        <div
-          ref={tableRef}
-          className="overflow-x-auto max-h-96 overflow-y-auto"
-          onScroll={handleScroll}
-        >
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
           {error ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center space-x-2 text-red-600">
@@ -562,7 +582,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
-                              inventory.riskLevel
+                              inventory.riskLevel,
                             )}`}
                           >
                             {inventory.riskLevel || "N/A"}
@@ -599,6 +619,31 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
             </>
           )}
         </div>
+        {totalPages && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+            <div className="text-xs sm:text-sm text-gray-600">
+              Page {page ?? 1} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) <= 1}
+                onClick={() => onPageChange?.((page ?? 1) - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) >= totalPages}
+                onClick={() => onPageChange?.((page ?? 1) + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
