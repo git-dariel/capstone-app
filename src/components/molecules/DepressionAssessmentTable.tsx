@@ -5,7 +5,13 @@ import { cn } from "@/lib/utils";
 import { useDepression } from "@/hooks";
 import type { DepressionAssessment as ApiDepressionAssessment } from "@/services";
 
-type DepressionSeverityLevel = "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
+type DepressionSeverityLevel =
+  | "minimal"
+  | "mild"
+  | "moderate"
+  | "moderately_severe"
+  | "severe"
+  | null;
 
 interface DepressionAssessment {
   id: string;
@@ -79,7 +85,8 @@ export const DepressionAssessmentTable: React.FC = () => {
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (assessment.severityLevel &&
+          assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase())) ||
         assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.year.toLowerCase().includes(searchTerm.toLowerCase()),
     );
@@ -131,7 +138,8 @@ export const DepressionAssessmentTable: React.FC = () => {
   };
 
   const getSeverityColor = (severityLevel: DepressionSeverityLevel) => {
-    switch (severityLevel) {
+    const normalizedLevel = (severityLevel || "unknown").toLowerCase();
+    switch (normalizedLevel) {
       case "severe":
       case "moderately_severe":
         return "bg-red-100 text-red-800";
@@ -153,6 +161,7 @@ export const DepressionAssessmentTable: React.FC = () => {
   };
 
   const formatSeverityLevel = (severityLevel: DepressionSeverityLevel) => {
+    if (!severityLevel) return "Pending validation";
     if (severityLevel === "moderately_severe") return "Moderately Severe";
     return severityLevel.charAt(0).toUpperCase() + severityLevel.slice(1);
   };

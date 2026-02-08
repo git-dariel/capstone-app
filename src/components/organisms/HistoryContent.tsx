@@ -6,10 +6,11 @@ import { AssessmentDetailModal } from "@/components/molecules";
 interface AssessmentHistoryItem {
   id: string;
   type: "anxiety" | "depression" | "stress" | "suicide" | "checklist";
-  score: number;
-  severityLevel: string;
+  score: number | null;
+  severityLevel: string | null;
   date: string;
   createdAt: string;
+  showResultToStudent?: boolean;
 }
 
 const getSeverityColor = (severity: string) => {
@@ -121,23 +122,23 @@ export const HistoryContent: React.FC = () => {
         await Promise.all([
           fetchAnxietyAssessments({
             limit: 100,
-            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt,showResultToStudent",
           }),
           fetchDepressionAssessments({
             limit: 100,
-            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt,showResultToStudent",
           }),
           fetchStressAssessments({
             limit: 100,
-            fields: "id,totalScore,severityLevel,assessmentDate,createdAt",
+            fields: "id,totalScore,severityLevel,assessmentDate,createdAt,showResultToStudent",
           }),
           fetchSuicideAssessments({
             limit: 100,
-            fields: "id,riskLevel,assessmentDate,createdAt",
+            fields: "id,riskLevel,assessmentDate,createdAt,showResultToStudent",
           }),
           fetchChecklistAssessments({
             limit: 100,
-            fields: "id,userId,checklist_analysis,date_completed,createdAt",
+            fields: "id,userId,checklist_analysis,date_completed,createdAt,showResultToStudent",
           }),
         ]);
 
@@ -145,51 +146,60 @@ export const HistoryContent: React.FC = () => {
         ...(anxietyData?.data || []).map((item: any) => ({
           id: item.id,
           type: "anxiety" as const,
-          score: item.totalScore,
-          severityLevel: item.severityLevel,
+          score: item.showResultToStudent ? item.totalScore : null,
+          severityLevel: item.showResultToStudent ? item.severityLevel : null,
           date: item.assessmentDate,
           createdAt: item.createdAt,
+          showResultToStudent: item.showResultToStudent,
         })),
         ...(depressionData?.data || []).map((item: any) => ({
           id: item.id,
           type: "depression" as const,
-          score: item.totalScore,
-          severityLevel: item.severityLevel,
+          score: item.showResultToStudent ? item.totalScore : null,
+          severityLevel: item.showResultToStudent ? item.severityLevel : null,
           date: item.assessmentDate,
           createdAt: item.createdAt,
+          showResultToStudent: item.showResultToStudent,
         })),
         ...(stressData?.data || []).map((item: any) => ({
           id: item.id,
           type: "stress" as const,
-          score: item.totalScore,
-          severityLevel: item.severityLevel,
+          score: item.showResultToStudent ? item.totalScore : null,
+          severityLevel: item.showResultToStudent ? item.severityLevel : null,
           date: item.assessmentDate,
           createdAt: item.createdAt,
+          showResultToStudent: item.showResultToStudent,
         })),
         ...(suicideData?.data || []).map((item: any) => ({
           id: item.id,
           type: "suicide" as const,
-          score: item.riskScore || 0,
-          severityLevel: item.riskLevel,
+          score: null,
+          severityLevel: item.showResultToStudent ? item.riskLevel : null,
           date: item.assessmentDate,
           createdAt: item.createdAt,
+          showResultToStudent: item.showResultToStudent,
         })),
         ...(checklistData?.data || [])
           .filter((item: any) => item.userId === user?.id) // Only include checklists for the current user
           .map((item: any) => ({
             id: item.id,
             type: "checklist" as const,
-            score: item.checklist_analysis?.totalProblemsChecked || 0,
-            severityLevel: item.checklist_analysis?.riskLevel || "unknown",
+            score: item.showResultToStudent
+              ? item.checklist_analysis?.totalProblemsChecked || 0
+              : null,
+            severityLevel: item.showResultToStudent
+              ? item.checklist_analysis?.riskLevel || "unknown"
+              : null,
             date: item.date_completed,
             createdAt: item.createdAt,
+            showResultToStudent: item.showResultToStudent,
           })),
       ];
 
       // Sort by date (most recent first)
       combinedHistory.sort(
         (a, b) =>
-          new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime()
+          new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime(),
       );
 
       setAssessmentHistory(combinedHistory);
@@ -221,10 +231,15 @@ export const HistoryContent: React.FC = () => {
     if (!searchTerm) return assessmentHistory;
     return assessmentHistory.filter((assessment) => {
       const searchLower = searchTerm.toLowerCase();
+      const isVisible = assessment.showResultToStudent !== false;
       return (
         assessment.type.toLowerCase().includes(searchLower) ||
-        assessment.severityLevel.toLowerCase().includes(searchLower) ||
-        assessment.score.toString().includes(searchLower) ||
+        (isVisible &&
+          assessment.severityLevel &&
+          assessment.severityLevel.toLowerCase().includes(searchLower)) ||
+        (isVisible &&
+          assessment.score !== null &&
+          assessment.score.toString().includes(searchLower)) ||
         formatDate(assessment.date || assessment.createdAt)
           .toLowerCase()
           .includes(searchLower)
@@ -281,78 +296,6 @@ export const HistoryContent: React.FC = () => {
             View your mental health assessment history and track your progress over time
           </p>
         </div>
-
-        {/* Summary Stats - Moved to top */}
-        {assessmentHistory.length > 0 && (
-          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            {["anxiety", "depression", "stress", "suicide", "checklist"].map((type) => {
-              const typeAssessments = assessmentHistory.filter((a) => a.type === type);
-              const latestScore = typeAssessments[0]?.score;
-              const latestLevel = typeAssessments[0]?.severityLevel;
-              const averageScore =
-                typeAssessments.length > 0 && type !== "suicide" && type !== "checklist"
-                  ? Math.round(
-                      typeAssessments.reduce((sum, a) => sum + a.score, 0) / typeAssessments.length
-                    )
-                  : 0;
-
-              return (
-                <div
-                  key={type}
-                  className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-base font-medium text-gray-900 capitalize">
-                      {type === "checklist" ? "Personal Problems" : type}
-                    </h3>
-                    <span className="text-2xl">{getTypeIcon(type)}</span>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Total:</span>
-                      <span className="text-sm font-medium text-primary-700">
-                        {typeAssessments.length}
-                      </span>
-                    </div>
-                    {type === "suicide" || type === "checklist" ? (
-                      latestLevel && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Latest:</span>
-                          <span
-                            className={`text-sm font-medium px-2 py-1 rounded-full border ${getSeverityColor(
-                              latestLevel
-                            )}`}
-                          >
-                            {formatSeverityLabel(latestLevel)}
-                          </span>
-                        </div>
-                      )
-                    ) : (
-                      <>
-                        {latestScore !== undefined && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Latest:</span>
-                            <span className="text-sm font-semibold text-gray-900">
-                              {latestScore}
-                            </span>
-                          </div>
-                        )}
-                        {typeAssessments.length > 0 && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Average:</span>
-                            <span className="text-sm font-medium text-gray-700">
-                              {averageScore}
-                            </span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
 
         {/* Assessment History Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -448,7 +391,7 @@ export const HistoryContent: React.FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div
                               className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(
-                                assessment.type
+                                assessment.type,
                               )}`}
                             >
                               <span>{getTypeIcon(assessment.type)}</span>
@@ -456,13 +399,15 @@ export const HistoryContent: React.FC = () => {
                                 {assessment.type === "suicide"
                                   ? "Suicide Risk"
                                   : assessment.type === "checklist"
-                                  ? "Personal Problems"
-                                  : assessment.type}
+                                    ? "Personal Problems"
+                                    : assessment.type}
                               </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {assessment.type === "suicide" ? (
+                            {assessment.showResultToStudent === false ? (
+                              <span className="text-sm text-gray-500">Pending validation</span>
+                            ) : assessment.type === "suicide" ? (
                               <span className="text-sm font-medium text-gray-900">
                                 Risk Assessment
                               </span>
@@ -477,13 +422,19 @@ export const HistoryContent: React.FC = () => {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div
-                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
-                                assessment.severityLevel
-                              )}`}
-                            >
-                              {formatSeverityLabel(assessment.severityLevel)}
-                            </div>
+                            {assessment.showResultToStudent === false ? (
+                              <span className="text-sm text-gray-500">Pending validation</span>
+                            ) : assessment.severityLevel ? (
+                              <div
+                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getSeverityColor(
+                                  assessment.severityLevel,
+                                )}`}
+                              >
+                                {formatSeverityLabel(assessment.severityLevel)}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-500">N/A</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center text-gray-600 text-sm">
@@ -518,7 +469,7 @@ export const HistoryContent: React.FC = () => {
                       <div className="flex items-center justify-between mb-3">
                         <div
                           className={`inline-flex items-center space-x-2 px-3 py-1 rounded-full text-sm font-medium border ${getTypeColor(
-                            assessment.type
+                            assessment.type,
                           )}`}
                         >
                           <span>{getTypeIcon(assessment.type)}</span>
@@ -526,11 +477,13 @@ export const HistoryContent: React.FC = () => {
                             {assessment.type === "suicide"
                               ? "Suicide Risk"
                               : assessment.type === "checklist"
-                              ? "Personal Problems"
-                              : assessment.type}
+                                ? "Personal Problems"
+                                : assessment.type}
                           </span>
                         </div>
-                        {assessment.type === "suicide" ? (
+                        {assessment.showResultToStudent === false ? (
+                          <span className="text-sm text-gray-500">Pending validation</span>
+                        ) : assessment.type === "suicide" ? (
                           <span className="text-sm font-medium text-gray-600">Risk Assessment</span>
                         ) : assessment.type === "checklist" ? (
                           <span className="text-sm font-medium text-gray-600">
@@ -545,13 +498,19 @@ export const HistoryContent: React.FC = () => {
 
                       {/* Severity Badge */}
                       <div className="mb-3">
-                        <div
-                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(
-                            assessment.severityLevel
-                          )}`}
-                        >
-                          {formatSeverityLabel(assessment.severityLevel)}
-                        </div>
+                        {assessment.showResultToStudent === false ? (
+                          <span className="text-sm text-gray-500">Pending validation</span>
+                        ) : assessment.severityLevel ? (
+                          <div
+                            className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getSeverityColor(
+                              assessment.severityLevel,
+                            )}`}
+                          >
+                            {formatSeverityLabel(assessment.severityLevel)}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-500">N/A</span>
+                        )}
                       </div>
 
                       {/* Date and Time Row */}

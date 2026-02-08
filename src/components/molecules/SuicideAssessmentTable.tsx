@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useSuicide } from "@/hooks";
 import type { SuicideAssessment as ApiSuicideAssessment } from "@/services";
 
-type SuicideRiskLevel = "low" | "moderate" | "high";
+type SuicideRiskLevel = "low" | "moderate" | "high" | null;
 
 interface SuicideAssessment {
   id: string;
@@ -77,7 +77,8 @@ export const SuicideAssessmentTable: React.FC = () => {
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.riskLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (assessment.riskLevel &&
+          assessment.riskLevel.toLowerCase().includes(searchTerm.toLowerCase())) ||
         assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.year.toLowerCase().includes(searchTerm.toLowerCase()),
     );
@@ -129,7 +130,8 @@ export const SuicideAssessmentTable: React.FC = () => {
   };
 
   const getRiskColor = (riskLevel: SuicideRiskLevel) => {
-    switch (riskLevel) {
+    const normalizedLevel = (riskLevel || "unknown").toLowerCase();
+    switch (normalizedLevel) {
       case "high":
         return "bg-red-100 text-red-800";
       case "moderate":
@@ -142,6 +144,7 @@ export const SuicideAssessmentTable: React.FC = () => {
   };
 
   const formatRiskLevel = (riskLevel: SuicideRiskLevel) => {
+    if (!riskLevel) return "Pending validation";
     return riskLevel.charAt(0).toUpperCase() + riskLevel.slice(1);
   };
 

@@ -29,8 +29,16 @@ import {
   X,
   Calendar,
 } from "lucide-react";
-import { InventoryService, ConsentService, UserService } from "@/services";
-import { useToast } from "@/hooks";
+import {
+  AnxietyService,
+  ConsentService,
+  DepressionService,
+  InventoryService,
+  StressService,
+  SuicideService,
+  UserService,
+} from "@/services";
+import { useAuth, useToast } from "@/hooks";
 import { Button } from "@/components/ui";
 
 interface StudentDetailsModalProps {
@@ -50,6 +58,7 @@ interface AssessmentHistory {
   riskLevel?: string;
   assessmentDate: string;
   totalScore?: number;
+  showResultToStudent?: boolean;
 }
 
 export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
@@ -57,6 +66,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   onClose,
   student,
 }) => {
+  const { user } = useAuth();
   const { addToast, toasts, removeToast } = useToast();
 
   const [expandedSections, setExpandedSections] = useState<ExpandedSections>({
@@ -78,6 +88,9 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
   const [isUpdatingPredictionVisibility, setIsUpdatingPredictionVisibility] = useState(false);
+  const [isUpdatingAssessmentVisibility, setIsUpdatingAssessmentVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   // Local student state for real-time updates
   const [currentStudentData, setCurrentStudentData] = useState<Student | null>(student || null);
@@ -106,6 +119,65 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     setCurrentStudentData(student || null);
   }, [student]);
 
+  const buildAssessmentHistory = (studentData: Student | null) => {
+    const assessments: AssessmentHistory[] = [];
+
+    if (!studentData?.person?.users?.[0]) {
+      return assessments;
+    }
+
+    const userRecord = studentData.person.users[0];
+
+    userRecord.anxietyAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "anxiety",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.depressionAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "depression",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.stressAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "stress",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.suicideAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "suicide",
+        riskLevel: a.riskLevel,
+        assessmentDate: a.assessmentDate,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    assessments.sort(
+      (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime(),
+    );
+
+    return assessments;
+  };
+
   // Fetch inventory and consent data when modal opens and student changes
   useEffect(() => {
     if (!isOpen || !student?.id) {
@@ -120,66 +192,21 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
       setError(null);
 
       try {
-        const [inventory, consent] = await Promise.all([
+        const [inventory, consent, detailedStudent] = await Promise.all([
           InventoryService.getInventoryByStudentId(student.id).catch(() => null),
           ConsentService.getConsentByStudentId(student.id).catch(() => null),
+          StudentService.getStudentById(student.id, {
+            fields:
+              "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus,person.users.id,person.users.avatar,person.users.anxietyAssessments.id,person.users.anxietyAssessments.severityLevel,person.users.anxietyAssessments.assessmentDate,person.users.anxietyAssessments.totalScore,person.users.anxietyAssessments.showResultToStudent,person.users.depressionAssessments.id,person.users.depressionAssessments.severityLevel,person.users.depressionAssessments.assessmentDate,person.users.depressionAssessments.totalScore,person.users.depressionAssessments.showResultToStudent,person.users.stressAssessments.id,person.users.stressAssessments.severityLevel,person.users.stressAssessments.assessmentDate,person.users.stressAssessments.totalScore,person.users.stressAssessments.showResultToStudent,person.users.suicideAssessments.id,person.users.suicideAssessments.riskLevel,person.users.suicideAssessments.assessmentDate,person.users.suicideAssessments.showResultToStudent",
+          }).catch(() => null),
         ]);
 
         setInventoryData(inventory);
         setConsentData(consent);
 
-        // Extract assessment history from student data
-        const assessments: AssessmentHistory[] = [];
-
-        if (student.person?.users?.[0]) {
-          const user = student.person.users[0];
-
-          // Collect all assessments
-          user.anxietyAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "anxiety",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.depressionAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "depression",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.stressAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "stress",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.suicideAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "suicide",
-              riskLevel: a.riskLevel,
-              assessmentDate: a.assessmentDate,
-            });
-          });
-        }
-
-        // Sort by date descending
-        assessments.sort(
-          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime(),
-        );
-        setAssessmentHistory(assessments);
+        const activeStudentData = detailedStudent || student;
+        setCurrentStudentData(activeStudentData);
+        setAssessmentHistory(buildAssessmentHistory(activeStudentData));
       } catch (err) {
         console.error("Error fetching student data:", err);
         setError("Failed to load additional student information");
@@ -501,14 +528,96 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     try {
       const freshStudent = await StudentService.getStudentById(student.id, {
         fields:
-          "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus",
+          "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus,person.users.id,person.users.avatar,person.users.anxietyAssessments.id,person.users.anxietyAssessments.severityLevel,person.users.anxietyAssessments.assessmentDate,person.users.anxietyAssessments.totalScore,person.users.anxietyAssessments.showResultToStudent,person.users.depressionAssessments.id,person.users.depressionAssessments.severityLevel,person.users.depressionAssessments.assessmentDate,person.users.depressionAssessments.totalScore,person.users.depressionAssessments.showResultToStudent,person.users.stressAssessments.id,person.users.stressAssessments.severityLevel,person.users.stressAssessments.assessmentDate,person.users.stressAssessments.totalScore,person.users.stressAssessments.showResultToStudent,person.users.suicideAssessments.id,person.users.suicideAssessments.riskLevel,person.users.suicideAssessments.assessmentDate,person.users.suicideAssessments.showResultToStudent",
       });
 
       if (freshStudent) {
         setCurrentStudentData(freshStudent);
+        setAssessmentHistory(buildAssessmentHistory(freshStudent));
       }
     } catch (error) {
       console.error("Error refreshing student data:", error);
+    }
+  };
+
+  const canToggleAssessmentVisibility =
+    user?.type === "guidance" || user?.type === "admin" || user?.type === "super_admin";
+
+  const handleToggleAssessmentVisibility = async (assessment: AssessmentHistory) => {
+    if (!canToggleAssessmentVisibility) return;
+
+    const nextVisibility = !assessment.showResultToStudent;
+    setIsUpdatingAssessmentVisibility((prev) => ({
+      ...prev,
+      [assessment.id]: true,
+    }));
+
+    try {
+      let updatedVisibility = nextVisibility;
+
+      switch (assessment.type) {
+        case "anxiety": {
+          const updated = await AnxietyService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "depression": {
+          const updated = await DepressionService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "stress": {
+          const updated = await StressService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "suicide": {
+          const updated = await SuicideService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        default:
+          break;
+      }
+
+      setAssessmentHistory((prev) =>
+        prev.map((item) =>
+          item.id === assessment.id
+            ? {
+                ...item,
+                showResultToStudent: updatedVisibility,
+              }
+            : item,
+        ),
+      );
+
+      addToast({
+        type: "success",
+        title: "Visibility Updated",
+        message: updatedVisibility
+          ? "Assessment results are now visible to the student."
+          : "Assessment results are now hidden from the student.",
+      });
+    } catch (error: any) {
+      console.error("Error updating assessment visibility:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to update assessment visibility.",
+      });
+    } finally {
+      setIsUpdatingAssessmentVisibility((prev) => ({
+        ...prev,
+        [assessment.id]: false,
+      }));
     }
   };
 
@@ -1780,6 +1889,34 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                               )}
                             </span>
                           ) : null}
+                          <span
+                            className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
+                              assessment.showResultToStudent
+                                ? "bg-green-100 text-green-800 border-green-300"
+                                : "bg-gray-100 text-gray-700 border-gray-300"
+                            }`}
+                          >
+                            {assessment.showResultToStudent ? "Visible" : "Hidden"}
+                          </span>
+                          {canToggleAssessmentVisibility && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleAssessmentVisibility(assessment)}
+                              disabled={isUpdatingAssessmentVisibility[assessment.id]}
+                              className={
+                                assessment.showResultToStudent
+                                  ? "border-green-300 text-green-700 hover:bg-green-50"
+                                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }
+                            >
+                              {isUpdatingAssessmentVisibility[assessment.id]
+                                ? "Updating..."
+                                : assessment.showResultToStudent
+                                  ? "Hide from Student"
+                                  : "Show to Student"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

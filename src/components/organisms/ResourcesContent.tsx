@@ -13,7 +13,16 @@ import {
 import { useAnxiety, useAuth, useChecklist, useDepression, useStress, useSuicide } from "@/hooks";
 import type { CooldownInfo } from "@/services/stress.service";
 import { activityCategories, type Activity } from "@/data/activities";
-import { AlertCircle, CheckCircle, Clock, FileText, Play, BookOpen, Headphones, Heart } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  FileText,
+  Play,
+  BookOpen,
+  Headphones,
+  Heart,
+} from "lucide-react";
 import React, { useState } from "react";
 
 type AssessmentType = "anxiety" | "depression" | "stress" | "suicide" | "checklist" | null;
@@ -162,7 +171,10 @@ export const ResourcesContent: React.FC = () => {
     }
   };
 
-  const getRecommendedActivities = (assessmentType: AssessmentType, severityLevel?: string): Activity[] => {
+  const getRecommendedActivities = (
+    assessmentType: AssessmentType,
+    severityLevel?: string,
+  ): Activity[] => {
     if (!assessmentType || !severityLevel) return [];
 
     const normalizedSeverity = severityLevel.toLowerCase().replace("_", " ");
@@ -182,8 +194,8 @@ export const ResourcesContent: React.FC = () => {
               (benefit) =>
                 benefit.toLowerCase().includes("anxiety") ||
                 benefit.toLowerCase().includes("calm") ||
-                benefit.toLowerCase().includes("stress")
-            )
+                benefit.toLowerCase().includes("stress"),
+            ),
         );
         break;
 
@@ -197,8 +209,8 @@ export const ResourcesContent: React.FC = () => {
               (benefit) =>
                 benefit.toLowerCase().includes("mood") ||
                 benefit.toLowerCase().includes("depression") ||
-                benefit.toLowerCase().includes("energy")
-            )
+                benefit.toLowerCase().includes("energy"),
+            ),
         );
         break;
 
@@ -213,8 +225,8 @@ export const ResourcesContent: React.FC = () => {
               (benefit) =>
                 benefit.toLowerCase().includes("stress") ||
                 benefit.toLowerCase().includes("relax") ||
-                benefit.toLowerCase().includes("tension")
-            )
+                benefit.toLowerCase().includes("tension"),
+            ),
         );
         break;
 
@@ -228,15 +240,16 @@ export const ResourcesContent: React.FC = () => {
               (benefit) =>
                 benefit.toLowerCase().includes("grounding") ||
                 benefit.toLowerCase().includes("immediate") ||
-                benefit.toLowerCase().includes("panic")
-            )
+                benefit.toLowerCase().includes("panic"),
+            ),
         );
         break;
 
       case "checklist":
         // For general checklist, provide a balanced mix
         recommendedActivities = allActivities.filter(
-          (activity) => activity.isRecommended || activity.type === "breathing" || activity.type === "exercise"
+          (activity) =>
+            activity.isRecommended || activity.type === "breathing" || activity.type === "exercise",
         );
         break;
 
@@ -258,7 +271,7 @@ export const ResourcesContent: React.FC = () => {
     } else if (normalizedSeverity.includes("moderate") || normalizedSeverity.includes("mild")) {
       // For moderate cases, include beginner and intermediate activities
       recommendedActivities = recommendedActivities.filter(
-        (activity) => activity.difficulty === "beginner" || activity.difficulty === "intermediate"
+        (activity) => activity.difficulty === "beginner" || activity.difficulty === "intermediate",
       );
     }
 
@@ -288,7 +301,9 @@ export const ResourcesContent: React.FC = () => {
 
     // Handle different response structures for different assessment types
     const analysis =
-      currentAssessment === "checklist" ? submissionState.results.checklist_analysis : submissionState.results.analysis;
+      currentAssessment === "checklist"
+        ? submissionState.results.checklist_analysis
+        : submissionState.results.analysis;
 
     const { totalScore } = submissionState.results;
     const assessmentName = currentAssessment
@@ -298,7 +313,8 @@ export const ResourcesContent: React.FC = () => {
     // For suicide and checklist, we do not display a total score in the UI
     const shouldShowScore = !(currentAssessment === "suicide" || currentAssessment === "checklist");
     // For checklist, if needed elsewhere, we compute but won't render in the summary
-    const displayScore = currentAssessment === "checklist" ? analysis?.totalProblemsChecked : totalScore;
+    const displayScore =
+      currentAssessment === "checklist" ? analysis?.totalProblemsChecked : totalScore;
     const scoreLabel = currentAssessment === "checklist" ? "Problems Identified" : "Total Score";
 
     // Handle different assessment types
@@ -306,8 +322,8 @@ export const ResourcesContent: React.FC = () => {
       currentAssessment === "suicide"
         ? analysis?.riskLevel
         : currentAssessment === "checklist"
-        ? analysis?.riskLevel
-        : analysis?.severityLevel;
+          ? analysis?.riskLevel
+          : analysis?.severityLevel;
 
     // const displayDescription =
     //   currentAssessment === "suicide"
@@ -360,9 +376,24 @@ export const ResourcesContent: React.FC = () => {
     };
 
     const severityColors = getSeverityColor(displayLevel || "");
+    const shouldShowResults = !isStudent;
+    const summaryColors = shouldShowResults
+      ? severityColors
+      : {
+          bg: "bg-gray-50",
+          border: "border-gray-200",
+          text: "text-gray-800",
+          icon: "text-gray-600",
+          badge: "bg-gray-100 text-gray-700",
+        };
 
     return (
-      <Modal isOpen={submissionState.success} onClose={handleCloseModal} title="Assessment Results" size="full">
+      <Modal
+        isOpen={submissionState.success}
+        onClose={handleCloseModal}
+        title="Assessment Results"
+        size="full"
+      >
         <div className="h-full flex flex-col bg-gray-50">
           {/* Body */}
           <div className="flex-1 overflow-y-auto">
@@ -371,37 +402,62 @@ export const ResourcesContent: React.FC = () => {
                 {/* Summary Column */}
                 <section className="lg:col-span-4 space-y-6">
                   {/* Result Summary Card */}
-                  <div className={`rounded-xl border ${severityColors.border} bg-white`}>
-                    <div className={`px-6 py-5 border-b ${severityColors.border} ${severityColors.bg}`}>
+                  <div className={`rounded-xl border ${summaryColors.border} bg-white`}>
+                    <div
+                      className={`px-6 py-5 border-b ${summaryColors.border} ${summaryColors.bg}`}
+                    >
                       <div className="flex items-center gap-3">
-                        <CheckCircle className={`w-6 h-6 ${severityColors.icon}`} />
-                        <h2 className="text-lg font-semibold text-gray-900">{assessmentName} Assessment</h2>
+                        <CheckCircle className={`w-6 h-6 ${summaryColors.icon}`} />
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          {assessmentName} Assessment
+                        </h2>
                       </div>
                     </div>
                     <div className="px-6 py-5 space-y-5">
-                      {/* Severity */}
-                      <div className="flex flex-col items-center text-center">
-                        <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Result</p>
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${severityColors.badge}`}
-                        >
-                          {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
-                        </span>
-                      </div>
-
-                      {/* Metrics */}
-                      <div className={"grid gap-4 " + (shouldShowScore ? "grid-cols-2" : "grid-cols-1")}>
-                        {shouldShowScore && (
-                          <div className="rounded-lg border border-gray-200 p-4 text-center">
-                            <p className="text-xs text-gray-500">{scoreLabel}</p>
-                            <p className="text-2xl font-bold text-gray-900">{displayScore}</p>
+                      {shouldShowResults ? (
+                        <>
+                          {/* Severity */}
+                          <div className="flex flex-col items-center text-center">
+                            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+                              Result
+                            </p>
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ${summaryColors.badge}`}
+                            >
+                              {displayLevel?.replace("_", " ").toUpperCase() || "N/A"}
+                            </span>
                           </div>
-                        )}
-                        <div className="rounded-lg border border-gray-200 p-4 text-center">
-                          <p className="text-xs text-gray-500">Assessment Date</p>
-                          <p className="text-base font-medium text-gray-900">{new Date().toLocaleDateString()}</p>
+
+                          {/* Metrics */}
+                          <div
+                            className={
+                              "grid gap-4 " + (shouldShowScore ? "grid-cols-2" : "grid-cols-1")
+                            }
+                          >
+                            {shouldShowScore && (
+                              <div className="rounded-lg border border-gray-200 p-4 text-center">
+                                <p className="text-xs text-gray-500">{scoreLabel}</p>
+                                <p className="text-2xl font-bold text-gray-900">{displayScore}</p>
+                              </div>
+                            )}
+                            <div className="rounded-lg border border-gray-200 p-4 text-center">
+                              <p className="text-xs text-gray-500">Assessment Date</p>
+                              <p className="text-base font-medium text-gray-900">
+                                {new Date().toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+                          Results are being reviewed by guidance. You will be notified once they are
+                          available.
+                          <div className="mt-3 text-xs text-blue-800">
+                            If you need immediate support, please contact your guidance counselor or
+                            local emergency services.
+                          </div>
                         </div>
-                      </div>
+                      )}
 
                       {/* Key message (if any) */}
                       {analysis?.recommendationMessage && (
@@ -413,12 +469,17 @@ export const ResourcesContent: React.FC = () => {
                   </div>
 
                   {/* Safety Notice for high risk */}
-                  {displayLevel &&
-                    (displayLevel.toLowerCase().includes("high") || displayLevel.toLowerCase().includes("severe")) && (
+                  {shouldShowResults &&
+                    displayLevel &&
+                    (displayLevel.toLowerCase().includes("high") ||
+                      displayLevel.toLowerCase().includes("severe")) && (
                       <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-                        <p className="text-sm font-semibold text-red-800">Immediate attention recommended.</p>
+                        <p className="text-sm font-semibold text-red-800">
+                          Immediate attention recommended.
+                        </p>
                         <p className="text-sm text-red-700 mt-1">
-                          If there is imminent risk, contact emergency services or a crisis hotline right away.
+                          If there is imminent risk, contact emergency services or a crisis hotline
+                          right away.
                         </p>
                       </div>
                     )}
@@ -454,12 +515,17 @@ export const ResourcesContent: React.FC = () => {
 
                   {/* Recommended Activities */}
                   {(() => {
-                    const recommendedActivities = getRecommendedActivities(currentAssessment, displayLevel);
+                    const recommendedActivities = getRecommendedActivities(
+                      currentAssessment,
+                      displayLevel,
+                    );
                     return (
                       recommendedActivities.length > 0 && (
                         <div className="rounded-xl border border-gray-200 bg-white">
                           <div className="px-6 py-5 border-b border-gray-200">
-                            <h3 className="text-base font-semibold text-gray-900">Recommended Activities</h3>
+                            <h3 className="text-base font-semibold text-gray-900">
+                              Recommended Activities
+                            </h3>
                             <p className="text-sm text-gray-600 mt-1">
                               Activities specifically selected based on your assessment results
                             </p>
@@ -484,7 +550,9 @@ export const ResourcesContent: React.FC = () => {
                                           {activity.duration}
                                         </span>
                                       </div>
-                                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{activity.description}</p>
+                                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                                        {activity.description}
+                                      </p>
                                       <div className="flex flex-wrap gap-1 mb-3">
                                         {activity.benefits.slice(0, 2).map((benefit) => (
                                           <span
@@ -503,7 +571,11 @@ export const ResourcesContent: React.FC = () => {
                                           className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700"
                                         >
                                           Start Activity
-                                          <svg className="ml-1 w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                          <svg
+                                            className="ml-1 w-3 h-3"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
                                             <path
                                               fillRule="evenodd"
                                               d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
@@ -515,7 +587,9 @@ export const ResourcesContent: React.FC = () => {
                                       {activity.instructions && !activity.url && (
                                         <button
                                           onClick={() => {
-                                            const activityData = encodeURIComponent(JSON.stringify(activity));
+                                            const activityData = encodeURIComponent(
+                                              JSON.stringify(activity),
+                                            );
                                             const timerUrl = `/activity-timer?activity=${activityData}`;
                                             window.open(timerUrl, "_blank");
                                           }}
@@ -615,7 +689,9 @@ export const ResourcesContent: React.FC = () => {
             </h4>
             <p className="text-sm text-red-700 mb-2">{submissionState.error}</p>
             {submissionState.cooldownInfo && (
-              <p className="text-sm text-red-600 mb-3">{formatCooldownMessage(submissionState.cooldownInfo)}</p>
+              <p className="text-sm text-red-600 mb-3">
+                {formatCooldownMessage(submissionState.cooldownInfo)}
+              </p>
             )}
             <button
               onClick={() => setSubmissionState((prev) => ({ ...prev, error: null }))}
@@ -638,8 +714,12 @@ export const ResourcesContent: React.FC = () => {
             <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-4 w-full max-w-sm">
               <div className="flex flex-col items-center justify-center space-y-3">
                 <LoadingSpinner size="lg" variant="lottie" />
-                <p className="text-gray-700 text-sm sm:text-base text-center">Submitting your assessment...</p>
-                <div className="text-xs text-gray-500 text-center">Please wait while we process your responses</div>
+                <p className="text-gray-700 text-sm sm:text-base text-center">
+                  Submitting your assessment...
+                </p>
+                <div className="text-xs text-gray-500 text-center">
+                  Please wait while we process your responses
+                </div>
               </div>
             </div>
           </div>
@@ -656,7 +736,9 @@ export const ResourcesContent: React.FC = () => {
           <>
             {/* Page Header */}
             <div className="mb-6 sm:mb-8">
-              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Mental Health Resources</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+                Mental Health Resources
+              </h1>
               <p className="text-gray-600 mt-1 text-sm sm:text-base">
                 Access mental health assessments and manage your assessment requests.
               </p>
@@ -712,16 +794,19 @@ export const ResourcesContent: React.FC = () => {
             {/* Content based on current view */}
             {(currentView === "assessments" || !isStudent) && (
               <>
-                <AssessmentGrid onSelectAssessment={handleSelectAssessment} isGuidanceUser={isGuidance} />
+                <AssessmentGrid
+                  onSelectAssessment={handleSelectAssessment}
+                  isGuidanceUser={isGuidance}
+                />
 
                 <div className="mt-6 sm:mt-8 lg:mt-12 bg-blue-50 rounded-lg p-4 sm:p-6 mx-2 sm:mx-0">
                   <h2 className="text-base sm:text-lg font-semibold text-blue-900 mb-2 text-center sm:text-left">
                     Important Notice
                   </h2>
                   <p className="text-blue-800 text-xs sm:text-sm leading-relaxed text-center sm:text-left">
-                    These assessments are screening tools and not diagnostic instruments. If you're experiencing
-                    significant distress or having thoughts of self-harm, please contact a mental health professional or
-                    call a crisis helpline immediately.
+                    These assessments are screening tools and not diagnostic instruments. If you're
+                    experiencing significant distress or having thoughts of self-harm, please
+                    contact a mental health professional or call a crisis helpline immediately.
                   </p>
                 </div>
               </>

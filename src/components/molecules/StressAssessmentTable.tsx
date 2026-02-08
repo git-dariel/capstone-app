@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useStress } from "@/hooks";
 import type { StressAssessment as ApiStressAssessment } from "@/services";
 
-type StressSeverityLevel = "low" | "moderate" | "high";
+type StressSeverityLevel = "low" | "moderate" | "high" | null;
 
 interface StressAssessment {
   id: string;
@@ -79,7 +79,8 @@ export const StressAssessmentTable: React.FC = () => {
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (assessment.severityLevel &&
+          assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase())) ||
         assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.year.toLowerCase().includes(searchTerm.toLowerCase()),
     );
@@ -131,7 +132,8 @@ export const StressAssessmentTable: React.FC = () => {
   };
 
   const getSeverityColor = (severityLevel: StressSeverityLevel) => {
-    switch (severityLevel) {
+    const normalizedLevel = (severityLevel || "unknown").toLowerCase();
+    switch (normalizedLevel) {
       case "high":
         return "bg-red-100 text-red-800";
       case "moderate":
@@ -150,6 +152,7 @@ export const StressAssessmentTable: React.FC = () => {
   };
 
   const formatSeverityLevel = (severityLevel: StressSeverityLevel) => {
+    if (!severityLevel) return "Pending validation";
     return severityLevel.charAt(0).toUpperCase() + severityLevel.slice(1);
   };
 

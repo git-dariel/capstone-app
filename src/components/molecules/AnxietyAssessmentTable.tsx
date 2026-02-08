@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { useAnxiety } from "@/hooks";
 import type { AnxietyAssessment as ApiAnxietyAssessment } from "@/services";
 
-type AnxietySeverityLevel = "minimal" | "mild" | "moderate" | "severe";
+type AnxietySeverityLevel = "minimal" | "mild" | "moderate" | "severe" | null;
 
 interface AnxietyAssessment {
   id: string;
@@ -79,7 +79,8 @@ export const AnxietyAssessmentTable: React.FC = () => {
     return allAssessments.filter(
       (assessment) =>
         assessment.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (assessment.severityLevel &&
+          assessment.severityLevel.toLowerCase().includes(searchTerm.toLowerCase())) ||
         assessment.program.toLowerCase().includes(searchTerm.toLowerCase()) ||
         assessment.year.toLowerCase().includes(searchTerm.toLowerCase()),
     );
@@ -131,7 +132,8 @@ export const AnxietyAssessmentTable: React.FC = () => {
   };
 
   const getSeverityColor = (severityLevel: AnxietySeverityLevel) => {
-    switch (severityLevel) {
+    const normalizedLevel = (severityLevel || "unknown").toLowerCase();
+    switch (normalizedLevel) {
       case "severe":
         return "bg-red-100 text-red-800";
       case "moderate":
@@ -152,6 +154,7 @@ export const AnxietyAssessmentTable: React.FC = () => {
   };
 
   const formatSeverityLevel = (severityLevel: AnxietySeverityLevel) => {
+    if (!severityLevel) return "Pending validation";
     return severityLevel.charAt(0).toUpperCase() + severityLevel.slice(1);
   };
 
