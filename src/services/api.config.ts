@@ -11,7 +11,7 @@ const getBaseURL = (): string => {
   }
 
   // For all other environments (production, staging, etc.), use Heroku or Vercel
-  return "https://mental-health-uat-4c63e5a7ab24.herokuapp.com/api";
+  return "https://capstone-uat-api-e0d0008e24de.herokuapp.com/api";
   // return "https://capstone-api-mental-health.vercel.app/api";
 };
 
