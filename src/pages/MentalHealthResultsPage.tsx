@@ -54,11 +54,11 @@ export const MentalHealthResultsPage: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-primary-100 px-4 py-10">
         <div className="bg-white/90 backdrop-blur p-6 sm:p-8 md:p-10 rounded-3xl shadow-xl border border-primary-100 max-w-md sm:max-w-lg w-full text-center">
-          <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto rounded-3xl bg-primary-50 border border-primary-100 flex items-center justify-center mb-5 sm:mb-6">
+          <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 mx-auto rounded-3xl bg-primary-50 border border-primary-100 overflow-hidden mb-5 sm:mb-6">
             <img
               src={catSmile}
               alt="Smiling cat"
-              className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 object-contain"
+              className="w-full h-full object-cover"
             />
           </div>
           <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-gray-900 mb-2">
