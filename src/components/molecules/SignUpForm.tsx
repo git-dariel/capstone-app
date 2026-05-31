@@ -217,7 +217,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
     <>
       <FullScreenLoading isLoading={loading} message="Creating your account..." />
       
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-3">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
             {error}
@@ -235,16 +235,17 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="min-h-[400px]">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="min-h-[260px] sm:min-h-[285px] xl:min-h-[300px]">
             {renderCurrentStep()}
           </div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          <div className="flex justify-between items-center pt-3 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={handlePrevious}
               disabled={currentStep === 1 || loading}
               className="px-6"
@@ -256,6 +257,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
               <Button
                 type="button"
                 variant="primary"
+                size="sm"
                 onClick={handleNext}
                 disabled={!isCurrentStepValid || loading}
                 className="px-8"
@@ -266,6 +268,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
               <Button
                 type="submit"
                 variant="primary"
+                size="sm"
                 disabled={!isCurrentStepValid || loading}
                 className="px-8 font-medium"
               >
@@ -276,8 +279,8 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
         </form>
 
         {/* First year Modal and Sign In Link */}
-        <div className="space-y-3 pt-4 border-t border-gray-50">
-          <div className="text-sm text-gray-500 text-center">
+        <div className="space-y-2 pt-3 border-t border-gray-50">
+          <div className="text-xs sm:text-sm text-gray-500 text-center leading-relaxed">
             Are you a first-year student and don't have a PUP Iskolar ng Bayan email?{" "}
             <button
               type="button"
@@ -289,7 +292,7 @@ export const SignUpForm: React.FC<SignUpFormProps> = ({ onSubmit, loading = fals
             .
           </div>
 
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-xs sm:text-sm text-gray-600">
             Already have an account?{" "}
             <a href="/signin" className="text-primary-700 hover:text-primary-800 font-medium">
               Sign in

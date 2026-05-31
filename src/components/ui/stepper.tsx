@@ -41,7 +41,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep, className 
                   {/* Step circle */}
                   <div
                     className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border-2 text-sm font-medium transition-all duration-200",
+                      "flex h-7 w-7 xl:h-8 xl:w-8 items-center justify-center rounded-full border-2 text-xs xl:text-sm font-medium transition-all duration-200",
                       isCompleted && "border-primary-600 bg-primary-600 text-white",
                       isActive && "border-primary-600 bg-white text-primary-600 ring-4 ring-primary-100",
                       isUpcoming && "border-gray-300 bg-white text-gray-500"
@@ -49,7 +49,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep, className 
                   >
                     {isCompleted ? (
                       <svg
-                        className="h-5 w-5"
+                        className="h-4 w-4 xl:h-5 xl:w-5"
                         viewBox="0 0 20 20"
                         fill="currentColor"
                         aria-hidden="true"
@@ -66,10 +66,10 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep, className 
                   </div>
 
                   {/* Step label */}
-                  <div className="mt-2 text-center">
+                  <div className="mt-1.5 text-center">
                     <p
                       className={cn(
-                        "text-xs font-medium",
+                        "text-[11px] xl:text-xs font-medium",
                         isActive && "text-primary-600",
                         isCompleted && "text-gray-900",
                         isUpcoming && "text-gray-500"
@@ -78,7 +78,7 @@ export const Stepper: React.FC<StepperProps> = ({ steps, currentStep, className 
                       {step.title}
                     </p>
                     {step.description && (
-                      <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
+                      <p className="text-[11px] xl:text-xs text-gray-500 mt-0.5">{step.description}</p>
                     )}
                   </div>
                 </div>

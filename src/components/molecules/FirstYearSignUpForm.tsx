@@ -230,7 +230,7 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
     <>
       <FullScreenLoading isLoading={loading} message="Creating your account..." />
 
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-3">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm relative">
             <div className="flex items-start justify-between">
@@ -264,14 +264,15 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="min-h-[400px]">{renderCurrentStep()}</div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="min-h-[260px] sm:min-h-[285px] xl:min-h-[300px]">{renderCurrentStep()}</div>
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between items-center pt-6 border-t border-gray-100">
+          <div className="flex justify-between items-center pt-3 border-t border-gray-100">
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={handlePrevious}
               disabled={currentStep === 1 || loading}
               className="px-6"
@@ -283,6 +284,7 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
               <Button
                 type="button"
                 variant="primary"
+                size="sm"
                 onClick={handleNext}
                 disabled={!isCurrentStepValid || loading}
                 className="px-8"
@@ -293,6 +295,7 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
               <Button
                 type="submit"
                 variant="primary"
+                size="sm"
                 disabled={!isCurrentStepValid || loading}
                 className="px-8 font-medium"
               >
@@ -303,8 +306,8 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
         </form>
 
         {/* Terms and Sign In Link */}
-        <div className="space-y-3 pt-4 border-t border-gray-50">
-          <div className="text-xs text-gray-500 text-center">
+        <div className="space-y-2 pt-3 border-t border-gray-50">
+          <div className="text-xs text-gray-500 text-center leading-relaxed">
             By completing registration you agree to Office of Guidance and Counseling Services{" "}
             <a href="#" className="text-primary-700 hover:text-primary-800">
               Terms and Conditions
@@ -316,7 +319,7 @@ export const FirstYearSignUpForm: React.FC<FirstYearSignUpFormProps> = ({
             .
           </div>
 
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-xs sm:text-sm text-gray-600">
             Already have an account?{" "}
             <a href="/signin" className="text-primary-700 hover:text-primary-800 font-medium">
               Sign in
@@ -357,10 +360,10 @@ const FirstYearAcademicInfoStep: React.FC<FirstYearAcademicInfoStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Academic Information</h2>
-        <p className="text-sm text-gray-600">Tell us about your academic details</p>
+    <div className="space-y-3">
+      <div className="text-center mb-4">
+        <h2 className="text-lg xl:text-xl font-semibold text-gray-900 mb-1">Academic Information</h2>
+        <p className="text-xs sm:text-sm text-gray-600">Tell us about your academic details</p>
       </div>
 
       <FormField
@@ -393,8 +396,8 @@ const FirstYearAcademicInfoStep: React.FC<FirstYearAcademicInfoStepProps> = ({
         disabled={disabled}
       />
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <p className="text-xs text-blue-800">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
+        <p className="text-xs text-blue-800 leading-relaxed">
           <strong>Note:</strong> Your student number will be validated against our database. Make sure to enter it correctly.
         </p>
       </div>
@@ -432,10 +435,10 @@ const FirstYearAccountInfoStep: React.FC<FirstYearAccountInfoStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Information</h2>
-        <p className="text-sm text-gray-600">Create your login credentials</p>
+    <div className="space-y-3">
+      <div className="text-center mb-4">
+        <h2 className="text-lg xl:text-xl font-semibold text-gray-900 mb-1">Account Information</h2>
+        <p className="text-xs sm:text-sm text-gray-600">Create your login credentials</p>
       </div>
 
       <FormField
@@ -461,15 +464,15 @@ const FirstYearAccountInfoStep: React.FC<FirstYearAccountInfoStepProps> = ({
       />
 
       {showPasswordError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-xs text-red-800">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-2.5">
+          <p className="text-xs text-red-800 leading-relaxed">
             <strong>Error:</strong> Please use a non-PUP email address (Gmail, Yahoo, etc.). If you have a PUP email, please use the regular registration.
           </p>
         </div>
       )}
 
-      <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-        <p className="text-xs text-green-800">
+      <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
+        <p className="text-xs text-green-800 leading-relaxed">
           <strong>✓ This registration accepts non-PUP emails:</strong> Gmail, Yahoo, Outlook, or any other email provider is welcome!
         </p>
       </div>
@@ -514,10 +517,10 @@ const FirstYearGuardianInfoStep: React.FC<FirstYearGuardianInfoStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Guardian Information</h2>
-        <p className="text-sm text-gray-600">Emergency contact and guardian details</p>
+    <div className="space-y-3">
+      <div className="text-center mb-4">
+        <h2 className="text-lg xl:text-xl font-semibold text-gray-900 mb-1">Guardian Information</h2>
+        <p className="text-xs sm:text-sm text-gray-600">Emergency contact and guardian details</p>
       </div>
 
       <FormField
@@ -562,8 +565,8 @@ const FirstYearGuardianInfoStep: React.FC<FirstYearGuardianInfoStepProps> = ({
         disabled={disabled}
       />
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-        <p className="text-xs text-yellow-800">
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2.5">
+        <p className="text-xs text-yellow-800 leading-relaxed">
           <strong>Note:</strong> Guardian information will be used for emergency contacts and important communications.
         </p>
       </div>

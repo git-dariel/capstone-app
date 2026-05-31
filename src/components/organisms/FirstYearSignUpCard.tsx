@@ -168,9 +168,9 @@ export const FirstYearSignUpCard: React.FC = () => {
 
   return (
     <div className="w-full">
-      <div className="text-center mb-1.5">
-        <Logo className="justify-center mb-1 scale-75 sm:scale-90" />
-        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 mb-0.5">
+      <div className="text-center mb-3 lg:mb-2">
+        <Logo size="sm" className="justify-center mb-1" />
+        <h1 className="text-base sm:text-lg xl:text-xl font-semibold text-gray-900 leading-tight mb-0.5">
           First-Year Student Registration
         </h1>
         <p className="text-xs sm:text-sm text-gray-600">
