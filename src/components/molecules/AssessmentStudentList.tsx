@@ -9,20 +9,32 @@ interface AssessmentStudentListProps {
   students: StudentDetails[];
   loading?: boolean;
   title?: string;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onSearch?: (query: string) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
   students,
   loading = false,
   title = "Student List",
+  total,
+  page = 1,
+  totalPages = 0,
+  onSearch,
+  onPageChange,
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { fetchStudentById } = useStudents();
 
   // Filter students based on search term
   const filteredStudents = useMemo(() => {
+    if (onSearch) return students;
     if (!searchTerm) return students;
 
     const searchLower = searchTerm.toLowerCase();
@@ -45,7 +57,30 @@ export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
         gender.includes(searchLower)
       );
     });
-  }, [students, searchTerm]);
+  }, [students, searchTerm, onSearch]);
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
 
   const handleStudentRowClick = async (studentId: string) => {
     try {
@@ -98,8 +133,10 @@ export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
             <div>
               <h3 className="text-lg font-medium text-gray-900">{title}</h3>
               <p className="text-sm text-gray-600 mt-1">
-                {filteredStudents.length} student{filteredStudents.length !== 1 ? "s" : ""} found
-                {searchTerm && ` matching "${searchTerm}"`}
+                {onSearch ? total || 0 : filteredStudents.length} student
+                {(onSearch ? total || 0 : filteredStudents.length) !== 1 ? "s" : ""} found
+                {(onSearch ? searchQuery : searchTerm) &&
+                  ` matching "${onSearch ? searchQuery : searchTerm}"`}
               </p>
             </div>
           </div>
@@ -111,10 +148,21 @@ export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
               type="text"
               placeholder="Search by name, program, year, email, severity, or gender..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
               disabled={loading}
             />
+            {onSearch && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs bg-primary-400 text-gray-900 hover:text-gray-700 hover:bg-primary-50"
+                disabled={loading}
+              >
+                Search
+              </button>
+            )}
           </div>
         </div>
 
@@ -174,7 +222,7 @@ export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(
-                        student.severity
+                        student.severity,
                       )}`}
                     >
                       {student.severity || "N/A"}
@@ -197,13 +245,39 @@ export const AssessmentStudentList: React.FC<AssessmentStudentListProps> = ({
         {filteredStudents.length === 0 && !loading && (
           <div className="p-6 text-center">
             <p className="text-gray-500">
-              {searchTerm 
-                ? `No students found matching "${searchTerm}"`
+              {(onSearch ? searchQuery : searchTerm)
+                ? `No students found matching "${onSearch ? searchQuery : searchTerm}"`
                 : "No students found matching your criteria"}
             </p>
           </div>
         )}
       </div>
+
+      {onPageChange && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Student Details Modal */}
       <StudentDetailsModal

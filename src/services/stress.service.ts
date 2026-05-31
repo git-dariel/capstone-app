@@ -28,10 +28,11 @@ export interface StressAssessment {
   id: string;
   userId: string;
   totalScore: number;
-  severityLevel: "low" | "moderate" | "high";
+  severityLevel: "low" | "moderate" | "high" | null;
   assessmentDate: string;
   responses: Record<string, number>;
   cooldownActive?: boolean;
+  showResultToStudent?: boolean;
   analysis: {
     totalScore: number;
     severityLevel: string;
@@ -71,6 +72,7 @@ export interface CreateStressAssessmentRequest {
 
 export interface UpdateStressAssessmentRequest {
   responses?: Record<string, number>;
+  showResultToStudent?: boolean;
 }
 
 export class StressService {
@@ -95,7 +97,7 @@ export class StressService {
   // Helper function to create assessment request from responses
   static createAssessmentRequest(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): CreateStressAssessmentRequest {
     return {
       userId,
@@ -117,7 +119,7 @@ export class StressService {
     try {
       // Get the most recent assessment for the user
       const response = await HttpClient.get<any>(
-        `/stress?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`
+        `/stress?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`,
       );
 
       if (response.assessments && response.assessments.length > 0) {
@@ -137,7 +139,7 @@ export class StressService {
 
           if (isActive) {
             const daysRemaining = Math.ceil(
-              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
             );
 
             return {
@@ -176,7 +178,7 @@ export class StressService {
   }
 
   static async getAllAssessments(
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<PaginatedResponse<StressAssessment>> {
     try {
       const response = await HttpClient.get<any>("/stress", params);
@@ -223,7 +225,7 @@ export class StressService {
   // Convenience method to create assessment from numeric responses
   static async createAssessmentFromResponses(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): Promise<StressAssessment> {
     try {
       const assessmentData = this.createAssessmentRequest(userId, responses);
@@ -238,7 +240,7 @@ export class StressService {
 
   static async updateAssessment(
     id: string,
-    data: UpdateStressAssessmentRequest
+    data: UpdateStressAssessmentRequest,
   ): Promise<StressAssessment> {
     try {
       const response = await HttpClient.patch<StressAssessment>(`/stress/${id}`, data);

@@ -1,30 +1,29 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth, useInventoryReminder } from "@/hooks";
-import { StudentDashboardService } from "@/services/student-dashboard.service";
-import { UserService } from "@/services";
-import type {
-  PersonalSummary,
-  AssessmentHistoryItem,
-  AssessmentTrends,
-  AssessmentStats,
-  ProgressInsight,
-} from "@/services/student-dashboard.service";
+import { Avatar } from "@/components/atoms";
 import {
   AssessmentOverviewCard,
   AssessmentTrendsChart,
-  WarningCard,
-  RecommendationsPanel,
   InventoryReminderModal,
+  RecommendationsPanel,
 } from "@/components/molecules";
-import { Avatar } from "@/components/atoms";
 import { Button } from "@/components/ui";
-import { RefreshCw, Calendar, TrendingUp, AlertTriangle, FileText, Clock } from "lucide-react";
+import { useAuth, useInventoryReminder } from "@/hooks";
+import { UserService } from "@/services";
+import type {
+  AssessmentHistoryItem,
+  AssessmentStats,
+  AssessmentTrends,
+  PersonalSummary,
+  ProgressInsight,
+} from "@/services/student-dashboard.service";
+import { StudentDashboardService } from "@/services/student-dashboard.service";
 import {
+  formatTimeRemaining,
   getReminderMessage,
   getReminderSeverity,
-  formatTimeRemaining,
 } from "@/utils/inventoryReminder";
+import { AlertTriangle, Calendar, Clock, FileText, RefreshCw } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const StudentDashboardContent: React.FC = () => {
   const { user } = useAuth();
@@ -296,10 +295,10 @@ export const StudentDashboardContent: React.FC = () => {
                   severity === "critical"
                     ? "bg-red-50 border-red-200"
                     : severity === "high"
-                    ? "bg-orange-50 border-orange-200"
-                    : severity === "medium"
-                    ? "bg-yellow-50 border-yellow-200"
-                    : "bg-blue-50 border-blue-200"
+                      ? "bg-orange-50 border-orange-200"
+                      : severity === "medium"
+                        ? "bg-yellow-50 border-yellow-200"
+                        : "bg-blue-50 border-blue-200"
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -309,10 +308,10 @@ export const StudentDashboardContent: React.FC = () => {
                         severity === "critical"
                           ? "bg-red-100"
                           : severity === "high"
-                          ? "bg-orange-100"
-                          : severity === "medium"
-                          ? "bg-yellow-100"
-                          : "bg-blue-100"
+                            ? "bg-orange-100"
+                            : severity === "medium"
+                              ? "bg-yellow-100"
+                              : "bg-blue-100"
                       }`}
                     >
                       <FileText
@@ -320,10 +319,10 @@ export const StudentDashboardContent: React.FC = () => {
                           severity === "critical"
                             ? "text-red-600"
                             : severity === "high"
-                            ? "text-orange-600"
-                            : severity === "medium"
-                            ? "text-yellow-600"
-                            : "text-blue-600"
+                              ? "text-orange-600"
+                              : severity === "medium"
+                                ? "text-yellow-600"
+                                : "text-blue-600"
                         }`}
                       />
                     </div>
@@ -333,10 +332,10 @@ export const StudentDashboardContent: React.FC = () => {
                           severity === "critical"
                             ? "text-red-900"
                             : severity === "high"
-                            ? "text-orange-900"
-                            : severity === "medium"
-                            ? "text-yellow-900"
-                            : "text-blue-900"
+                              ? "text-orange-900"
+                              : severity === "medium"
+                                ? "text-yellow-900"
+                                : "text-blue-900"
                         }`}
                       >
                         Inventory Update {reminderInfo.isOverdue ? "Overdue" : "Due Soon"}
@@ -346,10 +345,10 @@ export const StudentDashboardContent: React.FC = () => {
                           severity === "critical"
                             ? "text-red-700"
                             : severity === "high"
-                            ? "text-orange-700"
-                            : severity === "medium"
-                            ? "text-yellow-700"
-                            : "text-blue-700"
+                              ? "text-orange-700"
+                              : severity === "medium"
+                                ? "text-yellow-700"
+                                : "text-blue-700"
                         }`}
                       >
                         {message}
@@ -368,10 +367,10 @@ export const StudentDashboardContent: React.FC = () => {
                         severity === "critical"
                           ? "bg-red-600 hover:bg-red-700"
                           : severity === "high"
-                          ? "bg-orange-600 hover:bg-orange-700"
-                          : severity === "medium"
-                          ? "bg-yellow-600 hover:bg-yellow-700"
-                          : "bg-blue-600 hover:bg-blue-700"
+                            ? "bg-orange-600 hover:bg-orange-700"
+                            : severity === "medium"
+                              ? "bg-yellow-600 hover:bg-yellow-700"
+                              : "bg-blue-600 hover:bg-blue-700"
                       } text-white`}
                     >
                       Update Inventory
@@ -383,7 +382,7 @@ export const StudentDashboardContent: React.FC = () => {
           })()}
 
         {/* Progress Insights & Warnings */}
-        {progressInsights.length > 0 && (
+        {/* {progressInsights.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <TrendingUp className="w-5 h-5 text-primary-600" />
@@ -395,7 +394,7 @@ export const StudentDashboardContent: React.FC = () => {
               ))}
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Assessment Overview Cards */}
         <div className="space-y-4">
@@ -479,15 +478,23 @@ export const StudentDashboardContent: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-gray-900">{assessment.severityLevel}</p>
-                    {assessment.totalScore !== null && (
-                      <p className="text-sm text-gray-600">
-                        {assessment.type === "checklist"
-                          ? `${assessment.totalScore} Problem${
-                              assessment.totalScore !== 1 ? "s" : ""
-                            }`
-                          : `Score: ${assessment.totalScore}`}
-                      </p>
+                    {assessment.showResultToStudent === false ? (
+                      <p className="text-sm text-gray-600">Pending validation</p>
+                    ) : (
+                      <>
+                        <p className="font-medium text-gray-900">
+                          {assessment.severityLevel || "N/A"}
+                        </p>
+                        {assessment.totalScore !== null && (
+                          <p className="text-sm text-gray-600">
+                            {assessment.type === "checklist"
+                              ? `${assessment.totalScore} Problem${
+                                  assessment.totalScore !== 1 ? "s" : ""
+                                }`
+                              : `Score: ${assessment.totalScore}`}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

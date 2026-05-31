@@ -7,14 +7,12 @@ import {
   ScheduleModal,
   ScheduleViewModal,
   CalendarView,
-  CalendarModal,
   DateEventsDrawer,
   RequestAppointmentModal,
   PendingRequestsTable,
 } from "@/components/molecules";
 import { useAppointments, useSchedules, useAuth, useToast } from "@/hooks";
 import { AppointmentService } from "@/services";
-import { HttpClient } from "@/services/api.config";
 import type { Appointment, Schedule } from "@/services";
 import { Calendar, List } from "lucide-react";
 import { ToastContainer } from "@/components/atoms";
@@ -38,25 +36,32 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   const [isAppointmentViewModalOpen, setIsAppointmentViewModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isScheduleViewModalOpen, setIsScheduleViewModalOpen] = useState(false);
-  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isDateEventsDrawerOpen, setIsDateEventsDrawerOpen] = useState(false);
   const [isRequestAppointmentModalOpen, setIsRequestAppointmentModalOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [selectedSchedule, setSelectedSchedule] = useState<Schedule | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
-  const [calendarModalMode, setCalendarModalMode] = useState<"appointment" | "schedule">(
-    "appointment"
-  );
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | null>(null);
   const [appointmentModalMode, setAppointmentModalMode] = useState<"create" | "edit" | "view">(
-    "create"
+    "create",
   );
+  const [appointmentPage, setAppointmentPage] = useState(1);
+  const [appointmentSearchQuery, setAppointmentSearchQuery] = useState("");
+  const [schedulePage, setSchedulePage] = useState(1);
+  const [scheduleSearchQuery, setScheduleSearchQuery] = useState("");
+
+  const appointmentPageSize = 10;
+  const schedulePageSize = 10;
 
   // Hooks for data management
   const {
     appointments,
     loading: appointmentsLoading,
     error: appointmentsError,
+    total: appointmentsTotal,
+    page: appointmentsPage,
+    totalPages: appointmentsTotalPages,
     fetchAppointmentsByStudentId,
     fetchAppointmentsByCounselorId,
     createAppointment,
@@ -67,18 +72,55 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   // State for pending requests (guidance only)
   const [pendingRequests, setPendingRequests] = useState<Appointment[]>([]);
   const [pendingRequestsLoading, setPendingRequestsLoading] = useState(false);
+  const [pendingRequestsPage, setPendingRequestsPage] = useState(1);
+  const [pendingRequestsTotal, setPendingRequestsTotal] = useState(0);
+  const [pendingRequestsTotalPages, setPendingRequestsTotalPages] = useState(0);
+  const [pendingRequestsSearchQuery, setPendingRequestsSearchQuery] = useState("");
 
   const {
     schedules,
     availableSchedules,
     loading: schedulesLoading,
     error: schedulesError,
+    total: schedulesTotal,
+    page: schedulesPage,
+    totalPages: schedulesTotalPages,
     fetchSchedules,
     fetchAvailableSchedules,
     createSchedule,
     updateSchedule,
     deleteSchedule,
   } = useSchedules();
+
+  const loadAppointments = async (pageOverride = appointmentPage) => {
+    if (!user?.id) return;
+
+    if (isStudent) {
+      await fetchAppointmentsByStudentId(user.id, {
+        page: pageOverride,
+        limit: appointmentPageSize,
+        ...(appointmentSearchQuery ? { query: appointmentSearchQuery } : {}),
+      });
+    } else if (isGuidance) {
+      await fetchAppointmentsByCounselorId(user.id, {
+        page: pageOverride,
+        limit: appointmentPageSize,
+        ...(appointmentSearchQuery ? { query: appointmentSearchQuery } : {}),
+      });
+    }
+  };
+
+  const loadSchedules = async (pageOverride = schedulePage) => {
+    if (isGuidance) {
+      await fetchSchedules({
+        page: pageOverride,
+        limit: schedulePageSize,
+        ...(scheduleSearchQuery ? { query: scheduleSearchQuery } : {}),
+      });
+    } else if (isStudent) {
+      await fetchAvailableSchedules();
+    }
+  };
 
   // Load data on mount
   useEffect(() => {
@@ -89,26 +131,16 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       console.log("Loading data for user type:", user.type);
 
       try {
-        if (isStudent) {
-          console.log("Loading appointments for student:", user.id);
-          await fetchAppointmentsByStudentId(user.id);
-        } else if (isGuidance) {
-          console.log("Loading appointments for guidance counselor:", user.id);
-          await fetchAppointmentsByCounselorId(user.id);
-        }
+        console.log("Loading appointments for user:", user.id);
+        await loadAppointments();
       } catch (error) {
         console.error("Failed to load appointments:", error);
         // Don't throw error to prevent useEffect loop
       }
 
       try {
-        if (isGuidance) {
-          console.log("Loading schedules for guidance counselor");
-          await fetchSchedules();
-        } else if (isStudent) {
-          console.log("Loading available schedules for student");
-          await fetchAvailableSchedules();
-        }
+        console.log("Loading schedules for user");
+        await loadSchedules();
       } catch (error) {
         console.error("Failed to load schedules:", error);
         // Don't throw error to prevent useEffect loop
@@ -117,30 +149,43 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
     loadInitialData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isGuidance, isStudent]); // Depend on user and user type to reload when context is available
+  }, [
+    user,
+    isGuidance,
+    isStudent,
+    appointmentPage,
+    appointmentSearchQuery,
+    schedulePage,
+    scheduleSearchQuery,
+  ]); // Depend on user and user type to reload when context is available
 
   // Fetch pending appointment requests for guidance counselors
-  const fetchPendingRequests = async () => {
+  const fetchPendingRequests = async (pageOverride = pendingRequestsPage) => {
     if (!isGuidance || !user?.id) return;
 
     setPendingRequestsLoading(true);
     try {
-      // Use HttpClient for authenticated requests with proper base URL
-      const response = await HttpClient.get<{
-        appointments: Appointment[];
-        total: number;
-        page: number;
-        totalPages: number;
-      }>(`/appointment/counselor/${user.id}`);
+      const response = await AppointmentService.getAppointmentsByCounselorId(user.id, {
+        page: pageOverride,
+        limit: 10,
+        status: "pending",
+        ...(pendingRequestsSearchQuery ? { query: pendingRequestsSearchQuery } : {}),
+      });
 
-      // Filter for pending requests
-      const pending = response.appointments.filter(
-        (appointment: Appointment) => appointment.status === "pending"
-      );
-      setPendingRequests(pending);
-    } catch (err) {
+      const responseAppointments =
+        "appointments" in response ? (response as any).appointments : response.data || [];
+      setPendingRequests(responseAppointments || []);
+      setPendingRequestsTotal((response as any).total || 0);
+      setPendingRequestsPage((response as any).page || pageOverride);
+      setPendingRequestsTotalPages((response as any).totalPages || 0);
+    } catch (err: any) {
       console.error("Failed to fetch pending requests:", err);
-      error("Error", "Failed to fetch pending appointment requests. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to fetch pending appointment requests. Please try again.";
+      error("Error", errorMessage);
     } finally {
       setPendingRequestsLoading(false);
     }
@@ -161,6 +206,39 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     }
   };
 
+  useEffect(() => {
+    if (activeTab === "pending-requests" && isGuidance) {
+      fetchPendingRequests();
+    }
+  }, [activeTab, isGuidance, pendingRequestsPage, pendingRequestsSearchQuery]);
+
+  const handlePendingRequestsSearch = (query: string) => {
+    setPendingRequestsSearchQuery(query.trim());
+    setPendingRequestsPage(1);
+  };
+
+  const handlePendingRequestsPageChange = (page: number) => {
+    setPendingRequestsPage(page);
+  };
+
+  const handleAppointmentSearch = (query: string) => {
+    setAppointmentSearchQuery(query.trim());
+    setAppointmentPage(1);
+  };
+
+  const handleAppointmentPageChange = (page: number) => {
+    setAppointmentPage(page);
+  };
+
+  const handleScheduleSearch = (query: string) => {
+    setScheduleSearchQuery(query.trim());
+    setSchedulePage(1);
+  };
+
+  const handleSchedulePageChange = (page: number) => {
+    setSchedulePage(page);
+  };
+
   // Helper function to get events for a specific date
   const getEventsForDate = (date: Date) => {
     const events: any[] = [];
@@ -175,7 +253,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             title: appointment.title || "Appointment",
             startTime: new Date(appointment.requestedDate),
             endTime: new Date(
-              new Date(appointment.requestedDate).getTime() + (appointment.duration || 60) * 60000
+              new Date(appointment.requestedDate).getTime() + (appointment.duration || 60) * 60000,
             ),
             date: appointmentDate,
             color: getAppointmentColor(appointment.status),
@@ -260,8 +338,16 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
     // For guidance users with 0 or 1 events, open create modal
     if (isGuidance) {
-      setCalendarModalMode(activeTab === "schedules" && isGuidance ? "schedule" : "appointment");
-      setIsCalendarModalOpen(true);
+      if (activeTab === "schedules") {
+        // Open schedule modal with selected date
+        setSelectedCalendarDate(date);
+        setIsScheduleModalOpen(true);
+      } else {
+        // Open appointment modal with selected date
+        setSelectedCalendarDate(date);
+        setSelectedAppointment(null);
+        setIsAppointmentModalOpen(true);
+      }
     }
   };
 
@@ -288,31 +374,6 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     handleCalendarEventClick(event);
   };
 
-  const handleCreateFromCalendar = async (data: any) => {
-    try {
-      if (calendarModalMode === "appointment") {
-        await createAppointment(data);
-        success("Appointment Created", "Your appointment has been successfully created.");
-        // Refresh appointments
-        if (isStudent) {
-          await fetchAppointmentsByStudentId(user?.id || "");
-        } else if (isGuidance) {
-          await fetchAppointmentsByCounselorId(user?.id || "");
-        }
-      } else {
-        await createSchedule(data);
-        success("Schedule Created", "Your schedule has been successfully created.");
-        // Refresh schedules
-        await fetchSchedules();
-      }
-      setIsCalendarModalOpen(false);
-    } catch (err) {
-      console.error("Failed to create from calendar:", err);
-      error("Creation Failed", "Failed to create. Please try again.");
-      throw err;
-    }
-  };
-
   // Appointment handlers
   const handleCreateAppointment = () => {
     setSelectedAppointment(null);
@@ -335,18 +396,42 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await createAppointment(appointmentData);
       success(
         "Appointment Requested",
-        "Your appointment request has been submitted successfully. The counselor will review and respond soon."
+        "Your appointment request has been submitted successfully. The counselor will review and respond soon.",
       );
 
       // Refresh appointments
-      if (user?.id) {
-        await fetchAppointmentsByStudentId(user.id);
-      }
+      await loadAppointments();
 
       setIsRequestAppointmentModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to submit appointment request:", err);
-      error("Request Failed", "Failed to submit appointment request. Please try again.");
+
+      // Extract detailed error message from API response
+      let errorMessage = "Failed to submit appointment request. Please try again.";
+
+      if (err?.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+
+      // Show detailed conflict information if available
+      if (err?.response?.data?.conflictDetails) {
+        const conflict = err.response.data.conflictDetails;
+        errorMessage += `\n\nConflict Details:\n`;
+        errorMessage += `Date: ${new Date(conflict.date).toLocaleString()}\n`;
+        errorMessage += `Duration: ${conflict.duration} minutes\n`;
+        if (conflict.student) {
+          errorMessage += `Student: ${conflict.student}`;
+        }
+        if (conflict.counselor) {
+          errorMessage += `Counselor: ${conflict.counselor}`;
+        }
+      }
+
+      error("Request Failed", errorMessage);
       throw err;
     }
   };
@@ -357,17 +442,20 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await updateAppointment(request.id, { status: "confirmed" });
       success(
         "Request Approved",
-        `Appointment with ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been approved.`
+        `Appointment with ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been approved.`,
       );
 
       // Refresh pending requests and appointments
       await fetchPendingRequests();
-      if (user?.id) {
-        await fetchAppointmentsByCounselorId(user.id);
-      }
-    } catch (err) {
+      await loadAppointments();
+    } catch (err: any) {
       console.error("Failed to approve request:", err);
-      error("Approval Failed", "Failed to approve appointment request. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to approve appointment request. Please try again.";
+      error("Approval Failed", errorMessage);
     }
   };
 
@@ -379,17 +467,20 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       });
       success(
         "Request Denied",
-        `Appointment request from ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been denied.`
+        `Appointment request from ${request.student?.person?.firstName} ${request.student?.person?.lastName} has been denied.`,
       );
 
       // Refresh pending requests and appointments
       await fetchPendingRequests();
-      if (user?.id) {
-        await fetchAppointmentsByCounselorId(user.id);
-      }
-    } catch (err) {
+      await loadAppointments();
+    } catch (err: any) {
       console.error("Failed to deny request:", err);
-      error("Denial Failed", "Failed to deny appointment request. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to deny appointment request. Please try again.";
+      error("Denial Failed", errorMessage);
     }
   };
 
@@ -444,15 +535,20 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
       // Refresh both appointments and schedules since cancelling frees up the schedule slot
       if (isStudent) {
-        await fetchAppointmentsByStudentId(user?.id || "");
+        await loadAppointments();
         await fetchAvailableSchedules(); // Refresh available schedules for student
       } else if (isGuidance) {
-        await fetchAppointmentsByCounselorId(user?.id || "");
-        await fetchSchedules(); // Refresh schedules for guidance
+        await loadAppointments();
+        await loadSchedules(); // Refresh schedules for guidance
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to cancel appointment:", err);
-      error("Cancellation Failed", "Failed to cancel appointment. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to cancel appointment. Please try again.";
+      error("Cancellation Failed", errorMessage);
     }
   };
 
@@ -470,18 +566,23 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
 
       success(
         "Appointment Completed",
-        `Appointment with ${appointment.student?.person?.firstName} ${appointment.student?.person?.lastName} has been marked as completed.`
+        `Appointment with ${appointment.student?.person?.firstName} ${appointment.student?.person?.lastName} has been marked as completed.`,
       );
 
       // Refresh the list
       if (isStudent) {
-        await fetchAppointmentsByStudentId(user?.id || "");
+        await loadAppointments();
       } else if (isGuidance) {
-        await fetchAppointmentsByCounselorId(user?.id || "");
+        await loadAppointments();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to complete appointment:", err);
-      error("Completion Failed", "Failed to mark appointment as completed. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to mark appointment as completed. Please try again.";
+      error("Completion Failed", errorMessage);
     }
   };
 
@@ -490,12 +591,18 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await deleteAppointment(appointmentId);
       // Refresh the list
       if (isStudent) {
-        await fetchAppointmentsByStudentId(user?.id || "");
+        await loadAppointments();
       } else if (isGuidance) {
-        await fetchAppointmentsByCounselorId(user?.id || "");
+        await loadAppointments();
       }
-    } catch (error) {
-      console.error("Failed to delete appointment:", error);
+    } catch (err: any) {
+      console.error("Failed to delete appointment:", err);
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to delete appointment. Please try again.";
+      error("Delete Failed", errorMessage);
     }
   };
 
@@ -511,13 +618,72 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       setIsAppointmentModalOpen(false);
       // Refresh the list
       if (isStudent) {
-        await fetchAppointmentsByStudentId(user?.id || "");
+        await loadAppointments();
       } else if (isGuidance) {
-        await fetchAppointmentsByCounselorId(user?.id || "");
+        await loadAppointments();
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Failed to save appointment:", err);
-      error("Save Failed", "Failed to save appointment. Please try again.");
+      console.log("Full error object:", JSON.stringify(err, null, 2));
+
+      // Extract error message from backend response
+      const errorResponse = err as {
+        response?: {
+          status?: number;
+          data?: {
+            error?: string;
+            message?: string;
+            conflictDetails?: {
+              date: string;
+              duration: number;
+              student?: string;
+              counselor?: string;
+              appointmentId?: string;
+            };
+          };
+        };
+        message?: string;
+      };
+
+      console.log("Error response status:", errorResponse?.response?.status);
+      console.log("Error response data:", errorResponse?.response?.data);
+
+      const responseData = errorResponse?.response?.data;
+      const backendError = responseData?.error || responseData?.message;
+
+      console.log("Backend error message:", backendError);
+
+      // Handle conflict errors (409 status)
+      if (errorResponse?.response?.status === 409) {
+        const conflictDetails = responseData?.conflictDetails;
+
+        if (conflictDetails) {
+          const date = new Date(conflictDetails.date).toLocaleString();
+          const personInfo = conflictDetails.student
+            ? `Student: ${conflictDetails.student}`
+            : conflictDetails.counselor
+              ? `Counselor: ${conflictDetails.counselor}`
+              : "Unknown person";
+
+          const detailedMessage = `${backendError || "This time slot is already booked"}\n\nConflicting Appointment:\n${personInfo}\nDate: ${date}\nDuration: ${conflictDetails.duration} minutes`;
+
+          error("Schedule Conflict", detailedMessage);
+        } else {
+          error(
+            "Schedule Conflict",
+            backendError || "This time slot is already booked. Please choose a different time.",
+          );
+        }
+      } else if (backendError) {
+        // Display any other backend error messages
+        error("Error", backendError);
+      } else if (errorResponse?.message) {
+        // Try to get error from top-level message
+        error("Error", errorResponse.message);
+      } else {
+        // Generic error message
+        error("Save Failed", "Failed to save appointment. Please try again.");
+      }
       throw err;
     }
   };
@@ -541,9 +707,21 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
   const handleDeleteSchedule = async (scheduleId: string) => {
     try {
       await deleteSchedule(scheduleId);
-      fetchSchedules(); // Refresh the list
-    } catch (error) {
-      console.error("Failed to delete schedule:", error);
+      await loadSchedules(); // Refresh the list
+      success("Schedule Deleted", "The schedule has been successfully deleted.");
+    } catch (err: any) {
+      console.error("Failed to delete schedule:", err);
+
+      // Handle specific error cases
+      if (err.response && err.response.status === 400) {
+        const errorData = err.response.data;
+        const errorMessage = errorData.error || "Cannot delete schedule with existing appointments";
+        error("Cannot Delete Schedule", errorMessage);
+      } else {
+        const errorMessage =
+          err.response?.data?.error || err.message || "Failed to delete schedule";
+        error("Error", errorMessage);
+      }
     }
   };
 
@@ -551,19 +729,47 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
     try {
       if (selectedSchedule) {
         await updateSchedule(selectedSchedule.id, scheduleData);
+        success("Schedule Updated", "The schedule has been successfully updated.");
       } else {
         await createSchedule(
           scheduleData as Omit<
             Schedule,
             "id" | "createdAt" | "updatedAt" | "isDeleted" | "bookedSlots"
-          >
+          >,
         );
+        success("Schedule Created", "Your schedule has been successfully created.");
       }
       setIsScheduleModalOpen(false);
-      fetchSchedules(); // Refresh the list
-    } catch (error) {
-      console.error("Failed to save schedule:", error);
-      throw error;
+      await loadSchedules(); // Refresh the list
+    } catch (err: any) {
+      console.error("Failed to save schedule:", err);
+
+      // Handle 409 conflict responses (schedule conflicts with appointments)
+      if (err.response && err.response.status === 409) {
+        const errorData = err.response.data;
+        const conflicts = errorData.conflicts || errorData.affectedAppointments || [];
+
+        let errorMessage =
+          errorData.message || errorData.error || "Schedule conflicts with existing appointments";
+
+        if (conflicts.length > 0) {
+          const conflictList = conflicts
+            .map(
+              (c: any) =>
+                `• ${c.studentName} - ${new Date(c.date).toLocaleString()} (${c.duration || 60} min)`,
+            )
+            .join("\n");
+          errorMessage += `:\n\n${conflictList}`;
+        }
+
+        error("Schedule Conflict", errorMessage);
+      } else {
+        // Handle other errors
+        const errorMessage = err.response?.data?.error || err.message || "Failed to save schedule";
+        error("Error", errorMessage);
+      }
+
+      throw err;
     }
   };
 
@@ -576,8 +782,8 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         error(
           "Already Booked",
           `You already have an appointment for "${schedule.title}" on ${new Date(
-            existingAppointment?.requestedDate || ""
-          ).toLocaleDateString()}. Cancel it first to book again.`
+            existingAppointment?.requestedDate || "",
+          ).toLocaleDateString()}. Cancel it first to book again.`,
         );
         return;
       }
@@ -600,20 +806,25 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       await createAppointment(appointmentData);
       success(
         "Appointment Booked",
-        `Your appointment for "${schedule.title}" has been successfully booked.`
+        `Your appointment for "${schedule.title}" has been successfully booked.`,
       );
 
       // Refresh data
       if (isStudent) {
-        await fetchAppointmentsByStudentId(user?.id || "");
+        await loadAppointments();
         await fetchAvailableSchedules();
       } else if (isGuidance) {
-        await fetchAppointmentsByCounselorId(user?.id || "");
-        await fetchSchedules();
+        await loadAppointments();
+        await loadSchedules();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to book appointment:", err);
-      error("Booking Failed", "Failed to book appointment. Please try again.");
+      const errorMessage =
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to book appointment. Please try again.";
+      error("Booking Failed", errorMessage);
       throw err;
     }
   };
@@ -626,7 +837,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       (appointment) =>
         appointment.scheduleId === scheduleId &&
         appointment.status !== "cancelled" &&
-        appointment.status !== "completed"
+        appointment.status !== "completed",
     );
   };
 
@@ -639,7 +850,7 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         (appointment) =>
           appointment.scheduleId === scheduleId &&
           appointment.status !== "cancelled" &&
-          appointment.status !== "completed"
+          appointment.status !== "completed",
       ) || null
     );
   };
@@ -742,10 +953,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
             {activeTab === "appointments"
               ? "Appointments"
               : activeTab === "pending-requests"
-              ? "Pending Requests"
-              : isStudent
-              ? "Available Schedules"
-              : "Schedules"}
+                ? "Pending Requests"
+                : isStudent
+                  ? "Available Schedules"
+                  : "Schedules"}
           </h2>
           <p className="mt-1 text-sm text-gray-500 pr-4">
             {activeTab === "appointments"
@@ -753,10 +964,10 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
                 ? "View your booked appointments with guidance counselors"
                 : "View students who booked your scheduled sessions"
               : activeTab === "pending-requests"
-              ? "Review and approve student appointment requests"
-              : isStudent
-              ? "Browse available counseling schedules to book appointments"
-              : "Configure available time slots and schedules"}
+                ? "Review and approve student appointment requests"
+                : isStudent
+                  ? "Browse available counseling schedules to book appointments"
+                  : "Configure available time slots and schedules"}
           </p>
         </div>
 
@@ -838,6 +1049,11 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               showActions={true}
               searchable={true}
               userType={user?.type}
+              total={appointmentsTotal}
+              page={appointmentsPage}
+              totalPages={appointmentsTotalPages}
+              onSearch={handleAppointmentSearch}
+              onPageChange={handleAppointmentPageChange}
             />
           )}
 
@@ -858,6 +1074,11 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               getExistingAppointmentForSchedule={
                 isStudent ? getExistingAppointmentForSchedule : undefined
               }
+              total={isGuidance ? schedulesTotal : undefined}
+              page={isGuidance ? schedulesPage : undefined}
+              totalPages={isGuidance ? schedulesTotalPages : undefined}
+              onSearch={isGuidance ? handleScheduleSearch : undefined}
+              onPageChange={isGuidance ? handleSchedulePageChange : undefined}
             />
           )}
 
@@ -869,6 +1090,11 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
               onDeny={handleDenyRequest}
               onView={handleViewRequest}
               searchable={true}
+              total={pendingRequestsTotal}
+              page={pendingRequestsPage}
+              totalPages={pendingRequestsTotalPages}
+              onSearch={handlePendingRequestsSearch}
+              onPageChange={handlePendingRequestsPageChange}
             />
           )}
         </>
@@ -902,11 +1128,15 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       {/* Modals */}
       <AppointmentModal
         isOpen={isAppointmentModalOpen}
-        onClose={() => setIsAppointmentModalOpen(false)}
+        onClose={() => {
+          setIsAppointmentModalOpen(false);
+          setSelectedCalendarDate(null);
+        }}
         onSubmit={handleSaveAppointment}
         appointment={selectedAppointment}
         loading={appointmentsLoading}
         mode={appointmentModalMode}
+        initialDate={selectedCalendarDate}
       />
 
       <AppointmentViewModal
@@ -924,10 +1154,14 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
       {isGuidance && (
         <ScheduleModal
           isOpen={isScheduleModalOpen}
-          onClose={() => setIsScheduleModalOpen(false)}
+          onClose={() => {
+            setIsScheduleModalOpen(false);
+            setSelectedCalendarDate(null);
+          }}
           onSave={handleSaveSchedule}
           schedule={selectedSchedule}
           loading={schedulesLoading}
+          initialDate={selectedCalendarDate}
         />
       )}
 
@@ -946,19 +1180,6 @@ export const AppointmentsContent: React.FC<AppointmentsContentProps> = ({
         }
       />
 
-      <CalendarModal
-        isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        selectedDate={selectedDate}
-        onCreateAppointment={
-          calendarModalMode === "appointment" ? handleCreateFromCalendar : undefined
-        }
-        onCreateSchedule={calendarModalMode === "schedule" ? handleCreateFromCalendar : undefined}
-        loading={appointmentsLoading || schedulesLoading}
-        mode={calendarModalMode}
-      />
-
-      {/* Date Events Drawer */}
       <DateEventsDrawer
         isOpen={isDateEventsDrawerOpen}
         onClose={() => setIsDateEventsDrawerOpen(false)}

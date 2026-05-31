@@ -1,5 +1,14 @@
 import React from "react";
-import { Brain, Heart, Zap, AlertTriangle, TrendingUp, TrendingDown, Minus, ClipboardList } from "lucide-react";
+import {
+  Brain,
+  Heart,
+  Zap,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ClipboardList,
+} from "lucide-react";
 import { SeverityIndicator } from "./SeverityIndicator";
 
 interface AssessmentOverviewCardProps {
@@ -12,6 +21,7 @@ interface AssessmentOverviewCardProps {
     totalProblemsChecked?: number;
     assessmentDate: string;
     requiresIntervention?: boolean;
+    showResultToStudent?: boolean;
   } | null;
   trend?: "up" | "down" | "stable";
   trendPercentage?: number;
@@ -109,12 +119,12 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
-      
+
       // Check if date is valid
       if (isNaN(date.getTime())) {
         return "Invalid Date";
       }
-      
+
       const now = new Date();
       const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -179,25 +189,32 @@ export const AssessmentOverviewCard: React.FC<AssessmentOverviewCardProps> = ({
               </span>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Severity Level</span>
+            {latestAssessment.showResultToStudent === false ? (
+              <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600">
+                Results are pending guidance validation.
               </div>
-              <SeverityIndicator
-                level={getSeverityLevel()}
-                score={getScore()}
-                showScore={type !== "suicide"}
-                scoreLabel={type === "checklist" ? "problems" : undefined}
-              />
-            </div>
-
-            {latestAssessment.requiresIntervention && (
-              <div className="bg-red-100 border border-red-200 rounded p-2 mt-2">
-                <p className="text-xs text-red-800 font-medium">
-                  ⚠️ Immediate intervention required
-                </p>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">Severity Level</span>
+                </div>
+                <SeverityIndicator
+                  level={getSeverityLevel()}
+                  score={getScore()}
+                  showScore={type !== "suicide"}
+                  scoreLabel={type === "checklist" ? "problems" : undefined}
+                />
               </div>
             )}
+
+            {latestAssessment.requiresIntervention &&
+              latestAssessment.showResultToStudent !== false && (
+                <div className="bg-red-100 border border-red-200 rounded p-2 mt-2">
+                  <p className="text-xs text-red-800 font-medium">
+                    ⚠️ Immediate intervention required
+                  </p>
+                </div>
+              )}
           </>
         ) : (
           <div className="text-center py-3">

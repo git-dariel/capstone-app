@@ -28,10 +28,11 @@ export interface DepressionAssessment {
   id: string;
   userId: string;
   totalScore: number;
-  severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
+  severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe" | null;
   assessmentDate: string;
   responses: Record<string, number>;
   cooldownActive?: boolean;
+  showResultToStudent?: boolean;
   analysis: {
     totalScore: number;
     severityLevel: string;
@@ -72,6 +73,7 @@ export interface CreateDepressionAssessmentRequest {
 
 export interface UpdateDepressionAssessmentRequest {
   responses?: Record<string, number>;
+  showResultToStudent?: boolean;
 }
 
 export class DepressionService {
@@ -112,7 +114,7 @@ export class DepressionService {
     try {
       // Get the most recent assessment for the user
       const response = await HttpClient.get<any>(
-        `/depression?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`
+        `/depression?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`,
       );
 
       if (response.assessments && response.assessments.length > 0) {
@@ -132,7 +134,7 @@ export class DepressionService {
 
           if (isActive) {
             const daysRemaining = Math.ceil(
-              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
             );
 
             return {
@@ -177,7 +179,7 @@ export class DepressionService {
   // Helper function to create assessment request from responses
   static createAssessmentRequest(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): CreateDepressionAssessmentRequest {
     const request: CreateDepressionAssessmentRequest = {
       userId,
@@ -190,7 +192,7 @@ export class DepressionService {
       trouble_concentrating_things: this.convertToDepressionFrequency(responses[6] || 0),
       moving_speaking_slowly_fidgety_restless: this.convertToDepressionFrequency(responses[7] || 0),
       thoughts_better_off_dead_hurting_yourself: this.convertToDepressionFrequency(
-        responses[8] || 0
+        responses[8] || 0,
       ),
     };
 
@@ -203,7 +205,7 @@ export class DepressionService {
   }
 
   static async getAllAssessments(
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<PaginatedResponse<DepressionAssessment>> {
     try {
       const response = await HttpClient.get<any>("/depression", params);
@@ -231,7 +233,7 @@ export class DepressionService {
   }
 
   static async createAssessment(
-    data: CreateDepressionAssessmentRequest
+    data: CreateDepressionAssessmentRequest,
   ): Promise<DepressionAssessment> {
     try {
       const response = await HttpClient.post<DepressionAssessment>("/depression", data);
@@ -252,7 +254,7 @@ export class DepressionService {
   // Convenience method to create assessment from numeric responses
   static async createAssessmentFromResponses(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): Promise<DepressionAssessment> {
     try {
       const assessmentData = this.createAssessmentRequest(userId, responses);
@@ -267,7 +269,7 @@ export class DepressionService {
 
   static async updateAssessment(
     id: string,
-    data: UpdateDepressionAssessmentRequest
+    data: UpdateDepressionAssessmentRequest,
   ): Promise<DepressionAssessment> {
     try {
       const response = await HttpClient.patch<DepressionAssessment>(`/depression/${id}`, data);

@@ -38,23 +38,27 @@ export interface Student {
         severityLevel: "minimal" | "mild" | "moderate" | "severe";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       depressionAssessments?: Array<{
         id: string;
         severityLevel: "minimal" | "mild" | "moderate" | "moderately_severe" | "severe";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       stressAssessments?: Array<{
         id: string;
         severityLevel: "low" | "moderate" | "high";
         assessmentDate: string;
         totalScore: number;
+        showResultToStudent?: boolean;
       }>;
       suicideAssessments?: Array<{
         id: string;
         riskLevel: "low" | "moderate" | "high";
         assessmentDate: string;
+        showResultToStudent?: boolean;
       }>;
     }>;
   };
@@ -196,5 +200,81 @@ export class StudentService {
     } catch (error) {
       throw error;
     }
+  }
+
+  static async uploadStudentsCSV(file: File): Promise<{
+    message: string;
+    results: {
+      total: number;
+      successful: number;
+      skipped: number;
+      errors: Array<{
+        studentNumber: string;
+        fullName: string;
+        error: string;
+      }>;
+    };
+  }> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await HttpClient.postFormData<{
+        message: string;
+        results: {
+          total: number;
+          successful: number;
+          skipped: number;
+          errors: Array<{
+            studentNumber: string;
+            fullName: string;
+            error: string;
+          }>;
+        };
+      }>("/student/upload-csv", formData);
+
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Graduate a single student
+  static async graduateStudent(id: string): Promise<{ message: string; student: Student }> {
+    const response = await HttpClient.patch<{
+      message: string;
+      student: Student;
+    }>(`/student/${id}/graduate`);
+
+    if (response.message) {
+      return response;
+    }
+
+    throw new Error("Failed to graduate student");
+  }
+
+  // Graduate multiple students
+  static async graduateMultipleStudents(studentIds: string[]): Promise<{
+    message: string;
+    results: {
+      successful: number;
+      failed: number;
+      errors: string[];
+    };
+  }> {
+    const response = await HttpClient.post<{
+      message: string;
+      results: {
+        successful: number;
+        failed: number;
+        errors: string[];
+      };
+    }>("/student/graduate-batch", { studentIds });
+
+    if (response.message) {
+      return response;
+    }
+
+    throw new Error("Failed to graduate students");
   }
 }

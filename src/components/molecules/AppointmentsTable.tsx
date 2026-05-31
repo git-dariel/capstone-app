@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Search, CheckCircle, Calendar, Pencil, X, Trash2 } from "lucide-react";
 import { AppointmentService } from "@/services";
 import type { Appointment } from "@/services";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -15,6 +16,11 @@ interface AppointmentsTableProps {
   showActions?: boolean;
   searchable?: boolean;
   userType?: "student" | "guidance";
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onSearch?: (query: string) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
@@ -29,25 +35,95 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
   showActions = true,
   searchable = true,
   userType = "student",
+  total,
+  page = 1,
+  totalPages = 0,
+  onSearch,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [appointmentToCancel, setAppointmentToCancel] = useState<Appointment | null>(null);
+  const [sortBy, setSortBy] = useState<"date" | "priority" | "student" | "status">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  // Filter appointments based on search term
-  const filteredAppointments = appointments.filter((appointment) => {
-    const searchText = searchTerm.toLowerCase();
-    return (
-      appointment.title.toLowerCase().includes(searchText) ||
-      appointment.description?.toLowerCase().includes(searchText) ||
-      appointment.student?.person.firstName.toLowerCase().includes(searchText) ||
-      appointment.student?.person.lastName.toLowerCase().includes(searchText) ||
-      appointment.counselor?.person.firstName.toLowerCase().includes(searchText) ||
-      appointment.counselor?.person.lastName.toLowerCase().includes(searchText) ||
-      appointment.appointmentType.toLowerCase().includes(searchText) ||
-      appointment.status.toLowerCase().includes(searchText)
-    );
+  // Filter and sort appointments based on search term and sort options
+  const filteredAppointments = (
+    onSearch
+      ? appointments
+      : appointments.filter((appointment) => {
+          const searchText = searchTerm.toLowerCase();
+          return (
+            appointment.title.toLowerCase().includes(searchText) ||
+            appointment.description?.toLowerCase().includes(searchText) ||
+            appointment.student?.person.firstName.toLowerCase().includes(searchText) ||
+            appointment.student?.person.lastName.toLowerCase().includes(searchText) ||
+            appointment.counselor?.person.firstName.toLowerCase().includes(searchText) ||
+            appointment.counselor?.person.lastName.toLowerCase().includes(searchText) ||
+            appointment.appointmentType.toLowerCase().includes(searchText) ||
+            appointment.status.toLowerCase().includes(searchText)
+          );
+        })
+  ).sort((a, b) => {
+    let comparison = 0;
+
+    switch (sortBy) {
+      case "date": {
+        comparison = new Date(a.requestedDate).getTime() - new Date(b.requestedDate).getTime();
+        break;
+      }
+      case "priority": {
+        const priorityOrder = { urgent: 4, high: 3, normal: 2, low: 1 };
+        comparison =
+          (priorityOrder[a.priority as keyof typeof priorityOrder] || 2) -
+          (priorityOrder[b.priority as keyof typeof priorityOrder] || 2);
+        break;
+      }
+      case "student": {
+        const studentA = `${a.student?.person?.firstName} ${a.student?.person?.lastName}`;
+        const studentB = `${b.student?.person?.firstName} ${b.student?.person?.lastName}`;
+        comparison = studentA.localeCompare(studentB);
+        break;
+      }
+      case "status": {
+        comparison = a.status.localeCompare(b.status);
+        break;
+      }
+    }
+
+    return sortOrder === "asc" ? comparison : -comparison;
   });
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
+
+  // Note: handleSort can be used for table header click handlers if needed
+  // Currently using dropdown for sorting, but keeping function for future enhancement
 
   const handleDeleteClick = (appointment: Appointment) => {
     setAppointmentToDelete(appointment);
@@ -60,6 +136,32 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
     }
     setShowDeleteConfirm(false);
     setAppointmentToDelete(null);
+  };
+
+  const handleCompleteClick = (appointment: Appointment) => {
+    setAppointmentToComplete(appointment);
+    setShowCompleteConfirm(true);
+  };
+
+  const handleCompleteConfirm = () => {
+    if (appointmentToComplete && onComplete) {
+      onComplete(appointmentToComplete);
+    }
+    setShowCompleteConfirm(false);
+    setAppointmentToComplete(null);
+  };
+
+  const handleCancelClick = (appointment: Appointment) => {
+    setAppointmentToCancel(appointment);
+    setShowCancelConfirm(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (appointmentToCancel && onCancel) {
+      onCancel(appointmentToCancel);
+    }
+    setShowCancelConfirm(false);
+    setAppointmentToCancel(null);
   };
 
   const formatDate = (dateString: string) => {
@@ -89,18 +191,58 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      {/* Header with Search */}
+      {/* Header with Search and Sort */}
       {searchable && (
         <div className="p-4 border-b border-gray-200">
-          <div className="relative flex-1 max-w-md">
-            <input
-              type="text"
-              placeholder="Search appointments..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
-            />
-            <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">🔍</div>
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+            <div className="relative flex-1 w-full sm:max-w-md">
+              <input
+                type="text"
+                placeholder="Search appointments..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchKeyDown}
+                className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
+              />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Search className="h-4 w-4" />
+              </div>
+              {onSearch && (
+                <button
+                  type="button"
+                  onClick={handleSearchSubmit}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                  disabled={loading}
+                >
+                  Search
+                </button>
+              )}
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-500 whitespace-nowrap">Sort by:</span>
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [column, order] = e.target.value.split("-");
+                  setSortBy(column as "date" | "priority" | "student" | "status");
+                  setSortOrder(order as "asc" | "desc");
+                }}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-400"
+              >
+                <option value="date-desc">Newest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="priority-desc">High Priority First</option>
+                <option value="priority-asc">Low Priority First</option>
+                <option value="student-asc">Student A-Z</option>
+                <option value="student-desc">Student Z-A</option>
+                <option value="status-asc">Status A-Z</option>
+                <option value="status-desc">Status Z-A</option>
+              </select>
+            </div>
+          </div>
+          <div className="mt-3 text-xs text-gray-500">
+            Showing {filteredAppointments.length} of{" "}
+            {onSearch ? total || 0 : filteredAppointments.length} appointments
           </div>
         </div>
       )}
@@ -109,7 +251,9 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
       <div className="block md:hidden">
         {filteredAppointments.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm ? "No appointments match your search." : "No appointments found."}
+            {(onSearch ? searchQuery : searchTerm)
+              ? "No appointments match your search."
+              : "No appointments found."}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -155,10 +299,15 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                   {/* Card Body */}
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center text-sm">
-                      <span className="text-gray-500 w-20 flex-shrink-0">Student:</span>
+                      <span className="text-gray-500 w-20 flex-shrink-0">
+                        {(appointment as any).students?.length > 1 ? "Students:" : "Student:"}
+                      </span>
                       <span className="text-gray-900 truncate">
-                        {appointment.student?.person.firstName}{" "}
-                        {appointment.student?.person.lastName}
+                        {(appointment as any).students?.length > 0
+                          ? (appointment as any).students.length > 1
+                            ? `${(appointment as any).students.length} students`
+                            : `${(appointment as any).students[0]?.person?.firstName} ${(appointment as any).students[0]?.person?.lastName}`
+                          : `${appointment.student?.person.firstName} ${appointment.student?.person.lastName}`}
                       </span>
                     </div>
 
@@ -197,10 +346,11 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onComplete(appointment);
+                            handleCompleteClick(appointment);
                           }}
                           className="px-3 py-1 text-green-600 hover:text-green-900 text-xs font-medium border border-green-200 rounded-md hover:bg-green-50 touch-manipulation"
                         >
+                          <CheckCircle className="h-3 w-3 inline mr-1" />
                           Complete
                         </button>
                       )}
@@ -212,6 +362,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                           }}
                           className="px-3 py-1 text-blue-600 hover:text-blue-900 text-xs font-medium border border-blue-200 rounded-md hover:bg-blue-50 touch-manipulation"
                         >
+                          <Calendar className="h-3 w-3 inline mr-1" />
                           Reschedule
                         </button>
                       )}
@@ -223,6 +374,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                           }}
                           className="px-3 py-1 text-primary-600 hover:text-primary-900 text-xs font-medium border border-primary-200 rounded-md hover:bg-primary-50 touch-manipulation"
                         >
+                          <Pencil className="h-3 w-3 inline mr-1" />
                           Edit
                         </button>
                       )}
@@ -230,10 +382,11 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            onCancel(appointment);
+                            handleCancelClick(appointment);
                           }}
                           className="px-3 py-1 text-red-600 hover:text-red-900 text-xs font-medium border border-red-200 rounded-md hover:bg-red-50 touch-manipulation"
                         >
+                          <X className="h-3 w-3 inline mr-1" />
                           Cancel
                         </button>
                       )}
@@ -245,6 +398,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                           }}
                           className="px-3 py-1 text-gray-600 hover:text-red-600 text-xs font-medium border border-gray-200 rounded-md hover:bg-gray-50 touch-manipulation"
                         >
+                          <Trash2 className="h-3 w-3 inline mr-1" />
                           Delete
                         </button>
                       )}
@@ -266,7 +420,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                 Appointment
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Student
+                Student(s)
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Counselor
@@ -291,14 +445,16 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
             {filteredAppointments.length === 0 ? (
               <tr>
                 <td colSpan={showActions ? 7 : 6} className="px-4 py-8 text-center text-gray-500">
-                  {searchTerm ? "No appointments match your search." : "No appointments found."}
+                  {(onSearch ? searchQuery : searchTerm)
+                    ? "No appointments match your search."
+                    : "No appointments found."}
                 </td>
               </tr>
             ) : (
               filteredAppointments.map((appointment) => {
                 const statusInfo = AppointmentService.getStatusDisplayInfo(appointment.status);
                 const priorityInfo = AppointmentService.getPriorityDisplayInfo(
-                  appointment.priority
+                  appointment.priority,
                 );
                 const typeInfo = AppointmentService.getTypeDisplayInfo(appointment.appointmentType);
                 const canCancel = AppointmentService.canCancelAppointment(appointment);
@@ -332,14 +488,39 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                     </td>
                     <td className="px-4 py-4">
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {appointment.student?.person.firstName}{" "}
-                          {appointment.student?.person.lastName}
-                        </p>
-                        {appointment.student?.studentNumber && (
-                          <p className="text-sm text-gray-500">
-                            {appointment.student.studentNumber}
-                          </p>
+                        {(appointment as any).students?.length > 0 ? (
+                          (appointment as any).students.length > 1 ? (
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {(appointment as any).students.length} students
+                              </p>
+                              <p className="text-sm text-gray-500">Group Session</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {(appointment as any).students[0]?.person?.firstName}{" "}
+                                {(appointment as any).students[0]?.person?.lastName}
+                              </p>
+                              {(appointment as any).students[0]?.studentNumber && (
+                                <p className="text-sm text-gray-500">
+                                  {(appointment as any).students[0].studentNumber}
+                                </p>
+                              )}
+                            </div>
+                          )
+                        ) : (
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {appointment.student?.person.firstName}{" "}
+                              {appointment.student?.person.lastName}
+                            </p>
+                            {appointment.student?.studentNumber && (
+                              <p className="text-sm text-gray-500">
+                                {appointment.student.studentNumber}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -380,11 +561,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onComplete(appointment);
+                                handleCompleteClick(appointment);
                               }}
                               className="text-green-600 hover:text-green-900 text-sm font-medium"
                               title="Mark Complete"
                             >
+                              <CheckCircle className="h-4 w-4 inline mr-1" />
                               Complete
                             </button>
                           )}
@@ -397,6 +579,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               className="text-blue-600 hover:text-blue-900 text-sm font-medium"
                               title="Reschedule"
                             >
+                              <Calendar className="h-4 w-4 inline mr-1" />
                               Reschedule
                             </button>
                           )}
@@ -409,6 +592,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               className="text-primary-600 hover:text-primary-900 text-sm font-medium"
                               title="Edit"
                             >
+                              <Pencil className="h-4 w-4 inline mr-1" />
                               Edit
                             </button>
                           )}
@@ -416,11 +600,12 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                onCancel(appointment);
+                                handleCancelClick(appointment);
                               }}
                               className="text-red-600 hover:text-red-900 text-sm font-medium"
                               title="Cancel"
                             >
+                              <X className="h-4 w-4 inline mr-1" />
                               Cancel
                             </button>
                           )}
@@ -433,6 +618,7 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
                               className="text-gray-400 hover:text-red-600 text-sm font-medium"
                               title="Delete"
                             >
+                              <Trash2 className="h-4 w-4 inline mr-1" />
                               Delete
                             </button>
                           )}
@@ -447,6 +633,32 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
         </table>
       </div>
 
+      {onPageChange && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Delete Confirmation Modal */}
       <ConfirmationModal
         isOpen={showDeleteConfirm}
@@ -455,6 +667,28 @@ export const AppointmentsTable: React.FC<AppointmentsTableProps> = ({
         title="Delete Appointment"
         message={`Are you sure you want to delete the appointment "${appointmentToDelete?.title}"? This action cannot be undone.`}
         confirmText="Delete"
+        isDestructive={true}
+      />
+
+      {/* Complete Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCompleteConfirm}
+        onClose={() => setShowCompleteConfirm(false)}
+        onConfirm={handleCompleteConfirm}
+        title="Complete Appointment"
+        message={`Are you sure you want to mark the appointment "${appointmentToComplete?.title}" as completed?`}
+        confirmText="Complete"
+        isDestructive={false}
+      />
+
+      {/* Cancel Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelConfirm}
+        title="Cancel Appointment"
+        message={`Are you sure you want to cancel the appointment "${appointmentToCancel?.title}"? This action cannot be undone.`}
+        confirmText="Cancel Appointment"
         isDestructive={true}
       />
     </div>

@@ -6,6 +6,7 @@ import {
   ActivityTimerPage,
   AidFunctionPage,
   AppointmentsPage,
+  AuditLogsPage,
   ConsentPage,
   ConsentRecordsPage,
   ConsultantRecordsPage,
@@ -15,6 +16,7 @@ import {
   HistoryPage,
   HomePage,
   InsightsPage,
+  SimplifiedInsightsPage,
   InventoryPage,
   InventoryRecordsPage,
   InventoryInsightsPage,
@@ -33,6 +35,7 @@ import {
   StudentConsultationRecordsPage,
   StudentDashboardPage,
   StudentInventoryPage,
+  ArchiveStudentsPage,
 } from "@/pages";
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import { useState } from "react";
@@ -40,7 +43,7 @@ import { useState } from "react";
 // ========== MAINTENANCE MODE CONFIGURATION ==========
 // Set this to true to enable maintenance mode
 // Set this to false to restore normal application access
-const MAINTENANCE_MODE = true;
+const MAINTENANCE_MODE = false;
 // ====================================================
 
 function App() {
@@ -256,6 +259,14 @@ function App() {
             }
           />
           <Route
+            path="/archive-students"
+            element={
+              <ProtectedRoute>
+                <ArchiveStudentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/resources"
             element={
               <ProtectedRoute>
@@ -304,9 +315,27 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Audit Logs route - for admins and super admins only */}
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute>
+                <AuditLogsPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Insights routes */}
           <Route
             path="/insights/:type"
+            element={
+              <ProtectedRoute>
+                <SimplifiedInsightsPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Old insights route (keep for reference/comparison) */}
+          <Route
+            path="/insights-old/:type"
             element={
               <ProtectedRoute>
                 <InsightsPage />

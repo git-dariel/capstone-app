@@ -2,6 +2,12 @@ import React, { useState } from "react";
 import { FormField, FormSelect } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import type { InventoryFormData } from "@/services/inventory.service";
+import {
+  inventoryValidationRules,
+  validateField,
+  sanitizeFormData,
+} from "@/utils/validation";
+import { sanitizeObject } from "@/utils/sanitization";
 
 interface InventoryFormProps {
   studentId: string;
@@ -50,9 +56,15 @@ const relationshipOptions = [
 
 const parentalRelationshipOptions = [
   { value: "single_parent", label: "Single Parent" },
-  { value: "married_and_staying_together", label: "Married and Staying Together" },
+  {
+    value: "married_and_staying_together",
+    label: "Married and Staying Together",
+  },
   { value: "married_but_separated", label: "Married but Separated" },
-  { value: "not_married_but_living_together", label: "Not Married but Living Together" },
+  {
+    value: "not_married_but_living_together",
+    label: "Not Married but Living Together",
+  },
   { value: "others", label: "Others" },
 ];
 
@@ -71,16 +83,35 @@ const incomeOptions = [
   { value: "five_thousand_to_ten_thousand", label: "₱5,000 - ₱10,000" },
   { value: "ten_thousand_to_fifteen_thousand", label: "₱10,000 - ₱15,000" },
   { value: "fifteen_thousand_to_twenty_thousand", label: "₱15,000 - ₱20,000" },
-  { value: "twenty_thousand_to_twenty_five_thousand", label: "₱20,000 - ₱25,000" },
-  { value: "twenty_five_thousand_to_thirty_thousand", label: "₱25,000 - ₱30,000" },
-  { value: "thirty_thousand_to_thirty_five_thousand", label: "₱30,000 - ₱35,000" },
-  { value: "thirty_five_thousand_to_forty_thousand", label: "₱35,000 - ₱40,000" },
-  { value: "forty_thousand_to_forty_five_thousand", label: "₱40,000 - ₱45,000" },
-  { value: "forty_five_thousand_to_fifty_thousand", label: "₱45,000 - ₱50,000" },
+  {
+    value: "twenty_thousand_to_twenty_five_thousand",
+    label: "₱20,000 - ₱25,000",
+  },
+  {
+    value: "twenty_five_thousand_to_thirty_thousand",
+    label: "₱25,000 - ₱30,000",
+  },
+  {
+    value: "thirty_thousand_to_thirty_five_thousand",
+    label: "₱30,000 - ₱35,000",
+  },
+  {
+    value: "thirty_five_thousand_to_forty_thousand",
+    label: "₱35,000 - ₱40,000",
+  },
+  {
+    value: "forty_thousand_to_forty_five_thousand",
+    label: "₱40,000 - ₱45,000",
+  },
+  {
+    value: "forty_five_thousand_to_fifty_thousand",
+    label: "₱45,000 - ₱50,000",
+  },
   { value: "above_fifty_thousand", label: "Above ₱50,000" },
 ];
 
 const consultedOptions = [
+  { value: "none", label: "None" },
   { value: "psychiatrist", label: "Psychiatrist" },
   { value: "psychologist", label: "Psychologist" },
   { value: "councelor", label: "Counselor" },
@@ -125,7 +156,10 @@ const residenceOptions = [
   { value: "relatives_home", label: "Relatives Home" },
   { value: "bed_spacer", label: "Bed Spacer" },
   { value: "rented_apartment", label: "Rented Apartment" },
-  { value: "house_of_married_brother_or_sister", label: "House of Married Brother/Sister" },
+  {
+    value: "house_of_married_brother_or_sister",
+    label: "House of Married Brother/Sister",
+  },
   { value: "dorm", label: "Dormitory" },
   {
     value: "shares_apartment_with_friends_or_relatives",
@@ -146,7 +180,12 @@ const ordinalPositionOptions = [
   { value: "10th child", label: "10th child" },
 ];
 
-export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmit, loading = false, error }) => {
+export const InventoryForm: React.FC<InventoryFormProps> = ({
+  studentId,
+  onSubmit,
+  loading = false,
+  error,
+}) => {
   const [formData, setFormData] = useState<InventoryFormData>({
     studentId,
     height: "",
@@ -259,7 +298,8 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
       number_of_sisters: 0,
       number_of_brothers_or_sisters_employed: 0,
       ordinal_position: "1st child",
-      is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your: "family",
+      is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your:
+        "family",
       who_finances_your_schooling: "parents",
       how_much_is_your_weekly_allowance: 0,
       parents_total_montly_income: {
@@ -305,18 +345,31 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
     },
   });
 
-  const handleFieldChange = (field: string, value: any) => {
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [touchedFields, setTouchedFields] = useState<Record<string, boolean>>(
+    {},
+  );
+
+  const handleFieldChange = (
+    field: string,
+    value: string | number | boolean | null,
+  ) => {
     if (field.includes(".")) {
       const keys = field.split(".");
       setFormData((prev) => {
         const newData = { ...prev };
-        let current: any = newData;
+        let current: Record<string, unknown> = newData as Record<
+          string,
+          unknown
+        >;
 
         for (let i = 0; i < keys.length - 1; i++) {
           if (!current[keys[i]]) {
             current[keys[i]] = {};
           }
-          current = current[keys[i]];
+          current = current[keys[i]] as Record<string, unknown>;
         }
 
         current[keys[keys.length - 1]] = value;
@@ -328,11 +381,40 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
         [field]: value,
       }));
     }
+
+    // Clear error for this field when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleFieldBlur = (field: string, value: string) => {
+    setTouchedFields((prev) => ({ ...prev, [field]: true }));
+
+    // Validate field on blur
+    const rules = inventoryValidationRules[field];
+    if (rules) {
+      const error = validateField(value, rules);
+      if (error) {
+        setValidationErrors((prev) => ({ ...prev, [field]: error }));
+      } else {
+        setValidationErrors((prev) => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+    }
   };
 
   const handleHobbiesChange = (hobby: string) => {
     setFormData((prev) => {
-      const currentHobbies = prev.interest_and_hobbies?.what_are_your_hobbies || [];
+      const currentHobbies =
+        prev.interest_and_hobbies?.what_are_your_hobbies || [];
       const newHobbies = currentHobbies.includes(hobby)
         ? currentHobbies.filter((h) => h !== hobby)
         : [...currentHobbies, hobby];
@@ -351,40 +433,145 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
     e.preventDefault();
     if (loading) return;
 
+    // Validate all required fields before submission
+    const errors: Record<string, string> = {};
+    Object.keys(inventoryValidationRules).forEach((fieldKey) => {
+      const value = getNestedValue(
+        formData as unknown as Record<string, unknown>,
+        fieldKey,
+      );
+      const rules = inventoryValidationRules[fieldKey];
+      const error = validateField(value, rules);
+      if (error) {
+        errors[fieldKey] = error;
+      }
+    });
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      // Mark all fields as touched to show errors
+      const allTouched: Record<string, boolean> = {};
+      Object.keys(inventoryValidationRules).forEach((key) => {
+        allTouched[key] = true;
+      });
+      setTouchedFields(allTouched);
+
+      // Scroll to first error
+      const firstErrorField = Object.keys(errors)[0];
+      const element = document.getElementById(
+        firstErrorField.replace(/\./g, "_"),
+      );
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+        element.focus();
+      }
+      return;
+    }
+
     try {
-      // Sanitize data before submission - convert empty strings to null for DateTime fields
-      const sanitizedFormData = {
-        ...formData,
+      // Step 1: Apply field-specific sanitization (removes XSS/SQL injection)
+      let sanitizedFormData = sanitizeFormData(
+        formData as unknown as Record<string, unknown>,
+        inventoryValidationRules,
+      );
+
+      // Step 2: Deep sanitize entire object (extra safety layer)
+      sanitizedFormData = sanitizeObject(sanitizedFormData);
+
+      // Step 3: Convert empty strings to null for DateTime fields
+      const finalFormData = {
+        ...sanitizedFormData,
         health: {
-          ...formData.health,
+          ...(((sanitizedFormData as Record<string, unknown>).health as Record<
+            string,
+            unknown
+          >) || {}),
           psychological: {
-            ...formData.health.psychological,
-            when: formData.health.psychological.when === "" ? null : formData.health.psychological.when,
+            ...(((
+              (sanitizedFormData as Record<string, unknown>).health as Record<
+                string,
+                unknown
+              >
+            )?.psychological as Record<string, unknown>) || {}),
+            when:
+              (
+                (
+                  (sanitizedFormData as Record<string, unknown>)
+                    .health as Record<string, unknown>
+                )?.psychological as Record<string, unknown>
+              )?.when === ""
+                ? null
+                : (
+                    (
+                      (sanitizedFormData as Record<string, unknown>)
+                        .health as Record<string, unknown>
+                    )?.psychological as Record<string, unknown>
+                  )?.when,
           },
         },
-        test_results: formData.test_results
+        test_results: (sanitizedFormData as Record<string, unknown>)
+          .test_results
           ? {
-              ...formData.test_results,
-              date: formData.test_results.date === "" ? null : formData.test_results.date,
+              ...((sanitizedFormData as Record<string, unknown>)
+                .test_results as Record<string, unknown>),
+              date:
+                (
+                  (sanitizedFormData as Record<string, unknown>)
+                    .test_results as Record<string, unknown>
+                ).date === ""
+                  ? null
+                  : (
+                      (sanitizedFormData as Record<string, unknown>)
+                        .test_results as Record<string, unknown>
+                    ).date,
             }
           : undefined,
       };
 
-      await onSubmit(sanitizedFormData);
+      await onSubmit(finalFormData as InventoryFormData);
     } catch (err) {
       console.error("Form submission error:", err);
     }
   };
 
+  // Helper to get nested object value by dot notation
+  const getNestedValue = (
+    obj: Record<string, unknown>,
+    path: string,
+  ): string => {
+    const value = path.split(".").reduce((current: unknown, key) => {
+      if (current && typeof current === "object" && key in current) {
+        return (current as Record<string, unknown>)[key];
+      }
+      return "";
+    }, obj as unknown);
+
+    // Convert any value to string
+    if (value === null || value === undefined) {
+      return "";
+    }
+    if (typeof value === "boolean") {
+      return value.toString();
+    }
+    if (typeof value === "number") {
+      return value.toString();
+    }
+    return String(value);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">{error}</div>
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
       )}
 
       {/* Basic Information */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Basic Physical Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Basic Physical Information
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <FormField
             id="height"
@@ -392,9 +579,11 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             type="text"
             value={formData.height}
             onChange={(e) => handleFieldChange("height", e.target.value)}
+            onBlur={(e) => handleFieldBlur("height", e.target.value)}
             required
             disabled={loading}
             placeholder="e.g., 5'8&quot;"
+            error={touchedFields.height ? validationErrors.height : undefined}
           />
           <FormField
             id="weight"
@@ -402,9 +591,11 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             type="text"
             value={formData.weight}
             onChange={(e) => handleFieldChange("weight", e.target.value)}
+            onBlur={(e) => handleFieldBlur("weight", e.target.value)}
             required
             disabled={loading}
             placeholder="e.g., 150 lbs"
+            error={touchedFields.weight ? validationErrors.weight : undefined}
           />
           <FormField
             id="coplexion"
@@ -412,46 +603,100 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             type="text"
             value={formData.coplexion}
             onChange={(e) => handleFieldChange("coplexion", e.target.value)}
+            onBlur={(e) => handleFieldBlur("coplexion", e.target.value)}
             required
             disabled={loading}
             placeholder="e.g., Fair, Medium, Dark"
+            error={
+              touchedFields.coplexion ? validationErrors.coplexion : undefined
+            }
           />
         </div>
       </div>
 
       {/* Emergency Contact */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Emergency Contact
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <FormField
-            id="emergency_firstName"
+            id="person_to_be_contacted_in_case_of_accident_or_illness_firstName"
             label="First Name *"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.firstName}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .firstName
+            }
             onChange={(e) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.firstName", e.target.value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.firstName",
+                e.target.value,
+              )
+            }
+            onBlur={(e) =>
+              handleFieldBlur(
+                "person_to_be_contacted_in_case_of_accident_or_illness.firstName",
+                e.target.value,
+              )
             }
             required
             disabled={loading}
+            error={
+              touchedFields[
+                "person_to_be_contacted_in_case_of_accident_or_illness.firstName"
+              ]
+                ? validationErrors[
+                    "person_to_be_contacted_in_case_of_accident_or_illness.firstName"
+                  ]
+                : undefined
+            }
           />
           <FormField
-            id="emergency_lastName"
+            id="person_to_be_contacted_in_case_of_accident_or_illness_lastName"
             label="Last Name *"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.lastName}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .lastName
+            }
             onChange={(e) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.lastName", e.target.value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.lastName",
+                e.target.value,
+              )
+            }
+            onBlur={(e) =>
+              handleFieldBlur(
+                "person_to_be_contacted_in_case_of_accident_or_illness.lastName",
+                e.target.value,
+              )
             }
             required
             disabled={loading}
+            error={
+              touchedFields[
+                "person_to_be_contacted_in_case_of_accident_or_illness.lastName"
+              ]
+                ? validationErrors[
+                    "person_to_be_contacted_in_case_of_accident_or_illness.lastName"
+                  ]
+                : undefined
+            }
           />
           <FormField
             id="emergency_middleName"
             label="Middle Name"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.middleName || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .middleName || ""
+            }
             onChange={(e) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.middleName", e.target.value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.middleName",
+                e.target.value,
+              )
             }
             disabled={loading}
           />
@@ -460,9 +705,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
           <FormSelect
             id="emergency_relationship"
             label="Relationship *"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.relationship}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .relationship
+            }
             onChange={(value) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.relationship", value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.relationship",
+                value || "",
+              )
             }
             options={relationshipOptions}
             required
@@ -472,9 +723,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="emergency_street"
             label="Street"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.address.street || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .address.street || ""
+            }
             onChange={(e) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.address.street", e.target.value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.address.street",
+                e.target.value,
+              )
             }
             disabled={loading}
           />
@@ -482,11 +739,14 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="emergency_barangay"
             label="Barangay"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.address.barangay || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .address.barangay || ""
+            }
             onChange={(e) =>
               handleFieldChange(
                 "person_to_be_contacted_in_case_of_accident_or_illness.address.barangay",
-                e.target.value
+                e.target.value,
               )
             }
             disabled={loading}
@@ -497,9 +757,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="emergency_city"
             label="City"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.address.city || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .address.city || ""
+            }
             onChange={(e) =>
-              handleFieldChange("person_to_be_contacted_in_case_of_accident_or_illness.address.city", e.target.value)
+              handleFieldChange(
+                "person_to_be_contacted_in_case_of_accident_or_illness.address.city",
+                e.target.value,
+              )
             }
             disabled={loading}
           />
@@ -507,11 +773,14 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="emergency_province"
             label="Province"
             type="text"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.address.province || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness
+                .address.province || ""
+            }
             onChange={(e) =>
               handleFieldChange(
                 "person_to_be_contacted_in_case_of_accident_or_illness.address.province",
-                e.target.value
+                e.target.value,
               )
             }
             disabled={loading}
@@ -520,11 +789,14 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="emergency_zipCode"
             label="Zip Code"
             type="number"
-            value={formData.person_to_be_contacted_in_case_of_accident_or_illness.address.zipCode?.toString() || ""}
+            value={
+              formData.person_to_be_contacted_in_case_of_accident_or_illness.address.zipCode?.toString() ||
+              ""
+            }
             onChange={(e) =>
               handleFieldChange(
                 "person_to_be_contacted_in_case_of_accident_or_illness.address.zipCode",
-                parseInt(e.target.value) || undefined
+                parseInt(e.target.value) || 0,
               )
             }
             disabled={loading}
@@ -534,14 +806,18 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Educational Background */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Educational Background of Student</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Educational Background of Student
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <FormSelect
             id="education_level"
             label="Education Level *"
             value={formData.educational_background.level}
-            onChange={(value) => handleFieldChange("educational_background.level", value)}
+            onChange={(value) =>
+              handleFieldChange("educational_background.level", value)
+            }
             options={educationLevelOptions}
             required
             disabled={loading}
@@ -551,7 +827,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="School/Graduation *"
             type="text"
             value={formData.educational_background.school_graduation}
-            onChange={(e) => handleFieldChange("educational_background.school_graduation", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange(
+                "educational_background.school_graduation",
+                e.target.value,
+              )
+            }
             required
             disabled={loading}
           />
@@ -562,7 +843,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="school_status"
             label="School Status *"
             value={formData.educational_background.status}
-            onChange={(value) => handleFieldChange("educational_background.status", value)}
+            onChange={(value) =>
+              handleFieldChange("educational_background.status", value)
+            }
             options={schoolStatusOptions}
             required
             disabled={loading}
@@ -571,12 +854,21 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             id="dates_of_attendance"
             label="Dates of Attendance *"
             type="date"
-            value={formData.educational_background.dates_of_attendance.split("T")[0] || ""}
+            value={
+              formData.educational_background.dates_of_attendance.split(
+                "T",
+              )[0] || ""
+            }
             onChange={(e) => {
               // Convert date to ISO datetime string
               const dateValue = e.target.value;
-              const isoDateTime = dateValue ? new Date(dateValue).toISOString() : "";
-              handleFieldChange("educational_background.dates_of_attendance", isoDateTime);
+              const isoDateTime = dateValue
+                ? new Date(dateValue).toISOString()
+                : "";
+              handleFieldChange(
+                "educational_background.dates_of_attendance",
+                isoDateTime,
+              );
             }}
             required
             disabled={loading}
@@ -588,13 +880,20 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
           label="Honors Received"
           type="text"
           value={formData.educational_background.honors_received}
-          onChange={(e) => handleFieldChange("educational_background.honors_received", e.target.value)}
+          onChange={(e) =>
+            handleFieldChange(
+              "educational_background.honors_received",
+              e.target.value,
+            )
+          }
           disabled={loading}
           placeholder="List any academic honors or awards"
         />
 
         <div className="mt-4">
-          <h4 className="text-md font-medium text-gray-800 mb-3">Nature of Schooling</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Nature of Schooling
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex items-center">
               <input
@@ -605,7 +904,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 onChange={() => {
                   handleFieldChange("nature_of_schooling.continuous", true);
                   handleFieldChange("nature_of_schooling.interrupted", false);
-                  handleFieldChange("nature_of_schooling.exaplain_why", null);
+                  handleFieldChange("nature_of_schooling.exaplain_why", "");
                 }}
                 disabled={loading}
                 className="mr-2 w-4 h-4 text-primary-700 bg-gray-100 border-gray-300 focus:ring-primary-500"
@@ -634,7 +933,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="If interrupted, explain why"
               type="textarea"
               value={formData.nature_of_schooling.exaplain_why || ""}
-              onChange={(e) => handleFieldChange("nature_of_schooling.exaplain_why", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "nature_of_schooling.exaplain_why",
+                  e.target.value,
+                )
+              }
               disabled={loading}
               className="mt-2"
             />
@@ -644,18 +948,27 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Family Background */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-6">Home and Family Background</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-6">
+          Home and Family Background
+        </h3>
 
         {/* Father Information */}
         <div className="mb-8 p-4 bg-blue-50 rounded-lg">
-          <h4 className="text-md font-medium text-gray-800 mb-4">Father's Information</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-4">
+            Father's Information
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <FormField
               id="father_firstName"
               label="First Name *"
               type="text"
               value={formData.home_and_family_background.father.firstName}
-              onChange={(e) => handleFieldChange("home_and_family_background.father.firstName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.father.firstName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -664,7 +977,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Last Name *"
               type="text"
               value={formData.home_and_family_background.father.lastName}
-              onChange={(e) => handleFieldChange("home_and_family_background.father.lastName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.father.lastName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -672,8 +990,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="father_middleName"
               label="Middle Name"
               type="text"
-              value={formData.home_and_family_background.father.middleName || ""}
-              onChange={(e) => handleFieldChange("home_and_family_background.father.middleName", e.target.value)}
+              value={
+                formData.home_and_family_background.father.middleName || ""
+              }
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.father.middleName",
+                  e.target.value,
+                )
+              }
               disabled={loading}
             />
           </div>
@@ -684,7 +1009,10 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               type="number"
               value={formData.home_and_family_background.father.age.toString()}
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.father.age", parseInt(e.target.value) || 0)
+                handleFieldChange(
+                  "home_and_family_background.father.age",
+                  parseInt(e.target.value) || 0,
+                )
               }
               required
               disabled={loading}
@@ -693,7 +1021,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="father_status"
               label="Status *"
               value={formData.home_and_family_background.father.status}
-              onChange={(value) => handleFieldChange("home_and_family_background.father.status", value)}
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.father.status",
+                  value,
+                )
+              }
               options={statusOptions}
               required
               disabled={loading}
@@ -701,8 +1034,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="father_education"
               label="Educational Attainment *"
-              value={formData.home_and_family_background.father.educational_attainment}
-              onChange={(value) => handleFieldChange("home_and_family_background.father.educational_attainment", value)}
+              value={
+                formData.home_and_family_background.father
+                  .educational_attainment
+              }
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.father.educational_attainment",
+                  value,
+                )
+              }
               options={educationalAttainmentOptions}
               required
               disabled={loading}
@@ -714,20 +1055,35 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Occupation *"
               type="text"
               value={formData.home_and_family_background.father.occupation}
-              onChange={(e) => handleFieldChange("home_and_family_background.father.occupation", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.father.occupation",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
           </div>
           <div className="mb-2">
-            <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
+            <h5 className="text-sm font-medium text-gray-700 mb-2">
+              Employer Information
+            </h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
                 id="father_employer_name"
                 label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.father.employer?.name || ""}
-                onChange={(e) => handleFieldChange("home_and_family_background.father.employer.name", e.target.value)}
+                value={
+                  formData.home_and_family_background.father.employer?.name ||
+                  ""
+                }
+                onChange={(e) =>
+                  handleFieldChange(
+                    "home_and_family_background.father.employer.name",
+                    e.target.value,
+                  )
+                }
                 disabled={loading}
               />
             </div>
@@ -736,9 +1092,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="father_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.father.employer?.address?.street || ""}
+                value={
+                  formData.home_and_family_background.father.employer?.address
+                    ?.street || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.father.employer.address.street", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.father.employer.address.street",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -746,9 +1108,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="father_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.father.employer?.address?.city || ""}
+                value={
+                  formData.home_and_family_background.father.employer?.address
+                    ?.city || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.father.employer.address.city", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.father.employer.address.city",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -756,9 +1124,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="father_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.father.employer?.address?.province || ""}
+                value={
+                  formData.home_and_family_background.father.employer?.address
+                    ?.province || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.father.employer.address.province", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.father.employer.address.province",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -768,14 +1142,21 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
         {/* Mother Information */}
         <div className="mb-8 p-4 bg-pink-50 rounded-lg">
-          <h4 className="text-md font-medium text-gray-800 mb-4">Mother's Information</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-4">
+            Mother's Information
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <FormField
               id="mother_firstName"
               label="First Name *"
               type="text"
               value={formData.home_and_family_background.mother.firstName}
-              onChange={(e) => handleFieldChange("home_and_family_background.mother.firstName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.firstName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -784,7 +1165,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Last Name *"
               type="text"
               value={formData.home_and_family_background.mother.lastName}
-              onChange={(e) => handleFieldChange("home_and_family_background.mother.lastName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.lastName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -792,8 +1178,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="mother_middleName"
               label="Middle Name"
               type="text"
-              value={formData.home_and_family_background.mother.middleName || ""}
-              onChange={(e) => handleFieldChange("home_and_family_background.mother.middleName", e.target.value)}
+              value={
+                formData.home_and_family_background.mother.middleName || ""
+              }
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.middleName",
+                  e.target.value,
+                )
+              }
               disabled={loading}
             />
           </div>
@@ -804,7 +1197,10 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               type="number"
               value={formData.home_and_family_background.mother.age.toString()}
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.mother.age", parseInt(e.target.value) || 0)
+                handleFieldChange(
+                  "home_and_family_background.mother.age",
+                  parseInt(e.target.value) || 0,
+                )
               }
               required
               disabled={loading}
@@ -813,7 +1209,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="mother_status"
               label="Status *"
               value={formData.home_and_family_background.mother.status}
-              onChange={(value) => handleFieldChange("home_and_family_background.mother.status", value)}
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.status",
+                  value,
+                )
+              }
               options={statusOptions}
               required
               disabled={loading}
@@ -821,8 +1222,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="mother_education"
               label="Educational Attainment *"
-              value={formData.home_and_family_background.mother.educational_attainment}
-              onChange={(value) => handleFieldChange("home_and_family_background.mother.educational_attainment", value)}
+              value={
+                formData.home_and_family_background.mother
+                  .educational_attainment
+              }
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.educational_attainment",
+                  value,
+                )
+              }
               options={educationalAttainmentOptions}
               required
               disabled={loading}
@@ -834,20 +1243,35 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Occupation *"
               type="text"
               value={formData.home_and_family_background.mother.occupation}
-              onChange={(e) => handleFieldChange("home_and_family_background.mother.occupation", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.mother.occupation",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
           </div>
           <div className="mb-2">
-            <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
+            <h5 className="text-sm font-medium text-gray-700 mb-2">
+              Employer Information
+            </h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
                 id="mother_employer_name"
                 label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.mother.employer?.name || ""}
-                onChange={(e) => handleFieldChange("home_and_family_background.mother.employer.name", e.target.value)}
+                value={
+                  formData.home_and_family_background.mother.employer?.name ||
+                  ""
+                }
+                onChange={(e) =>
+                  handleFieldChange(
+                    "home_and_family_background.mother.employer.name",
+                    e.target.value,
+                  )
+                }
                 disabled={loading}
               />
             </div>
@@ -856,9 +1280,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="mother_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.mother.employer?.address?.street || ""}
+                value={
+                  formData.home_and_family_background.mother.employer?.address
+                    ?.street || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.mother.employer.address.street", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.mother.employer.address.street",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -866,9 +1296,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="mother_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.mother.employer?.address?.city || ""}
+                value={
+                  formData.home_and_family_background.mother.employer?.address
+                    ?.city || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.mother.employer.address.city", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.mother.employer.address.city",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -876,9 +1312,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="mother_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.mother.employer?.address?.province || ""}
+                value={
+                  formData.home_and_family_background.mother.employer?.address
+                    ?.province || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.mother.employer.address.province", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.mother.employer.address.province",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -888,14 +1330,21 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
         {/* Guardian Information */}
         <div className="mb-8 p-4 bg-green-50 rounded-lg">
-          <h4 className="text-md font-medium text-gray-800 mb-4">Guardian's Information</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-4">
+            Guardian's Information
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <FormField
               id="guardian_firstName"
               label="First Name *"
               type="text"
               value={formData.home_and_family_background.guardian.firstName}
-              onChange={(e) => handleFieldChange("home_and_family_background.guardian.firstName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.guardian.firstName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -904,7 +1353,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Last Name *"
               type="text"
               value={formData.home_and_family_background.guardian.lastName}
-              onChange={(e) => handleFieldChange("home_and_family_background.guardian.lastName", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.guardian.lastName",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
@@ -912,8 +1366,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="guardian_middleName"
               label="Middle Name"
               type="text"
-              value={formData.home_and_family_background.guardian.middleName || ""}
-              onChange={(e) => handleFieldChange("home_and_family_background.guardian.middleName", e.target.value)}
+              value={
+                formData.home_and_family_background.guardian.middleName || ""
+              }
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.guardian.middleName",
+                  e.target.value,
+                )
+              }
               disabled={loading}
             />
           </div>
@@ -924,7 +1385,10 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               type="number"
               value={formData.home_and_family_background.guardian.age.toString()}
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.guardian.age", parseInt(e.target.value) || 0)
+                handleFieldChange(
+                  "home_and_family_background.guardian.age",
+                  parseInt(e.target.value) || 0,
+                )
               }
               required
               disabled={loading}
@@ -933,7 +1397,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="guardian_status"
               label="Status *"
               value={formData.home_and_family_background.guardian.status}
-              onChange={(value) => handleFieldChange("home_and_family_background.guardian.status", value)}
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.guardian.status",
+                  value,
+                )
+              }
               options={statusOptions}
               required
               disabled={loading}
@@ -941,9 +1410,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="guardian_education"
               label="Educational Attainment *"
-              value={formData.home_and_family_background.guardian.educational_attainment}
+              value={
+                formData.home_and_family_background.guardian
+                  .educational_attainment
+              }
               onChange={(value) =>
-                handleFieldChange("home_and_family_background.guardian.educational_attainment", value)
+                handleFieldChange(
+                  "home_and_family_background.guardian.educational_attainment",
+                  value,
+                )
               }
               options={educationalAttainmentOptions}
               required
@@ -956,20 +1431,35 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Occupation *"
               type="text"
               value={formData.home_and_family_background.guardian.occupation}
-              onChange={(e) => handleFieldChange("home_and_family_background.guardian.occupation", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "home_and_family_background.guardian.occupation",
+                  e.target.value,
+                )
+              }
               required
               disabled={loading}
             />
           </div>
           <div className="mb-2">
-            <h5 className="text-sm font-medium text-gray-700 mb-2">Employer Information</h5>
+            <h5 className="text-sm font-medium text-gray-700 mb-2">
+              Employer Information
+            </h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <FormField
                 id="guardian_employer_name"
                 label="Company/Employer Name"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer?.name || ""}
-                onChange={(e) => handleFieldChange("home_and_family_background.guardian.employer.name", e.target.value)}
+                value={
+                  formData.home_and_family_background.guardian.employer?.name ||
+                  ""
+                }
+                onChange={(e) =>
+                  handleFieldChange(
+                    "home_and_family_background.guardian.employer.name",
+                    e.target.value,
+                  )
+                }
                 disabled={loading}
               />
             </div>
@@ -978,9 +1468,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="guardian_employer_street"
                 label="Street"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer?.address?.street || ""}
+                value={
+                  formData.home_and_family_background.guardian.employer?.address
+                    ?.street || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.guardian.employer.address.street", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.guardian.employer.address.street",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -988,9 +1484,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="guardian_employer_city"
                 label="City"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer?.address?.city || ""}
+                value={
+                  formData.home_and_family_background.guardian.employer?.address
+                    ?.city || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.guardian.employer.address.city", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.guardian.employer.address.city",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -998,9 +1500,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
                 id="guardian_employer_province"
                 label="Province"
                 type="text"
-                value={formData.home_and_family_background.guardian.employer?.address?.province || ""}
+                value={
+                  formData.home_and_family_background.guardian.employer?.address
+                    ?.province || ""
+                }
                 onChange={(e) =>
-                  handleFieldChange("home_and_family_background.guardian.employer.address.province", e.target.value)
+                  handleFieldChange(
+                    "home_and_family_background.guardian.employer.address.province",
+                    e.target.value,
+                  )
                 }
                 disabled={loading}
               />
@@ -1015,9 +1523,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="parents_relationship"
               label="Parents' Marital Relationship *"
               value={
-                formData.home_and_family_background?.parents_martial_relationship || "married_and_staying_together"
+                formData.home_and_family_background
+                  ?.parents_martial_relationship ||
+                "married_and_staying_together"
               }
-              onChange={(value) => handleFieldChange("home_and_family_background.parents_martial_relationship", value)}
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.parents_martial_relationship",
+                  value,
+                )
+              }
               options={parentalRelationshipOptions}
               required
               disabled={loading}
@@ -1025,8 +1540,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="who_finances"
               label="Who finances your schooling? *"
-              value={formData.home_and_family_background?.who_finances_your_schooling || "parents"}
-              onChange={(value) => handleFieldChange("home_and_family_background.who_finances_your_schooling", value)}
+              value={
+                formData.home_and_family_background
+                  ?.who_finances_your_schooling || "parents"
+              }
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.who_finances_your_schooling",
+                  value,
+                )
+              }
               options={whoFinancesOptions}
               required
               disabled={loading}
@@ -1045,7 +1568,7 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               onChange={(e) =>
                 handleFieldChange(
                   "home_and_family_background.number_of_children_in_the_family_including_yourself",
-                  parseInt(e.target.value) || 0
+                  parseInt(e.target.value) || 0,
                 )
               }
               required
@@ -1055,9 +1578,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="brothers"
               label="Number of brothers"
               type="number"
-              value={formData.home_and_family_background?.number_of_brothers?.toString() || "0"}
+              value={
+                formData.home_and_family_background?.number_of_brothers?.toString() ||
+                "0"
+              }
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.number_of_brothers", parseInt(e.target.value) || 0)
+                handleFieldChange(
+                  "home_and_family_background.number_of_brothers",
+                  parseInt(e.target.value) || 0,
+                )
               }
               disabled={loading}
             />
@@ -1065,9 +1594,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="sisters"
               label="Number of sisters"
               type="number"
-              value={formData.home_and_family_background?.number_of_sisters?.toString() || "0"}
+              value={
+                formData.home_and_family_background?.number_of_sisters?.toString() ||
+                "0"
+              }
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.number_of_sisters", parseInt(e.target.value) || 0)
+                handleFieldChange(
+                  "home_and_family_background.number_of_sisters",
+                  parseInt(e.target.value) || 0,
+                )
               }
               disabled={loading}
             />
@@ -1075,11 +1610,14 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="employed_siblings"
               label="Employed brothers/sisters"
               type="number"
-              value={formData.home_and_family_background?.number_of_brothers_or_sisters_employed?.toString() || "0"}
+              value={
+                formData.home_and_family_background?.number_of_brothers_or_sisters_employed?.toString() ||
+                "0"
+              }
               onChange={(e) =>
                 handleFieldChange(
                   "home_and_family_background.number_of_brothers_or_sisters_employed",
-                  parseInt(e.target.value) || 0
+                  parseInt(e.target.value) || 0,
                 )
               }
               disabled={loading}
@@ -1090,8 +1628,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="ordinal_position"
               label="Ordinal Position *"
-              value={formData.home_and_family_background?.ordinal_position || "1st child"}
-              onChange={(value) => handleFieldChange("home_and_family_background.ordinal_position", value)}
+              value={
+                formData.home_and_family_background?.ordinal_position ||
+                "1st child"
+              }
+              onChange={(value) =>
+                handleFieldChange(
+                  "home_and_family_background.ordinal_position",
+                  value,
+                )
+              }
               options={ordinalPositionOptions}
               required
               disabled={loading}
@@ -1101,12 +1647,13 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="Employed sibling providing support to *"
               value={
                 formData.home_and_family_background
-                  ?.is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your || "family"
+                  ?.is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your ||
+                "family"
               }
               onChange={(value) =>
                 handleFieldChange(
                   "home_and_family_background.is_your_brother_sister_who_is_gainfully_employed_providing_support_to_your",
-                  value
+                  value,
                 )
               }
               options={employedSiblingProvidingOptions}
@@ -1119,9 +1666,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="family_income"
               label="Parents' total monthly income *"
-              value={formData.home_and_family_background?.parents_total_montly_income?.income || "below_five_thousand"}
+              value={
+                formData.home_and_family_background?.parents_total_montly_income
+                  ?.income || "below_five_thousand"
+              }
               onChange={(value) =>
-                handleFieldChange("home_and_family_background.parents_total_montly_income.income", value)
+                handleFieldChange(
+                  "home_and_family_background.parents_total_montly_income.income",
+                  value,
+                )
               }
               options={incomeOptions}
               required
@@ -1131,9 +1684,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="income_others"
               label="Additional income sources"
               type="text"
-              value={formData.home_and_family_background?.parents_total_montly_income?.others || ""}
+              value={
+                formData.home_and_family_background?.parents_total_montly_income
+                  ?.others || ""
+              }
               onChange={(e) =>
-                handleFieldChange("home_and_family_background.parents_total_montly_income.others", e.target.value)
+                handleFieldChange(
+                  "home_and_family_background.parents_total_montly_income.others",
+                  e.target.value,
+                )
               }
               disabled={loading}
               placeholder="Other sources of income"
@@ -1142,11 +1701,14 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="weekly_allowance"
               label="Weekly allowance (₱) *"
               type="number"
-              value={formData.home_and_family_background?.how_much_is_your_weekly_allowance?.toString() || "0"}
+              value={
+                formData.home_and_family_background?.how_much_is_your_weekly_allowance?.toString() ||
+                "0"
+              }
               onChange={(e) =>
                 handleFieldChange(
                   "home_and_family_background.how_much_is_your_weekly_allowance",
-                  parseInt(e.target.value) || 0
+                  parseInt(e.target.value) || 0,
                 )
               }
               required
@@ -1158,9 +1720,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="quiet_place"
               label="Do you have a quiet place to study? *"
-              value={formData.home_and_family_background?.do_you_have_quiet_place_to_study || "yes"}
+              value={
+                formData.home_and_family_background
+                  ?.do_you_have_quiet_place_to_study || "yes"
+              }
               onChange={(value) =>
-                handleFieldChange("home_and_family_background.do_you_have_quiet_place_to_study", value)
+                handleFieldChange(
+                  "home_and_family_background.do_you_have_quiet_place_to_study",
+                  value,
+                )
               }
               options={yesNoOptions}
               required
@@ -1169,9 +1737,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="share_room"
               label="Do you share your room with anyone? *"
-              value={formData.home_and_family_background?.do_you_share_your_room_with_anyone?.status || "no"}
+              value={
+                formData.home_and_family_background
+                  ?.do_you_share_your_room_with_anyone?.status || "no"
+              }
               onChange={(value) =>
-                handleFieldChange("home_and_family_background.do_you_share_your_room_with_anyone.status", value)
+                handleFieldChange(
+                  "home_and_family_background.do_you_share_your_room_with_anyone.status",
+                  value,
+                )
               }
               options={yesNoOptions}
               required
@@ -1180,9 +1754,15 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             <FormSelect
               id="residence_nature"
               label="Nature of residence while attending school *"
-              value={formData.home_and_family_background?.nature_of_residence_while_attending_school || "family_home"}
+              value={
+                formData.home_and_family_background
+                  ?.nature_of_residence_while_attending_school || "family_home"
+              }
               onChange={(value) =>
-                handleFieldChange("home_and_family_background.nature_of_residence_while_attending_school", value)
+                handleFieldChange(
+                  "home_and_family_background.nature_of_residence_while_attending_school",
+                  value,
+                )
               }
               options={residenceOptions}
               required
@@ -1190,16 +1770,20 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             />
           </div>
 
-          {formData.home_and_family_background?.do_you_share_your_room_with_anyone?.status === "yes" && (
+          {formData.home_and_family_background
+            ?.do_you_share_your_room_with_anyone?.status === "yes" && (
             <FormField
               id="share_room_with_whom"
               label="If yes, with whom?"
               type="text"
-              value={formData.home_and_family_background?.do_you_share_your_room_with_anyone?.if_yes_with_whom || ""}
+              value={
+                formData.home_and_family_background
+                  ?.do_you_share_your_room_with_anyone?.if_yes_with_whom || ""
+              }
               onChange={(e) =>
                 handleFieldChange(
                   "home_and_family_background.do_you_share_your_room_with_anyone.if_yes_with_whom",
-                  e.target.value
+                  e.target.value,
                 )
               }
               disabled={loading}
@@ -1211,16 +1795,25 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Health and Wellness */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Health Information</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Health Information
+        </h3>
 
         <div className="mb-6">
-          <h4 className="text-md font-medium text-gray-800 mb-3">Physical Health</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Physical Health
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="flex items-center">
               <input
                 type="checkbox"
                 checked={formData.health.physical.your_vision}
-                onChange={(e) => handleFieldChange("health.physical.your_vision", e.target.checked)}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "health.physical.your_vision",
+                    e.target.checked,
+                  )
+                }
                 disabled={loading}
                 className="mr-2"
               />
@@ -1230,7 +1823,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               <input
                 type="checkbox"
                 checked={formData.health.physical.your_hearing}
-                onChange={(e) => handleFieldChange("health.physical.your_hearing", e.target.checked)}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "health.physical.your_hearing",
+                    e.target.checked,
+                  )
+                }
                 disabled={loading}
                 className="mr-2"
               />
@@ -1240,7 +1838,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               <input
                 type="checkbox"
                 checked={formData.health.physical.your_speech}
-                onChange={(e) => handleFieldChange("health.physical.your_speech", e.target.checked)}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "health.physical.your_speech",
+                    e.target.checked,
+                  )
+                }
                 disabled={loading}
                 className="mr-2"
               />
@@ -1250,7 +1853,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               <input
                 type="checkbox"
                 checked={formData.health.physical.your_general_health}
-                onChange={(e) => handleFieldChange("health.physical.your_general_health", e.target.checked)}
+                onChange={(e) =>
+                  handleFieldChange(
+                    "health.physical.your_general_health",
+                    e.target.checked,
+                  )
+                }
                 disabled={loading}
                 className="mr-2"
               />
@@ -1262,20 +1870,29 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="If yes, please specify"
             type="text"
             value={formData.health.physical.if_yes_please_specify || ""}
-            onChange={(e) => handleFieldChange("health.physical.if_yes_please_specify", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange(
+                "health.physical.if_yes_please_specify",
+                e.target.value,
+              )
+            }
             disabled={loading}
             className="mt-4"
           />
         </div>
 
         <div className="mb-6">
-          <h4 className="text-md font-medium text-gray-800 mb-3">Psychological Health (Optional)</h4>
+          <h4 className="text-md font-medium text-gray-800 mb-3">
+            Psychological Health (Optional)
+          </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormSelect
               id="psychological_consulted"
               label="Have you consulted a professional?"
               value={formData.health.psychological.consulted}
-              onChange={(value) => handleFieldChange("health.psychological.consulted", value)}
+              onChange={(value) =>
+                handleFieldChange("health.psychological.consulted", value)
+              }
               options={consultedOptions}
               disabled={loading}
             />
@@ -1283,7 +1900,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="psychological_status"
               label="Status"
               value={formData.health.psychological.status}
-              onChange={(value) => handleFieldChange("health.psychological.status", value)}
+              onChange={(value) =>
+                handleFieldChange("health.psychological.status", value)
+              }
               options={yesNoOptions}
               disabled={loading}
             />
@@ -1291,11 +1910,17 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               id="psychological_when"
               label="When?"
               type="date"
-              value={formData.health.psychological.when ? formData.health.psychological.when.split("T")[0] : ""}
+              value={
+                formData.health.psychological.when
+                  ? formData.health.psychological.when.split("T")[0]
+                  : ""
+              }
               onChange={(e) => {
                 // Convert date to ISO datetime string or set to null
                 const dateValue = e.target.value;
-                const isoDateTime = dateValue ? new Date(dateValue).toISOString() : null;
+                const isoDateTime = dateValue
+                  ? new Date(dateValue).toISOString()
+                  : "";
                 handleFieldChange("health.psychological.when", isoDateTime);
               }}
               disabled={loading}
@@ -1305,7 +1930,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
               label="For what?"
               type="text"
               value={formData.health.psychological.for_what || ""}
-              onChange={(e) => handleFieldChange("health.psychological.for_what", e.target.value)}
+              onChange={(e) =>
+                handleFieldChange(
+                  "health.psychological.for_what",
+                  e.target.value,
+                )
+              }
               disabled={loading}
             />
           </div>
@@ -1314,13 +1944,17 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Interest and Hobbies */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Interest and Hobbies</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Interest and Hobbies
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <FormSelect
             id="academic_interest"
             label="Academic Interest *"
             value={formData.interest_and_hobbies.academic || "science_club"}
-            onChange={(value) => handleFieldChange("interest_and_hobbies.academic", value)}
+            onChange={(value) =>
+              handleFieldChange("interest_and_hobbies.academic", value)
+            }
             options={academicHobbiesOptions}
             required
             disabled={loading}
@@ -1330,7 +1964,12 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="Favorite Subject *"
             type="text"
             value={formData.interest_and_hobbies.favorite_subject || ""}
-            onChange={(e) => handleFieldChange("interest_and_hobbies.favorite_subject", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange(
+                "interest_and_hobbies.favorite_subject",
+                e.target.value,
+              )
+            }
             required
             disabled={loading}
           />
@@ -1339,15 +1978,28 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="Least Favorite Subject *"
             type="text"
             value={formData.interest_and_hobbies.favorite_least_subject || ""}
-            onChange={(e) => handleFieldChange("interest_and_hobbies.favorite_least_subject", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange(
+                "interest_and_hobbies.favorite_least_subject",
+                e.target.value,
+              )
+            }
             required
             disabled={loading}
           />
           <FormSelect
             id="organizations"
             label="Organizations Participated *"
-            value={formData.interest_and_hobbies.organizations_participated || "athletics"}
-            onChange={(value) => handleFieldChange("interest_and_hobbies.organizations_participated", value)}
+            value={
+              formData.interest_and_hobbies.organizations_participated ||
+              "athletics"
+            }
+            onChange={(value) =>
+              handleFieldChange(
+                "interest_and_hobbies.organizations_participated",
+                value || "",
+              )
+            }
             options={organizationsOptions}
             required
             disabled={loading}
@@ -1358,8 +2010,16 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
           <FormSelect
             id="position_in_organization"
             label="Position in Organization *"
-            value={formData.interest_and_hobbies.occupational_position_organization || "member"}
-            onChange={(value) => handleFieldChange("interest_and_hobbies.occupational_position_organization", value)}
+            value={
+              formData.interest_and_hobbies
+                .occupational_position_organization || "member"
+            }
+            onChange={(value) =>
+              handleFieldChange(
+                "interest_and_hobbies.occupational_position_organization",
+                value || "",
+              )
+            }
             options={positionOptions}
             required
             disabled={loading}
@@ -1371,11 +2031,24 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             What are your hobbies? (Check all that apply)
           </label>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {["Reading", "Swimming", "Gaming", "Music", "Sports", "Art", "Dancing", "Cooking"].map((hobby) => (
+            {[
+              "Reading",
+              "Swimming",
+              "Gaming",
+              "Music",
+              "Sports",
+              "Art",
+              "Dancing",
+              "Cooking",
+            ].map((hobby) => (
               <label key={hobby} className="flex items-center">
                 <input
                   type="checkbox"
-                  checked={formData.interest_and_hobbies.what_are_your_hobbies?.includes(hobby) || false}
+                  checked={
+                    formData.interest_and_hobbies.what_are_your_hobbies?.includes(
+                      hobby,
+                    ) || false
+                  }
                   onChange={() => handleHobbiesChange(hobby)}
                   disabled={loading}
                   className="mr-2"
@@ -1389,17 +2062,25 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
 
       {/* Test Results */}
       <div className="bg-white p-6 rounded-lg border border-gray-200">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Test Results (Optional)</h3>
+        <h3 className="text-lg font-medium text-gray-900 mb-4">
+          Test Results (Optional)
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <FormField
             id="test_date"
             label="Test Date"
             type="date"
-            value={formData.test_results?.date ? formData.test_results.date.split("T")[0] : ""}
+            value={
+              formData.test_results?.date
+                ? formData.test_results.date.split("T")[0]
+                : ""
+            }
             onChange={(e) => {
               // Convert date to ISO datetime string
               const dateValue = e.target.value;
-              const isoDateTime = dateValue ? new Date(dateValue).toISOString() : null;
+              const isoDateTime = dateValue
+                ? new Date(dateValue).toISOString()
+                : "";
               handleFieldChange("test_results.date", isoDateTime);
             }}
             disabled={loading}
@@ -1409,7 +2090,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="Name of Test"
             type="text"
             value={formData.test_results?.name_of_test || ""}
-            onChange={(e) => handleFieldChange("test_results.name_of_test", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange("test_results.name_of_test", e.target.value)
+            }
             disabled={loading}
           />
         </div>
@@ -1419,7 +2102,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="RS Score"
             type="text"
             value={formData.test_results?.rs || ""}
-            onChange={(e) => handleFieldChange("test_results.rs", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange("test_results.rs", e.target.value)
+            }
             disabled={loading}
           />
           <FormField
@@ -1427,7 +2112,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
             label="PR Score"
             type="text"
             value={formData.test_results?.pr || ""}
-            onChange={(e) => handleFieldChange("test_results.pr", e.target.value)}
+            onChange={(e) =>
+              handleFieldChange("test_results.pr", e.target.value)
+            }
             disabled={loading}
           />
         </div>
@@ -1436,7 +2123,9 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
           label="Description"
           type="textarea"
           value={formData.test_results?.description || ""}
-          onChange={(e) => handleFieldChange("test_results.description", e.target.value)}
+          onChange={(e) =>
+            handleFieldChange("test_results.description", e.target.value)
+          }
           disabled={loading}
         />
       </div>
@@ -1450,10 +2139,18 @@ export const InventoryForm: React.FC<InventoryFormProps> = ({ studentId, onSubmi
           label="Student signature (type your full name) *"
           type="text"
           value={formData.student_signature}
-          onChange={(e) => handleFieldChange("student_signature", e.target.value)}
+          onChange={(e) =>
+            handleFieldChange("student_signature", e.target.value)
+          }
+          onBlur={(e) => handleFieldBlur("student_signature", e.target.value)}
           required
           disabled={loading}
           placeholder="Type your full name as your signature"
+          error={
+            touchedFields.student_signature
+              ? validationErrors.student_signature
+              : undefined
+          }
         />
       </div>
 

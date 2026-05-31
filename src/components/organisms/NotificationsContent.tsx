@@ -35,7 +35,7 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
     error,
     pagination,
     unreadCount,
-    socketConnected,
+    // socketConnected,
     stats,
     markAsRead,
     markAllAsRead,
@@ -242,7 +242,7 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
 
           <div className="flex items-center gap-2">
             {/* Connection Status */}
-            <div
+            {/* <div
               className={cn(
                 "flex items-center gap-2 px-2 py-1 rounded-full text-xs",
                 socketConnected ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
@@ -255,7 +255,7 @@ export const NotificationsContent: React.FC<NotificationsContentProps> = ({ clas
                 )}
               />
               {socketConnected ? "Live" : "Offline"}
-            </div>
+            </div> */}
 
             <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading}>
               <RefreshCw className={cn("w-4 h-4", loading && "animate-spin")} />

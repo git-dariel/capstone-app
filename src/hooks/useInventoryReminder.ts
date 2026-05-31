@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "./useAuth";
-import { InventoryService, type GetInventoryResponse } from "@/services/inventory.service";
-import { calculateInventoryReminder, type InventoryReminderInfo } from "@/utils/inventoryReminder";
+import { InventoryService } from "@/services/inventory.service";
+import { type InventoryReminderInfo } from "@/utils/inventoryReminder";
 
 interface UseInventoryReminderState {
-  inventory: GetInventoryResponse | null;
   reminderInfo: InventoryReminderInfo | null;
+  message: string | null;
+  severity: "low" | "medium" | "high" | "critical" | null;
+  timeRemaining: string | null;
   loading: boolean;
   error: string | null;
   showReminder: boolean;
@@ -14,8 +16,10 @@ interface UseInventoryReminderState {
 export const useInventoryReminder = () => {
   const { student } = useAuth();
   const [state, setState] = useState<UseInventoryReminderState>({
-    inventory: null,
     reminderInfo: null,
+    message: null,
+    severity: null,
+    timeRemaining: null,
     loading: true,
     error: null,
     showReminder: false,
@@ -34,48 +38,61 @@ export const useInventoryReminder = () => {
     try {
       setState((prev) => ({ ...prev, loading: true, error: null }));
 
-      const inventory = await InventoryService.getInventoryByStudentId(student.id);
+      // Fetch reminder information from API
+      const reminderData = await InventoryService.getReminderInfo(student.id);
 
-      if (!inventory) {
+      // Check if we should show the reminder
+      // Only show if needs update and user hasn't dismissed it recently
+      const lastDismissed = localStorage.getItem(
+        `inventory-reminder-dismissed-${student.id}`,
+      );
+      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+      const shouldShow =
+        reminderData.reminderInfo.needsUpdate &&
+        (!lastDismissed || parseInt(lastDismissed) < oneDayAgo);
+
+      setState((prev) => ({
+        ...prev,
+        reminderInfo: reminderData.reminderInfo,
+        message: reminderData.message,
+        severity: reminderData.severity,
+        timeRemaining: reminderData.timeRemaining,
+        loading: false,
+        showReminder: shouldShow,
+      }));
+    } catch (err: unknown) {
+      // If student doesn't have inventory yet, don't treat as error
+      if (err instanceof Error && err.message?.includes("not found")) {
         setState((prev) => ({
           ...prev,
-          inventory: null,
           reminderInfo: null,
+          message: null,
+          severity: null,
+          timeRemaining: null,
           loading: false,
           showReminder: false,
         }));
         return;
       }
 
-      const reminderInfo = calculateInventoryReminder(inventory);
-
-      // Check if we should show the reminder
-      // Only show if needs update and user hasn't dismissed it recently
-      const lastDismissed = localStorage.getItem(`inventory-reminder-dismissed-${student.id}`);
-      const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-      const shouldShow =
-        reminderInfo.needsUpdate && (!lastDismissed || parseInt(lastDismissed) < oneDayAgo);
-
-      setState((prev) => ({
-        ...prev,
-        inventory,
-        reminderInfo,
-        loading: false,
-        showReminder: shouldShow,
-      }));
-    } catch (err: any) {
       console.error("Error checking inventory reminder:", err);
       setState((prev) => ({
         ...prev,
         loading: false,
-        error: err.message || "Failed to check inventory reminder",
+        error:
+          err instanceof Error
+            ? err.message
+            : "Failed to check inventory reminder",
       }));
     }
   }, [student?.id]);
 
   const dismissReminder = useCallback(() => {
     if (student?.id) {
-      localStorage.setItem(`inventory-reminder-dismissed-${student.id}`, Date.now().toString());
+      localStorage.setItem(
+        `inventory-reminder-dismissed-${student.id}`,
+        Date.now().toString(),
+      );
     }
     setState((prev) => ({ ...prev, showReminder: false }));
   }, [student?.id]);
@@ -89,8 +106,10 @@ export const useInventoryReminder = () => {
   }, [checkInventoryReminder]);
 
   return {
-    inventory: state.inventory,
     reminderInfo: state.reminderInfo,
+    message: state.message,
+    severity: state.severity,
+    timeRemaining: state.timeRemaining,
     loading: state.loading,
     error: state.error,
     showReminder: state.showReminder,

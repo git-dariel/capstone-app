@@ -1,4 +1,9 @@
-import { Avatar, FormField, FormSelect, FullScreenLoading, Modal } from "@/components/atoms";
+import {
+  Avatar,
+  FormSelect,
+  FullScreenLoading,
+  Modal,
+} from "@/components/atoms";
 import { Button } from "@/components/ui";
 import { useAuth } from "@/hooks";
 import type {
@@ -6,15 +11,70 @@ import type {
   CreateAnnouncementRequest,
   UpdateAnnouncementRequest,
 } from "@/services";
-import { Download, FileText, Trash2, Upload, X } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Trash2,
+  Upload,
+  X,
+  AlertCircle,
+} from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { ConfirmationModal } from "./ConfirmationModal";
+
+// Validation constants
+const CHAR_LIMITS = {
+  title: 200,
+  description: 2000,
+};
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "text/plain",
+];
+
+// Helper function to validate special characters
+const validateSpecialCharacters = (value: string): boolean => {
+  // Allow letters, numbers, spaces, and common punctuation
+  // Block potentially harmful characters
+  const allowedPattern = /^[a-zA-Z0-9\s.,;:!?\-'"()[\]/\n\r\u00C0-\u017F]*$/;
+  return allowedPattern.test(value);
+};
+
+// Helper function to sanitize input
+const sanitizeInput = (value: string): string => {
+  // Remove potentially harmful characters
+  return value.replace(/[<>&]/g, "");
+};
+
+// Helper function to get remaining characters
+const getRemainingChars = (value: string, limit: number): number => {
+  return Math.max(0, limit - value.length);
+};
 
 interface AnnouncementFormData {
   title: string;
   description: string;
   status: "academic" | "career" | "wellness";
   attachments: File[];
+}
+
+interface ValidationErrors {
+  title?: string;
+  description?: string;
+  attachments?: string;
 }
 
 interface AnnouncementModalProps {
@@ -45,6 +105,9 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
     status: "academic",
     attachments: [],
   });
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>(
+    {},
+  );
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +124,15 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
   // Helper function to check if attachment is an image
   const isImageFile = (filename: string): boolean => {
     if (!filename) return false;
-    const imageExtensions = [".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg"];
+    const imageExtensions = [
+      ".jpg",
+      ".jpeg",
+      ".png",
+      ".gif",
+      ".bmp",
+      ".webp",
+      ".svg",
+    ];
     const lowerFilename = filename.toLowerCase();
     return (
       imageExtensions.some((ext) => lowerFilename.endsWith(ext)) ||
@@ -92,11 +163,58 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validate form
+    const errors: ValidationErrors = {};
+
+    // Validate title
+    if (!formData.title.trim()) {
+      errors.title = "Title is required";
+    } else if (formData.title.length > CHAR_LIMITS.title) {
+      errors.title = `Title must be ${CHAR_LIMITS.title} characters or less`;
+    } else if (!validateSpecialCharacters(formData.title)) {
+      errors.title = "Title contains invalid characters";
+    }
+
+    // Validate description
+    if (!formData.description.trim()) {
+      errors.description = "Description is required";
+    } else if (formData.description.length > CHAR_LIMITS.description) {
+      errors.description = `Description must be ${CHAR_LIMITS.description} characters or less`;
+    } else if (!validateSpecialCharacters(formData.description)) {
+      errors.description = "Description contains invalid characters";
+    }
+
+    // Validate attachments
+    if (formData.attachments.length > 0) {
+      const invalidFiles = formData.attachments.filter(
+        (file) => file.size > MAX_FILE_SIZE,
+      );
+      if (invalidFiles.length > 0) {
+        errors.attachments = `${invalidFiles.length} file(s) exceed the 10MB size limit`;
+      }
+
+      const unsupportedFiles = formData.attachments.filter(
+        (file) => !ALLOWED_FILE_TYPES.includes(file.type),
+      );
+      if (unsupportedFiles.length > 0) {
+        errors.attachments = `${unsupportedFiles.length} file(s) have unsupported file types`;
+      }
+    }
+
+    // If there are validation errors, set them and return
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Clear validation errors
+    setValidationErrors({});
+
     if (isViewMode && announcement) {
       // Update existing announcement
       const updateData: UpdateAnnouncementRequest = {
-        title: formData.title,
-        description: formData.description,
+        title: sanitizeInput(formData.title.trim()),
+        description: sanitizeInput(formData.description.trim()),
         status: formData.status,
         attachement: formData.attachments,
       };
@@ -104,8 +222,8 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
     } else {
       // Create new announcement
       const createData: CreateAnnouncementRequest = {
-        title: formData.title,
-        description: formData.description,
+        title: sanitizeInput(formData.title.trim()),
+        description: sanitizeInput(formData.description.trim()),
         status: formData.status,
         attachement: formData.attachments,
       };
@@ -113,17 +231,59 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
     }
   };
 
-  const handleChange = (name: keyof Omit<AnnouncementFormData, 'attachments'>, value: string) => {
+  const handleChange = (
+    name: keyof Omit<AnnouncementFormData, "attachments">,
+    value: string,
+  ) => {
+    // Clear validation error for this field
+    setValidationErrors((prev) => ({ ...prev, [name]: undefined }));
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setFormData((prev) => ({ 
-      ...prev, 
-      attachments: [...prev.attachments, ...files]
+
+    // Validate files
+    const errors: string[] = [];
+    const invalidSizeFiles: string[] = [];
+    const invalidTypeFiles: string[] = [];
+
+    files.forEach((file) => {
+      if (file.size > MAX_FILE_SIZE) {
+        invalidSizeFiles.push(file.name);
+      }
+      if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+        invalidTypeFiles.push(file.name);
+      }
+    });
+
+    if (invalidSizeFiles.length > 0) {
+      errors.push(`Files exceed 10MB limit: ${invalidSizeFiles.join(", ")}`);
+    }
+    if (invalidTypeFiles.length > 0) {
+      errors.push(`Unsupported file types: ${invalidTypeFiles.join(", ")}`);
+    }
+
+    if (errors.length > 0) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        attachments: errors.join(" | "),
+      }));
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    // Clear attachment errors if files are valid
+    setValidationErrors((prev) => ({ ...prev, attachments: undefined }));
+
+    setFormData((prev) => ({
+      ...prev,
+      attachments: [...prev.attachments, ...files],
     }));
-    
+
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -133,7 +293,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
   const removeFile = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
+      attachments: prev.attachments.filter((_, i) => i !== index),
     }));
   };
 
@@ -160,6 +320,8 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
       status: "academic",
       attachments: [],
     });
+    // Reset validation errors
+    setValidationErrors({});
     // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -215,7 +377,10 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto">
         {/* Backdrop */}
-        <div className="fixed inset-0 backdrop-blur-sm transition-all" onClick={onClose} />
+        <div
+          className="fixed inset-0 backdrop-blur-sm transition-all"
+          onClick={onClose}
+        />
 
         {/* Modal */}
         <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
@@ -225,7 +390,9 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
           >
             {/* Custom Header */}
             <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900">Post Details</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">
+                Post Details
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -262,10 +429,11 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                 <div className="mb-4">
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(
-                      announcement.status
+                      announcement.status,
                     )}`}
                   >
-                    {announcement.status.charAt(0).toUpperCase() + announcement.status.slice(1)}
+                    {announcement.status.charAt(0).toUpperCase() +
+                      announcement.status.slice(1)}
                   </span>
                 </div>
 
@@ -280,53 +448,68 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                 </div>
 
                 {/* Attachment Display */}
-                {announcement.attachement && announcement.attachement.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    {announcement.attachement.map((attachment, index) => (
-                      <div key={index}>
-                        {isImageFile(attachment.name) ? (
-                          <div className="rounded-lg overflow-hidden border border-gray-200">
-                            <img
-                              src={attachment.url}
-                              alt={attachment.name}
-                              className="w-full h-auto max-h-96 object-cover cursor-pointer"
-                              onClick={() => window.open(attachment.url, '_blank')}
-                              onError={(e) => {
-                                e.currentTarget.style.display = "none";
-                                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-                              }}
-                            />
-                            <div className="hidden bg-gray-100 p-4">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
-                                  <FileText className="w-6 h-6 text-gray-600" />
-                                </div>
-                                <div>
-                                  <p className="text-base font-medium text-gray-900">{attachment.name}</p>
-                                  <p className="text-sm text-gray-500">Click to view full size</p>
+                {announcement.attachement &&
+                  announcement.attachement.length > 0 && (
+                    <div className="mt-6 space-y-3">
+                      {announcement.attachement.map((attachment, index) => (
+                        <div key={index}>
+                          {isImageFile(attachment.name) ? (
+                            <div className="rounded-lg overflow-hidden border border-gray-200">
+                              <img
+                                src={attachment.url}
+                                alt={attachment.name}
+                                className="w-full h-auto max-h-96 object-cover cursor-pointer"
+                                onClick={() =>
+                                  window.open(attachment.url, "_blank")
+                                }
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                  e.currentTarget.nextElementSibling?.classList.remove(
+                                    "hidden",
+                                  );
+                                }}
+                              />
+                              <div className="hidden bg-gray-100 p-4">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
+                                    <FileText className="w-6 h-6 text-gray-600" />
+                                  </div>
+                                  <div>
+                                    <p className="text-base font-medium text-gray-900">
+                                      {attachment.name}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      Click to view full size
+                                    </p>
+                                  </div>
                                 </div>
                               </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div 
-                            className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors cursor-pointer"
-                            onClick={() => window.open(attachment.url, '_blank')}
-                          >
-                            <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
-                              <FileText className="w-6 h-6 text-gray-600" />
+                          ) : (
+                            <div
+                              className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center space-x-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                              onClick={() =>
+                                window.open(attachment.url, "_blank")
+                              }
+                            >
+                              <div className="w-12 h-12 bg-gray-300 rounded flex items-center justify-center">
+                                <FileText className="w-6 h-6 text-gray-600" />
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-base font-medium text-gray-900">
+                                  {attachment.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Click to download or view
+                                </p>
+                              </div>
+                              <Download className="w-5 h-5 text-gray-400" />
                             </div>
-                            <div className="flex-1">
-                              <p className="text-base font-medium text-gray-900">{attachment.name}</p>
-                              <p className="text-sm text-gray-500">Click to download or view</p>
-                            </div>
-                            <Download className="w-5 h-5 text-gray-400" />
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
 
               {/* Post Footer - Facebook-style */}
@@ -365,7 +548,12 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
         isLoading={loading}
         message={isViewMode ? "Updating announcement..." : "Working on it..."}
       />
-      <Modal isOpen={isOpen} onClose={handleClose} title={getModalTitle()} size="lg">
+      <Modal
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={getModalTitle()}
+        size="lg"
+      >
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-3 sm:px-4 py-3 rounded-lg text-xs sm:text-sm">
@@ -373,19 +561,51 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
             </div>
           )}
 
-          <FormField
-            id="title"
-            label="Announcement Title"
-            type="text"
-            value={formData.title}
-            onChange={(e) => handleChange("title", e.target.value)}
-            placeholder="Enter announcement title"
-            required
-            disabled={loading || isReadOnly}
-          />
+          <div className="space-y-2">
+            <div className="space-y-2">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Announcement Title <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="title"
+                type="text"
+                value={formData.title}
+                onChange={(e) => handleChange("title", e.target.value)}
+                placeholder="Enter announcement title"
+                required
+                disabled={loading || isReadOnly}
+                maxLength={CHAR_LIMITS.title}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              />
+            </div>
+            <div className="flex justify-between items-center">
+              {validationErrors.title && (
+                <p className="text-xs text-red-600 flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {validationErrors.title}
+                </p>
+              )}
+              <p
+                className={`text-xs ${
+                  formData.title.length > CHAR_LIMITS.title * 0.9
+                    ? "text-red-600 font-medium"
+                    : "text-gray-500"
+                } ml-auto`}
+              >
+                {getRemainingChars(formData.title, CHAR_LIMITS.title)}{" "}
+                characters remaining
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-2">
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="description"
+              className="block text-sm font-medium text-gray-700"
+            >
               Description
             </label>
             <textarea
@@ -396,8 +616,30 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
               required
               disabled={loading || isReadOnly}
               rows={4}
+              maxLength={CHAR_LIMITS.description}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             />
+            <div className="flex justify-between items-center">
+              {validationErrors.description && (
+                <p className="text-xs text-red-600 flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  {validationErrors.description}
+                </p>
+              )}
+              <p
+                className={`text-xs ${
+                  formData.description.length > CHAR_LIMITS.description * 0.9
+                    ? "text-red-600 font-medium"
+                    : "text-gray-500"
+                } ml-auto`}
+              >
+                {getRemainingChars(
+                  formData.description,
+                  CHAR_LIMITS.description,
+                )}{" "}
+                characters remaining
+              </p>
+            </div>
           </div>
 
           <FormSelect
@@ -414,7 +656,14 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
             <label className="block text-sm font-medium text-gray-700">
               Attachments (Optional)
             </label>
-            
+
+            {validationErrors.attachments && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg text-xs flex items-start">
+                <AlertCircle className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5" />
+                <span>{validationErrors.attachments}</span>
+              </div>
+            )}
+
             {/* File Input */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-primary-400 transition-colors">
               <input
@@ -430,7 +679,7 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
               <label
                 htmlFor="file-upload"
                 className={`cursor-pointer flex flex-col items-center justify-center py-4 ${
-                  loading || isReadOnly ? 'opacity-50 cursor-not-allowed' : ''
+                  loading || isReadOnly ? "opacity-50 cursor-not-allowed" : ""
                 }`}
               >
                 <Upload className="w-8 h-8 text-gray-400 mb-2" />
@@ -444,57 +693,71 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
             </div>
 
             {/* Existing Attachments (Edit Mode) */}
-            {isViewMode && announcement?.attachement && announcement.attachement.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">Current Attachments:</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {announcement.attachement.map((attachment, index) => (
-                    <div
-                      key={`existing-${index}`}
-                      className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-5 h-5 text-blue-500" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{attachment.name}</p>
-                          <p className="text-xs text-blue-600">Current attachment</p>
+            {isViewMode &&
+              announcement?.attachement &&
+              announcement.attachement.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-gray-700">
+                    Current Attachments:
+                  </h4>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {announcement.attachement.map((attachment, index) => (
+                      <div
+                        key={`existing-${index}`}
+                        className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-200"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <FileText className="w-5 h-5 text-blue-500" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {attachment.name}
+                            </p>
+                            <p className="text-xs text-blue-600">
+                              Current attachment
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(attachment.url, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-1 h-8 w-8"
-                          title="View/Download"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        {!isReadOnly && (
+                        <div className="flex items-center space-x-2">
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => {/* Handle remove existing attachment */}}
-                            disabled={loading}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
-                            title="Remove attachment"
+                            onClick={() =>
+                              window.open(attachment.url, "_blank")
+                            }
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-100 p-1 h-8 w-8"
+                            title="View/Download"
                           >
-                            <X className="w-4 h-4" />
+                            <Download className="w-4 h-4" />
                           </Button>
-                        )}
+                          {!isReadOnly && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                /* Handle remove existing attachment */
+                              }}
+                              disabled={loading}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 p-1 h-8 w-8"
+                              title="Remove attachment"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* Selected Files List */}
             {formData.attachments.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-sm font-medium text-gray-700">New Files to Upload:</h4>
+                <h4 className="text-sm font-medium text-gray-700">
+                  New Files to Upload:
+                </h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {formData.attachments.map((file, index) => (
                     <div
@@ -504,8 +767,12 @@ export const AnnouncementModal: React.FC<AnnouncementModalProps> = ({
                       <div className="flex items-center space-x-3">
                         <FileText className="w-5 h-5 text-gray-500" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {formatFileSize(file.size)}
+                          </p>
                         </div>
                       </div>
                       {!isReadOnly && (

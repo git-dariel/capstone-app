@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/atoms";
-import { Avatar } from "@/components/atoms";
+import { Avatar, ToastContainer } from "@/components/atoms";
 import type { Student } from "@/services/student.service";
 import { StudentService } from "@/services/student.service";
 import type { GetInventoryResponse } from "@/services/inventory.service";
@@ -29,8 +29,16 @@ import {
   X,
   Calendar,
 } from "lucide-react";
-import { InventoryService, ConsentService, UserService } from "@/services";
-import { useToast } from "@/hooks";
+import {
+  AnxietyService,
+  ConsentService,
+  DepressionService,
+  InventoryService,
+  StressService,
+  SuicideService,
+  UserService,
+} from "@/services";
+import { useAuth, useToast } from "@/hooks";
 import { Button } from "@/components/ui";
 
 interface StudentDetailsModalProps {
@@ -50,6 +58,7 @@ interface AssessmentHistory {
   riskLevel?: string;
   assessmentDate: string;
   totalScore?: number;
+  showResultToStudent?: boolean;
 }
 
 export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
@@ -57,7 +66,8 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   onClose,
   student,
 }) => {
-  const { addToast } = useToast();
+  const { user } = useAuth();
+  const { addToast, toasts, removeToast } = useToast();
 
   const [expandedSections, setExpandedSections] = useState<ExpandedSections>({
     studentDetails: true,
@@ -77,6 +87,10 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [generatingReport, setGeneratingReport] = useState(false);
+  const [isUpdatingPredictionVisibility, setIsUpdatingPredictionVisibility] = useState(false);
+  const [isUpdatingAssessmentVisibility, setIsUpdatingAssessmentVisibility] = useState<
+    Record<string, boolean>
+  >({});
 
   // Local student state for real-time updates
   const [currentStudentData, setCurrentStudentData] = useState<Student | null>(student || null);
@@ -93,7 +107,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   // Consultation notes management
   const [isAddingConsultationNote, setIsAddingConsultationNote] = useState(false);
   const [editingConsultationNoteIndex, setEditingConsultationNoteIndex] = useState<number | null>(
-    null
+    null,
   );
   const [newConsultationNoteData, setNewConsultationNoteData] = useState({
     title: "",
@@ -104,6 +118,65 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   useEffect(() => {
     setCurrentStudentData(student || null);
   }, [student]);
+
+  const buildAssessmentHistory = (studentData: Student | null) => {
+    const assessments: AssessmentHistory[] = [];
+
+    if (!studentData?.person?.users?.[0]) {
+      return assessments;
+    }
+
+    const userRecord = studentData.person.users[0];
+
+    userRecord.anxietyAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "anxiety",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.depressionAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "depression",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.stressAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "stress",
+        severityLevel: a.severityLevel,
+        assessmentDate: a.assessmentDate,
+        totalScore: a.totalScore,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    userRecord.suicideAssessments?.forEach((a) => {
+      assessments.push({
+        id: a.id,
+        type: "suicide",
+        riskLevel: a.riskLevel,
+        assessmentDate: a.assessmentDate,
+        showResultToStudent: a.showResultToStudent,
+      });
+    });
+
+    assessments.sort(
+      (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime(),
+    );
+
+    return assessments;
+  };
 
   // Fetch inventory and consent data when modal opens and student changes
   useEffect(() => {
@@ -119,66 +192,21 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
       setError(null);
 
       try {
-        const [inventory, consent] = await Promise.all([
+        const [inventory, consent, detailedStudent] = await Promise.all([
           InventoryService.getInventoryByStudentId(student.id).catch(() => null),
           ConsentService.getConsentByStudentId(student.id).catch(() => null),
+          StudentService.getStudentById(student.id, {
+            fields:
+              "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus,person.users.id,person.users.avatar,person.users.anxietyAssessments.id,person.users.anxietyAssessments.severityLevel,person.users.anxietyAssessments.assessmentDate,person.users.anxietyAssessments.totalScore,person.users.anxietyAssessments.showResultToStudent,person.users.depressionAssessments.id,person.users.depressionAssessments.severityLevel,person.users.depressionAssessments.assessmentDate,person.users.depressionAssessments.totalScore,person.users.depressionAssessments.showResultToStudent,person.users.stressAssessments.id,person.users.stressAssessments.severityLevel,person.users.stressAssessments.assessmentDate,person.users.stressAssessments.totalScore,person.users.stressAssessments.showResultToStudent,person.users.suicideAssessments.id,person.users.suicideAssessments.riskLevel,person.users.suicideAssessments.assessmentDate,person.users.suicideAssessments.showResultToStudent",
+          }).catch(() => null),
         ]);
 
         setInventoryData(inventory);
         setConsentData(consent);
 
-        // Extract assessment history from student data
-        const assessments: AssessmentHistory[] = [];
-
-        if (student.person?.users?.[0]) {
-          const user = student.person.users[0];
-
-          // Collect all assessments
-          user.anxietyAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "anxiety",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.depressionAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "depression",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.stressAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "stress",
-              severityLevel: a.severityLevel,
-              assessmentDate: a.assessmentDate,
-              totalScore: a.totalScore,
-            });
-          });
-
-          user.suicideAssessments?.forEach((a) => {
-            assessments.push({
-              id: a.id,
-              type: "suicide",
-              riskLevel: a.riskLevel,
-              assessmentDate: a.assessmentDate,
-            });
-          });
-        }
-
-        // Sort by date descending
-        assessments.sort(
-          (a, b) => new Date(b.assessmentDate).getTime() - new Date(a.assessmentDate).getTime()
-        );
-        setAssessmentHistory(assessments);
+        const activeStudentData = detailedStudent || student;
+        setCurrentStudentData(activeStudentData);
+        setAssessmentHistory(buildAssessmentHistory(activeStudentData));
       } catch (err) {
         console.error("Error fetching student data:", err);
         setError("Failed to load additional student information");
@@ -236,23 +264,6 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     return "text-gray-700 bg-gray-100 border-gray-300";
   };
 
-  const getRiskLevelColor = (level?: string) => {
-    if (!level) return "text-gray-700 bg-gray-100 border-gray-300";
-    const lower = level.toLowerCase();
-    switch (lower) {
-      case "low":
-        return "text-green-700 bg-green-100 border-green-300";
-      case "moderate":
-        return "text-yellow-700 bg-yellow-100 border-yellow-300";
-      case "high":
-        return "text-orange-700 bg-orange-100 border-orange-300";
-      case "critical":
-        return "text-red-700 bg-red-100 border-red-300";
-      default:
-        return "text-gray-700 bg-gray-100 border-gray-300";
-    }
-  };
-
   const getAssessmentTypeIcon = (type: string) => {
     switch (type) {
       case "anxiety":
@@ -307,6 +318,44 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
       });
     } finally {
       setGeneratingReport(false);
+    }
+  };
+
+  const handleTogglePredictionVisibility = async () => {
+    if (!inventoryData?.id) return;
+
+    try {
+      setIsUpdatingPredictionVisibility(true);
+      const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
+        showMlPredictionsToStudent: !inventoryData.showMlPredictionsToStudent,
+      });
+      let finalInventory = updatedInventory;
+      if (student?.id) {
+        const freshInventory = await InventoryService.getInventoryByStudentId(student.id);
+        if (freshInventory) {
+          finalInventory = freshInventory;
+          setInventoryData(freshInventory);
+        } else {
+          setInventoryData(updatedInventory);
+        }
+      } else {
+        setInventoryData(updatedInventory);
+      }
+      addToast({
+        type: "success",
+        title: "Visibility Updated",
+        message: finalInventory.showMlPredictionsToStudent
+          ? "ML predictions are now visible to the student."
+          : "ML predictions are now hidden from the student.",
+      });
+    } catch (error: any) {
+      addToast({
+        type: "error",
+        title: "Update Failed",
+        message: error.message || "Failed to update prediction visibility.",
+      });
+    } finally {
+      setIsUpdatingPredictionVisibility(false);
     }
   };
 
@@ -375,7 +424,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   const handleEditNote = async (
     noteId: string,
-    updatedData: { date?: string; incident?: string; remarks?: string }
+    updatedData: { date?: string; incident?: string; remarks?: string },
   ) => {
     if (!inventoryData?.id || !updatedData.incident?.trim()) {
       addToast({
@@ -391,7 +440,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
       const updatedNotes =
         inventoryData.significantNotes?.map((note) =>
-          note.id === noteId ? { ...note, ...updatedData } : note
+          note.id === noteId ? { ...note, ...updatedData } : note,
         ) || [];
 
       const updatedInventory = await InventoryService.updateInventory(inventoryData.id, {
@@ -479,14 +528,96 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
     try {
       const freshStudent = await StudentService.getStudentById(student.id, {
         fields:
-          "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus",
+          "id,studentNumber,program,year,status,notes,createdAt,updatedAt,person.id,person.firstName,person.lastName,person.middleName,person.suffix,person.email,person.contactNumber,person.gender,person.birthDate,person.birthPlace,person.age,person.religion,person.civilStatus,person.users.id,person.users.avatar,person.users.anxietyAssessments.id,person.users.anxietyAssessments.severityLevel,person.users.anxietyAssessments.assessmentDate,person.users.anxietyAssessments.totalScore,person.users.anxietyAssessments.showResultToStudent,person.users.depressionAssessments.id,person.users.depressionAssessments.severityLevel,person.users.depressionAssessments.assessmentDate,person.users.depressionAssessments.totalScore,person.users.depressionAssessments.showResultToStudent,person.users.stressAssessments.id,person.users.stressAssessments.severityLevel,person.users.stressAssessments.assessmentDate,person.users.stressAssessments.totalScore,person.users.stressAssessments.showResultToStudent,person.users.suicideAssessments.id,person.users.suicideAssessments.riskLevel,person.users.suicideAssessments.assessmentDate,person.users.suicideAssessments.showResultToStudent",
       });
 
       if (freshStudent) {
         setCurrentStudentData(freshStudent);
+        setAssessmentHistory(buildAssessmentHistory(freshStudent));
       }
     } catch (error) {
       console.error("Error refreshing student data:", error);
+    }
+  };
+
+  const canToggleAssessmentVisibility =
+    user?.type === "guidance" || user?.type === "admin" || user?.type === "super_admin";
+
+  const handleToggleAssessmentVisibility = async (assessment: AssessmentHistory) => {
+    if (!canToggleAssessmentVisibility) return;
+
+    const nextVisibility = !assessment.showResultToStudent;
+    setIsUpdatingAssessmentVisibility((prev) => ({
+      ...prev,
+      [assessment.id]: true,
+    }));
+
+    try {
+      let updatedVisibility = nextVisibility;
+
+      switch (assessment.type) {
+        case "anxiety": {
+          const updated = await AnxietyService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "depression": {
+          const updated = await DepressionService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "stress": {
+          const updated = await StressService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        case "suicide": {
+          const updated = await SuicideService.updateAssessment(assessment.id, {
+            showResultToStudent: nextVisibility,
+          });
+          updatedVisibility = updated.showResultToStudent ?? nextVisibility;
+          break;
+        }
+        default:
+          break;
+      }
+
+      setAssessmentHistory((prev) =>
+        prev.map((item) =>
+          item.id === assessment.id
+            ? {
+                ...item,
+                showResultToStudent: updatedVisibility,
+              }
+            : item,
+        ),
+      );
+
+      addToast({
+        type: "success",
+        title: "Visibility Updated",
+        message: updatedVisibility
+          ? "Assessment results are now visible to the student."
+          : "Assessment results are now hidden from the student.",
+      });
+    } catch (error: any) {
+      console.error("Error updating assessment visibility:", error);
+      addToast({
+        type: "error",
+        title: "Error",
+        message: error.message || "Failed to update assessment visibility.",
+      });
+    } finally {
+      setIsUpdatingAssessmentVisibility((prev) => ({
+        ...prev,
+        [assessment.id]: false,
+      }));
     }
   };
 
@@ -543,7 +674,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
   const handleEditConsultationNote = async (
     noteIndex: number,
-    updatedData: { title?: string; content?: string }
+    updatedData: { title?: string; content?: string },
   ) => {
     if (!currentStudentData?.id) return;
 
@@ -648,7 +779,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
 
     // Sort by createdAt date (most recent first) and return the first one
     const sortedPredictions = [...inventoryData.mentalHealthPredictions].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
     return sortedPredictions[0];
@@ -659,6 +790,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="" size="full">
       <div className="space-y-4 h-full overflow-y-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+        <ToastContainer toasts={toasts} onDismiss={removeToast} />
         {/* Student Header Card - Mobile Responsive */}
         <div className="bg-gradient-to-r from-primary-50 to-primary-100 border border-primary-200 rounded-lg p-4 sm:p-5 md:p-6 mb-4 sm:mb-5 md:mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 sm:gap-5 md:gap-6">
@@ -708,28 +840,365 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   </p>
                 </div>
                 <div
-                  className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${
-                    latestPrediction?.mentalHealthRisk?.level
-                      ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level)
-                          .replace("text-", "border-")
-                          .replace("bg-", "border-")
-                          .split(" ")[2]
-                      : "border-gray-300"
-                  }`}
+                  className={`bg-white bg-opacity-70 rounded-lg p-2 sm:p-3 lg:p-4 border border-opacity-50 ${(() => {
+                    // Use mlPredictions for risk level display
+                    if (!latestPrediction?.mlPredictions) return "border-gray-300";
+
+                    const mlPredictions = latestPrediction.mlPredictions;
+
+                    // Check if all low risk
+                    if (
+                      "message" in mlPredictions &&
+                      "status" in mlPredictions &&
+                      (mlPredictions as any).status === "all_low_risk"
+                    ) {
+                      return "border-green-300";
+                    }
+
+                    // Helper to check risk level
+                    const isHighRisk = (condition: any): boolean => {
+                      if (!condition) return false;
+                      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                      const prediction = condition.prediction?.toLowerCase() || "";
+                      return riskLevel.includes("high") || prediction.includes("high");
+                    };
+
+                    const isModerateRisk = (condition: any): boolean => {
+                      if (!condition) return false;
+                      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                      const prediction = condition.prediction?.toLowerCase() || "";
+                      return (
+                        (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                        !isHighRisk(condition)
+                      );
+                    };
+
+                    // Categorize conditions
+                    const conditions = [
+                      { name: "depression", data: mlPredictions.depression },
+                      { name: "anxiety", data: mlPredictions.anxiety },
+                      { name: "stress", data: mlPredictions.stress },
+                    ].filter((c) => c.data);
+
+                    let highRiskCount = 0;
+                    let moderateRiskCount = 0;
+                    let lowRiskCount = 0;
+
+                    conditions.forEach((c) => {
+                      if (isHighRisk(c.data)) {
+                        highRiskCount++;
+                      } else if (isModerateRisk(c.data)) {
+                        moderateRiskCount++;
+                      } else {
+                        lowRiskCount++;
+                      }
+                    });
+
+                    // Determine selected category
+                    let selectedCondition: any = null;
+                    if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                      selectedCondition =
+                        conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                        conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                        conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                    } else if (
+                      moderateRiskCount > highRiskCount &&
+                      moderateRiskCount > lowRiskCount
+                    ) {
+                      selectedCondition =
+                        conditions.find((c) => c.name === "depression" && isModerateRisk(c.data)) ||
+                        conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                        conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                    } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                      selectedCondition =
+                        conditions.find(
+                          (c) =>
+                            c.name === "depression" &&
+                            !isHighRisk(c.data) &&
+                            !isModerateRisk(c.data),
+                        ) ||
+                        conditions.find(
+                          (c) =>
+                            c.name === "anxiety" && !isHighRisk(c.data) && !isModerateRisk(c.data),
+                        ) ||
+                        conditions.find(
+                          (c) =>
+                            c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
+                        );
+                    } else {
+                      // Equal counts - prioritize high > moderate > low
+                      if (highRiskCount > 0) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (moderateRiskCount > 0) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression") ||
+                          conditions.find((c) => c.name === "anxiety") ||
+                          conditions.find((c) => c.name === "stress");
+                      }
+                    }
+
+                    if (!selectedCondition?.data) return "border-gray-300";
+
+                    const riskLevel = selectedCondition.data.riskLevel?.toLowerCase() || "";
+                    if (riskLevel.includes("high")) return "border-red-300";
+                    if (riskLevel.includes("moderate")) return "border-yellow-300";
+                    return "border-green-300";
+                  })()}`}
                 >
                   <p className="text-[10px] sm:text-xs font-semibold text-primary-600 uppercase tracking-wide truncate">
                     Mental Health Risk Level
                   </p>
                   <p
-                    className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${
-                      latestPrediction?.mentalHealthRisk?.level
-                        ? getRiskLevelColor(latestPrediction.mentalHealthRisk.level).split(" ")[0]
-                        : "text-gray-900"
-                    }`}
+                    className={`text-sm sm:text-lg lg:text-xl font-bold truncate ${(() => {
+                      // Use mlPredictions for risk level display
+                      if (!latestPrediction?.mlPredictions) return "text-gray-900";
+
+                      const mlPredictions = latestPrediction.mlPredictions;
+
+                      // Check if all low risk
+                      if (
+                        "message" in mlPredictions &&
+                        "status" in mlPredictions &&
+                        (mlPredictions as any).status === "all_low_risk"
+                      ) {
+                        return "text-green-900";
+                      }
+
+                      // Helper to check risk level
+                      const isHighRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return riskLevel.includes("high") || prediction.includes("high");
+                      };
+
+                      const isModerateRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return (
+                          (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                          !isHighRisk(condition)
+                        );
+                      };
+
+                      // Categorize conditions
+                      const conditions = [
+                        { name: "depression", data: mlPredictions.depression },
+                        { name: "anxiety", data: mlPredictions.anxiety },
+                        { name: "stress", data: mlPredictions.stress },
+                      ].filter((c) => c.data);
+
+                      let highRiskCount = 0;
+                      let moderateRiskCount = 0;
+                      let lowRiskCount = 0;
+
+                      conditions.forEach((c) => {
+                        if (isHighRisk(c.data)) {
+                          highRiskCount++;
+                        } else if (isModerateRisk(c.data)) {
+                          moderateRiskCount++;
+                        } else {
+                          lowRiskCount++;
+                        }
+                      });
+
+                      // Determine selected category
+                      let selectedCondition: any = null;
+                      if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (
+                        moderateRiskCount > highRiskCount &&
+                        moderateRiskCount > lowRiskCount
+                      ) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) =>
+                              c.name === "depression" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "anxiety" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
+                          );
+                      } else {
+                        // Equal counts - prioritize high > moderate > low
+                        if (highRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                        } else if (moderateRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find(
+                              (c) => c.name === "depression" && isModerateRisk(c.data),
+                            ) ||
+                            conditions.find(
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data),
+                            ) ||
+                            conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                        } else {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression") ||
+                            conditions.find((c) => c.name === "anxiety") ||
+                            conditions.find((c) => c.name === "stress");
+                        }
+                      }
+
+                      if (!selectedCondition?.data) return "text-gray-900";
+
+                      const riskLevel = selectedCondition.data.riskLevel?.toLowerCase() || "";
+                      if (riskLevel.includes("high")) return "text-red-900";
+                      if (riskLevel.includes("moderate")) return "text-yellow-900";
+                      return "text-green-900";
+                    })()}`}
                   >
-                    {latestPrediction?.mentalHealthRisk?.level
-                      ? latestPrediction.mentalHealthRisk.level.toUpperCase()
-                      : "N/A"}
+                    {(() => {
+                      // Use mlPredictions for risk level display
+                      if (!latestPrediction?.mlPredictions) return "N/A";
+
+                      const mlPredictions = latestPrediction.mlPredictions;
+
+                      // Check if all low risk
+                      if (
+                        "message" in mlPredictions &&
+                        "status" in mlPredictions &&
+                        (mlPredictions as any).status === "all_low_risk"
+                      ) {
+                        return "LOW RISK";
+                      }
+
+                      // Helper to check risk level
+                      const isHighRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return riskLevel.includes("high") || prediction.includes("high");
+                      };
+
+                      const isModerateRisk = (condition: any): boolean => {
+                        if (!condition) return false;
+                        const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                        const prediction = condition.prediction?.toLowerCase() || "";
+                        return (
+                          (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+                          !isHighRisk(condition)
+                        );
+                      };
+
+                      // Categorize conditions
+                      const conditions = [
+                        { name: "depression", data: mlPredictions.depression },
+                        { name: "anxiety", data: mlPredictions.anxiety },
+                        { name: "stress", data: mlPredictions.stress },
+                      ].filter((c) => c.data);
+
+                      let highRiskCount = 0;
+                      let moderateRiskCount = 0;
+                      let lowRiskCount = 0;
+
+                      conditions.forEach((c) => {
+                        if (isHighRisk(c.data)) {
+                          highRiskCount++;
+                        } else if (isModerateRisk(c.data)) {
+                          moderateRiskCount++;
+                        } else {
+                          lowRiskCount++;
+                        }
+                      });
+
+                      // Determine selected category
+                      let selectedCondition: any = null;
+                      if (highRiskCount > moderateRiskCount && highRiskCount > lowRiskCount) {
+                        selectedCondition =
+                          conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                      } else if (
+                        moderateRiskCount > highRiskCount &&
+                        moderateRiskCount > lowRiskCount
+                      ) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) => c.name === "depression" && isModerateRisk(c.data),
+                          ) ||
+                          conditions.find((c) => c.name === "anxiety" && isModerateRisk(c.data)) ||
+                          conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                      } else if (lowRiskCount > highRiskCount && lowRiskCount > moderateRiskCount) {
+                        selectedCondition =
+                          conditions.find(
+                            (c) =>
+                              c.name === "depression" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "anxiety" &&
+                              !isHighRisk(c.data) &&
+                              !isModerateRisk(c.data),
+                          ) ||
+                          conditions.find(
+                            (c) =>
+                              c.name === "stress" && !isHighRisk(c.data) && !isModerateRisk(c.data),
+                          );
+                      } else {
+                        // Equal counts - prioritize high > moderate > low
+                        if (highRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "anxiety" && isHighRisk(c.data)) ||
+                            conditions.find((c) => c.name === "stress" && isHighRisk(c.data));
+                        } else if (moderateRiskCount > 0) {
+                          selectedCondition =
+                            conditions.find(
+                              (c) => c.name === "depression" && isModerateRisk(c.data),
+                            ) ||
+                            conditions.find(
+                              (c) => c.name === "anxiety" && isModerateRisk(c.data),
+                            ) ||
+                            conditions.find((c) => c.name === "stress" && isModerateRisk(c.data));
+                        } else {
+                          selectedCondition =
+                            conditions.find((c) => c.name === "depression") ||
+                            conditions.find((c) => c.name === "anxiety") ||
+                            conditions.find((c) => c.name === "stress");
+                        }
+                      }
+
+                      if (!selectedCondition?.data) return "N/A";
+
+                      const riskLevel =
+                        selectedCondition.data.riskLevel || selectedCondition.data.prediction || "";
+                      return riskLevel.toUpperCase() || "N/A";
+                    })()}
                   </p>
                 </div>
               </div>
@@ -1170,7 +1639,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                     >
                                       {hobby}
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -1412,14 +1881,42 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                           {assessment.severityLevel || assessment.riskLevel ? (
                             <span
                               className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getSeverityColor(
-                                assessment.severityLevel || assessment.riskLevel
+                                assessment.severityLevel || assessment.riskLevel,
                               )}`}
                             >
                               {formatSeverityLabel(
-                                assessment.severityLevel || assessment.riskLevel || "Unknown"
+                                assessment.severityLevel || assessment.riskLevel || "Unknown",
                               )}
                             </span>
                           ) : null}
+                          <span
+                            className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
+                              assessment.showResultToStudent
+                                ? "bg-green-100 text-green-800 border-green-300"
+                                : "bg-gray-100 text-gray-700 border-gray-300"
+                            }`}
+                          >
+                            {assessment.showResultToStudent ? "Visible" : "Hidden"}
+                          </span>
+                          {canToggleAssessmentVisibility && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleAssessmentVisibility(assessment)}
+                              disabled={isUpdatingAssessmentVisibility[assessment.id]}
+                              className={
+                                assessment.showResultToStudent
+                                  ? "border-green-300 text-green-700 hover:bg-green-50"
+                                  : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }
+                            >
+                              {isUpdatingAssessmentVisibility[assessment.id]
+                                ? "Updating..."
+                                : assessment.showResultToStudent
+                                  ? "Hide from Student"
+                                  : "Show to Student"}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1428,7 +1925,7 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
               </CollapsibleSection>
             )}
 
-            {/* Mental Health Predictions Section */}
+            {/* Mental Health Predictions Section - ML Predictions Only */}
             {inventoryData?.mentalHealthPredictions &&
               inventoryData.mentalHealthPredictions.length > 0 && (
                 <CollapsibleSection
@@ -1437,10 +1934,41 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                   isExpanded={expandedSections.mentalHealthPredictions}
                   onToggle={() => toggleSection("mentalHealthPredictions")}
                 >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                    <div className="text-xs sm:text-sm text-gray-600">
+                      Student visibility is currently
+                      <span
+                        className={`ml-2 inline-flex items-center px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${
+                          inventoryData.showMlPredictionsToStudent
+                            ? "bg-green-100 text-green-800 border-green-300"
+                            : "bg-gray-100 text-gray-700 border-gray-300"
+                        }`}
+                      >
+                        {inventoryData.showMlPredictionsToStudent ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleTogglePredictionVisibility}
+                      disabled={isUpdatingPredictionVisibility}
+                      className={
+                        inventoryData.showMlPredictionsToStudent
+                          ? "border-green-300 text-green-700 hover:bg-green-50"
+                          : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                      }
+                    >
+                      {isUpdatingPredictionVisibility
+                        ? "Updating..."
+                        : inventoryData.showMlPredictionsToStudent
+                          ? "Hide from Student"
+                          : "Show to Student"}
+                    </Button>
+                  </div>
                   <div className="space-y-4">
                     {[...inventoryData.mentalHealthPredictions]
                       .sort(
-                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
                       )
                       .map((prediction, index) => (
                         <div
@@ -1465,102 +1993,426 @@ export const StudentDetailsModal: React.FC<StudentDetailsModalProps> = ({
                                 {formatTime(prediction.createdAt)}
                               </p>
                             </div>
-                            <div className="flex items-center space-x-2 flex-wrap gap-2">
-                              <span
-                                className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold border ${getRiskLevelColor(
-                                  prediction.mentalHealthRisk?.level
-                                )}`}
-                              >
-                                {prediction.mentalHealthRisk?.level?.toUpperCase() || "UNKNOWN"}
-                              </span>
-                              {prediction.mentalHealthRisk?.needsAttention && (
-                                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-300">
-                                  ⚠️ Needs Attention
-                                </span>
-                              )}
-                            </div>
                           </div>
 
-                          {/* Academic Performance Outlook */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                            <div>
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
-                                Confidence Level
-                              </label>
-                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900 font-medium">
-                                {prediction.confidence
-                                  ? `${(prediction.confidence * 100).toFixed(1)}%`
-                                  : "N/A"}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Risk Description */}
-                          {prediction.mentalHealthRisk?.description && (
+                          {/* Machine Learning Predictions Section */}
+                          {prediction.mlPredictions ? (
                             <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-1">
-                                Risk Assessment
-                              </label>
-                              <div className="bg-blue-100 rounded-md p-2 text-[10px] sm:text-xs text-blue-900">
-                                {prediction.mentalHealthRisk.description}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Risk Factors */}
-                          {prediction.riskFactors && prediction.riskFactors.length > 0 && (
-                            <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                Risk Factors ({prediction.riskFactors.length})
-                              </label>
-                              <div className="flex flex-wrap gap-1">
-                                {prediction.riskFactors.map((factor, factorIndex) => (
-                                  <span
-                                    key={factorIndex}
-                                    className="inline-flex items-center px-2 py-1 rounded-full text-[8px] sm:text-[10px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300"
-                                  >
-                                    {factor}
+                              <div className="flex items-center space-x-2 mb-3">
+                                <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                                <h5 className="text-sm sm:text-base font-semibold text-gray-900">
+                                  Machine Learning Predictions
+                                </h5>
+                                {prediction.mlPredictions.trainingDataSize && (
+                                  <span className="text-[8px] sm:text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                                    Trained on {prediction.mlPredictions.trainingDataSize} students
                                   </span>
-                                ))}
+                                )}
                               </div>
-                            </div>
-                          )}
 
-                          {/* Recommendations */}
-                          {prediction.recommendations && prediction.recommendations.length > 0 && (
-                            <div className="mb-3">
-                              <label className="block text-[10px] sm:text-xs font-medium text-blue-700 mb-2">
-                                Recommendations ({prediction.recommendations.length})
-                              </label>
-                              <div className="bg-green-50 border border-green-200 rounded-md p-2">
-                                <ul className="space-y-1">
-                                  {prediction.recommendations.map((rec, recIndex) => (
-                                    <li
-                                      key={recIndex}
-                                      className="text-[10px] sm:text-xs text-green-800 flex items-start"
+                              {/* Check if all low risk (positive message) */}
+                              {(() => {
+                                const mlPredictions = prediction.mlPredictions;
+                                // Check if it's the positive message format (all low risk)
+                                if (
+                                  mlPredictions &&
+                                  "message" in mlPredictions &&
+                                  "status" in mlPredictions &&
+                                  (mlPredictions as any).status === "all_low_risk"
+                                ) {
+                                  const formattedML = mlPredictions as any;
+                                  return (
+                                    <div className="bg-green-50 rounded-lg p-3 sm:p-4 border border-green-200 mb-3">
+                                      <div className="flex items-start space-x-2 mb-2">
+                                        <span className="text-green-600 font-bold text-base sm:text-lg">
+                                          ✅
+                                        </span>
+                                        <div className="flex-1">
+                                          <p className="text-xs sm:text-sm font-medium text-green-900 mb-2">
+                                            {typeof formattedML.message === "string"
+                                              ? formattedML.message
+                                              : "Great news! Based on our machine learning analysis of your profile, you are not prone to anxiety, depression, or stress."}
+                                          </p>
+                                          {/* Show risk levels for each condition */}
+                                          {(formattedML.anxiety ||
+                                            formattedML.depression ||
+                                            formattedML.stress) && (
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                                              {formattedML.anxiety && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Anxiety
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.anxiety.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {formattedML.depression && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Depression
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.depression.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              {formattedML.stress && (
+                                                <div className="bg-white rounded p-2">
+                                                  <div className="text-[8px] sm:text-[10px] text-gray-600">
+                                                    Stress
+                                                  </div>
+                                                  <div className="text-[10px] sm:text-xs font-medium text-green-700 capitalize">
+                                                    {formattedML.stress.riskLevel || "Low Risk"}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                // Helper function to check if a condition is High Risk (case-insensitive)
+                                const isConditionHighRisk = (condition: any): boolean => {
+                                  if (!condition) return false;
+                                  const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                                  const prediction = condition.prediction?.toLowerCase() || "";
+                                  return riskLevel.includes("high") || prediction.includes("high");
+                                };
+
+                                // Helper function to check if a condition is Moderate Risk (case-insensitive)
+                                const isConditionModerateRisk = (condition: any): boolean => {
+                                  if (!condition) return false;
+                                  const riskLevel = condition.riskLevel?.toLowerCase() || "";
+                                  const prediction = condition.prediction?.toLowerCase() || "";
+                                  return (
+                                    (riskLevel.includes("moderate") ||
+                                      prediction.includes("moderate")) &&
+                                    !isConditionHighRisk(condition)
+                                  );
+                                };
+
+                                // Categorize all conditions
+                                const conditions = [
+                                  { name: "depression", data: mlPredictions.depression },
+                                  { name: "anxiety", data: mlPredictions.anxiety },
+                                  { name: "stress", data: mlPredictions.stress },
+                                ].filter((c) => c.data);
+
+                                const highRiskConditions: { name: string; data: any }[] = [];
+                                const moderateRiskConditions: { name: string; data: any }[] = [];
+                                const lowRiskConditions: { name: string; data: any }[] = [];
+
+                                conditions.forEach((c) => {
+                                  if (isConditionHighRisk(c.data)) {
+                                    highRiskConditions.push(c);
+                                  } else if (isConditionModerateRisk(c.data)) {
+                                    moderateRiskConditions.push(c);
+                                  } else {
+                                    lowRiskConditions.push(c);
+                                  }
+                                });
+
+                                // Determine which category to pick from based on count
+                                let conditionData;
+                                let conditionName;
+                                let isHighRisk;
+
+                                if (
+                                  highRiskConditions.length > moderateRiskConditions.length &&
+                                  highRiskConditions.length > lowRiskConditions.length
+                                ) {
+                                  // High Risk has the most - pick from High Risk
+                                  isHighRisk = true;
+                                  const selectedCondition =
+                                    highRiskConditions.find((c) => c.name === "depression") ||
+                                    highRiskConditions.find((c) => c.name === "anxiety") ||
+                                    highRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else if (
+                                  moderateRiskConditions.length > highRiskConditions.length &&
+                                  moderateRiskConditions.length > lowRiskConditions.length
+                                ) {
+                                  // Moderate Risk has the most - pick from Moderate Risk
+                                  isHighRisk = false;
+                                  const selectedCondition =
+                                    moderateRiskConditions.find((c) => c.name === "depression") ||
+                                    moderateRiskConditions.find((c) => c.name === "anxiety") ||
+                                    moderateRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else if (
+                                  lowRiskConditions.length > highRiskConditions.length &&
+                                  lowRiskConditions.length > moderateRiskConditions.length
+                                ) {
+                                  // Low Risk has the most - pick from Low Risk
+                                  isHighRisk = false;
+                                  const selectedCondition =
+                                    lowRiskConditions.find((c) => c.name === "depression") ||
+                                    lowRiskConditions.find((c) => c.name === "anxiety") ||
+                                    lowRiskConditions.find((c) => c.name === "stress");
+                                  conditionData = selectedCondition?.data;
+                                  conditionName = selectedCondition?.name;
+                                } else {
+                                  // Counts are equal or tied - use priority: High Risk > Moderate Risk > Low Risk
+                                  if (highRiskConditions.length > 0) {
+                                    isHighRisk = true;
+                                    const selectedCondition =
+                                      highRiskConditions.find((c) => c.name === "depression") ||
+                                      highRiskConditions.find((c) => c.name === "anxiety") ||
+                                      highRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  } else if (moderateRiskConditions.length > 0) {
+                                    isHighRisk = false;
+                                    const selectedCondition =
+                                      moderateRiskConditions.find((c) => c.name === "depression") ||
+                                      moderateRiskConditions.find((c) => c.name === "anxiety") ||
+                                      moderateRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  } else {
+                                    isHighRisk = false;
+                                    const selectedCondition =
+                                      lowRiskConditions.find((c) => c.name === "depression") ||
+                                      lowRiskConditions.find((c) => c.name === "anxiety") ||
+                                      lowRiskConditions.find((c) => c.name === "stress");
+                                    conditionData = selectedCondition?.data;
+                                    conditionName = selectedCondition?.name;
+                                  }
+                                }
+
+                                if (!conditionData) return null;
+
+                                // Ensure riskPercentage is set (use confidence if available)
+                                const riskPercentage =
+                                  conditionData.riskPercentage ||
+                                  (conditionData.confidence
+                                    ? `${(conditionData.confidence * 100).toFixed(1)}%`
+                                    : undefined);
+
+                                const isModerateRisk =
+                                  conditionData.riskLevel?.toLowerCase().includes("moderate") ||
+                                  conditionData.prediction?.toLowerCase().includes("moderate");
+
+                                return (
+                                  <div className="space-y-3">
+                                    {/* Primary Concern Header */}
+                                    <div
+                                      className={`rounded-lg p-3 sm:p-4 border ${
+                                        isHighRisk
+                                          ? "bg-red-50 border-red-200"
+                                          : isModerateRisk
+                                            ? "bg-yellow-50 border-yellow-200"
+                                            : "bg-blue-50 border-blue-200"
+                                      }`}
                                     >
-                                      <span className="text-green-600 mr-1 flex-shrink-0">•</span>
-                                      {rec}
-                                    </li>
-                                  ))}
-                                </ul>
+                                      <div className="flex items-center justify-between mb-2">
+                                        <span
+                                          className={`text-sm sm:text-base font-semibold capitalize ${
+                                            isHighRisk
+                                              ? "text-red-900"
+                                              : isModerateRisk
+                                                ? "text-yellow-900"
+                                                : "text-blue-900"
+                                          }`}
+                                        >
+                                          {conditionName}
+                                        </span>
+                                        <span
+                                          className={`px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                                            isHighRisk
+                                              ? "bg-red-100 text-red-800"
+                                              : isModerateRisk
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : "bg-green-100 text-green-800"
+                                          }`}
+                                        >
+                                          {conditionData.riskLevel || conditionData.prediction}
+                                        </span>
+                                      </div>
+
+                                      {/* Risk Percentage */}
+                                      {riskPercentage && (
+                                        <div className="mb-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
+                                            }`}
+                                          >
+                                            Risk Percentage
+                                          </label>
+                                          <div
+                                            className={`text-[10px] sm:text-xs rounded px-2 py-1 ${
+                                              isHighRisk
+                                                ? "text-red-900 bg-red-100"
+                                                : isModerateRisk
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
+                                            }`}
+                                          >
+                                            {riskPercentage}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Explanation */}
+                                      {conditionData.explanation && (
+                                        <div className="mt-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
+                                            }`}
+                                          >
+                                            Explanation
+                                          </label>
+                                          <div
+                                            className={`text-[10px] sm:text-xs rounded p-2 ${
+                                              isHighRisk
+                                                ? "text-red-900 bg-red-100"
+                                                : isModerateRisk
+                                                  ? "text-yellow-900 bg-yellow-100"
+                                                  : "text-blue-900 bg-blue-100"
+                                            }`}
+                                          >
+                                            {conditionData.explanation}
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* Model Basis */}
+                                      {conditionData.modelBasis && (
+                                        <div className="mt-2">
+                                          <label
+                                            className={`text-[8px] sm:text-[10px] font-medium block mb-1 ${
+                                              isHighRisk
+                                                ? "text-red-700"
+                                                : isModerateRisk
+                                                  ? "text-yellow-700"
+                                                  : "text-blue-700"
+                                            }`}
+                                          >
+                                            Model Basis
+                                          </label>
+                                          <div
+                                            className={`text-[8px] sm:text-[10px] rounded p-2 ${
+                                              isHighRisk
+                                                ? "text-red-800 bg-red-100"
+                                                : isModerateRisk
+                                                  ? "text-yellow-800 bg-yellow-100"
+                                                  : "text-blue-800 bg-blue-100"
+                                            }`}
+                                          >
+                                            {conditionData.modelBasis}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Risk Factors */}
+                                    {conditionData.riskFactors &&
+                                      conditionData.riskFactors.length > 0 && (
+                                        <div className="mb-2">
+                                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                            Risk Factors ({conditionData.riskFactors.length})
+                                          </label>
+                                          <div className="bg-yellow-50 rounded-lg p-2 sm:p-3 border border-yellow-200">
+                                            <ul className="list-disc list-inside space-y-1">
+                                              {conditionData.riskFactors.map(
+                                                (factor: string, factorIndex: number) => (
+                                                  <li
+                                                    key={factorIndex}
+                                                    className="text-[10px] sm:text-xs text-yellow-900"
+                                                  >
+                                                    {factor}
+                                                  </li>
+                                                ),
+                                              )}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Recommendations */}
+                                    {conditionData.recommendations &&
+                                      conditionData.recommendations.length > 0 && (
+                                        <div className="mb-2">
+                                          <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                            Recommendations ({conditionData.recommendations.length})
+                                          </label>
+                                          <div className="bg-green-50 rounded-lg p-2 sm:p-3 border border-green-200">
+                                            <ul className="list-disc list-inside space-y-1">
+                                              {conditionData.recommendations.map(
+                                                (rec: string, recIndex: number) => (
+                                                  <li
+                                                    key={recIndex}
+                                                    className="text-[10px] sm:text-xs text-green-900"
+                                                  >
+                                                    {rec}
+                                                  </li>
+                                                ),
+                                              )}
+                                            </ul>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                    {/* Immediate Action */}
+                                    {conditionData.immediateAction && (
+                                      <div className="mb-2">
+                                        <label className="block text-[10px] sm:text-xs font-medium text-gray-700 mb-2">
+                                          Immediate Action Required
+                                        </label>
+                                        <div className="bg-red-50 rounded-lg p-2 sm:p-3 border border-red-200">
+                                          <div className="flex items-start space-x-2">
+                                            <span className="text-red-600 font-bold text-sm">
+                                              ⚠️
+                                            </span>
+                                            <div className="text-[10px] sm:text-xs text-red-900 font-medium">
+                                              {conditionData.immediateAction}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })()}
+
+                              {/* ML Predictions Disclaimer */}
+                              <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 sm:p-3 mt-3">
+                                <p className="text-[8px] sm:text-[10px] text-orange-800">
+                                  <span className="font-semibold">⚠️ Disclaimer:</span> This
+                                  assessment is based on machine learning models trained on actual
+                                  student outcome data. For comprehensive mental health evaluation,
+                                  please consult with qualified mental health professionals.
+                                </p>
                               </div>
                             </div>
-                          )}
-
-                          {/* Assessment Summary */}
-                          {prediction.mentalHealthRisk?.assessmentSummary && (
-                            <div className="mt-3 p-2 bg-blue-100 border-l-4 border-blue-500 rounded">
-                              <p className="text-[10px] sm:text-xs text-blue-900 font-medium">
-                                <strong>Summary:</strong>{" "}
-                                {prediction.mentalHealthRisk.assessmentSummary}
+                          ) : (
+                            <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-200 text-center">
+                              <p className="text-[10px] sm:text-xs text-gray-600">
+                                Machine learning predictions are not available for this assessment.
                               </p>
                             </div>
                           )}
                         </div>
                       ))}
 
-                    {/* Disclaimer */}
+                    {/* General Disclaimer */}
                     <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                       <p className="text-[10px] sm:text-xs text-orange-800">
                         <strong>Disclaimer:</strong> These predictions are machine learning

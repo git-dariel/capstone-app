@@ -5,7 +5,7 @@ import type {
   UpdateStudentRequest,
 } from "@/services/student.service";
 import type { PaginatedResponse, QueryParams } from "@/services/api.config";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface StudentsState {
   students: Student[];
@@ -28,140 +28,158 @@ export const useStudents = () => {
     totalPages: 0,
   });
 
-  const setLoading = (loading: boolean) => {
+  const setLoading = useCallback((loading: boolean) => {
     setState((prev) => ({ ...prev, loading }));
-  };
+  }, []);
 
-  const setError = (error: string | null) => {
+  const setError = useCallback((error: string | null) => {
     setState((prev) => ({ ...prev, error }));
-  };
+  }, []);
 
-  const clearError = () => {
+  const clearError = useCallback(() => {
     setState((prev) => ({ ...prev, error: null }));
-  };
+  }, []);
 
-  const fetchStudents = async (params?: QueryParams) => {
-    setLoading(true);
-    setError(null);
+  const fetchStudents = useCallback(
+    async (params?: QueryParams) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response: PaginatedResponse<Student> = await StudentService.getAllStudents(params);
+      try {
+        const response: PaginatedResponse<Student> = await StudentService.getAllStudents(params);
 
-      setState((prev) => ({
-        ...prev,
-        students: response.data || [],
-        total: response.total || 0,
-        page: response.page || 1,
-        totalPages: response.totalPages || 0,
-        loading: false,
-      }));
+        setState((prev) => ({
+          ...prev,
+          students: response.data || [],
+          total: response.total || 0,
+          page: response.page || 1,
+          totalPages: response.totalPages || 0,
+          loading: false,
+        }));
 
-      return response;
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to fetch students";
-      setError(errorMessage);
-      setLoading(false);
-      throw error;
-    }
-  };
+        return response;
+      } catch (error: any) {
+        const errorMessage = error.message || "Failed to fetch students";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setError, setLoading],
+  );
 
-  const fetchStudentById = async (id: string, params?: QueryParams) => {
-    setLoading(true);
-    setError(null);
+  const fetchStudentById = useCallback(
+    async (id: string, params?: QueryParams) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const student = await StudentService.getStudentById(id, params);
+      try {
+        const student = await StudentService.getStudentById(id, params);
 
-      setState((prev) => ({
-        ...prev,
-        currentStudent: student,
-        loading: false,
-      }));
+        setState((prev) => ({
+          ...prev,
+          currentStudent: student,
+          loading: false,
+        }));
 
-      return student;
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to fetch student";
-      setError(errorMessage);
-      setLoading(false);
-      throw error;
-    }
-  };
+        return student;
+      } catch (error: any) {
+        const errorMessage = error.message || "Failed to fetch student";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setError, setLoading],
+  );
 
-  const createStudent = async (data: CreateStudentRequest) => {
-    setLoading(true);
-    setError(null);
+  const createStudent = useCallback(
+    async (data: CreateStudentRequest) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const student = await StudentService.createStudent(data);
+      try {
+        const student = await StudentService.createStudent(data);
 
-      setState((prev) => ({
-        ...prev,
-        students: [student, ...prev.students],
-        total: prev.total + 1,
-        loading: false,
-      }));
+        setState((prev) => ({
+          ...prev,
+          students: [student, ...prev.students],
+          total: prev.total + 1,
+          loading: false,
+        }));
 
-      return student;
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to create student";
-      setError(errorMessage);
-      setLoading(false);
-      throw error;
-    }
-  };
+        return student;
+      } catch (error: any) {
+        const errorMessage = error.message || "Failed to create student";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setError, setLoading],
+  );
 
-  const updateStudent = async (id: string, data: UpdateStudentRequest) => {
-    setLoading(true);
-    setError(null);
+  const updateStudent = useCallback(
+    async (id: string, data: UpdateStudentRequest) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const updatedStudent = await StudentService.updateStudent(id, data);
+      try {
+        const updatedStudent = await StudentService.updateStudent(id, data);
 
-      setState((prev) => ({
-        ...prev,
-        students: prev.students.map((student) => (student.id === id ? updatedStudent : student)),
-        currentStudent: prev.currentStudent?.id === id ? updatedStudent : prev.currentStudent,
-        loading: false,
-      }));
+        setState((prev) => ({
+          ...prev,
+          students: prev.students.map((student) => (student.id === id ? updatedStudent : student)),
+          currentStudent: prev.currentStudent?.id === id ? updatedStudent : prev.currentStudent,
+          loading: false,
+        }));
 
-      return updatedStudent;
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to update student";
-      setError(errorMessage);
-      setLoading(false);
-      throw error;
-    }
-  };
+        return updatedStudent;
+      } catch (error: any) {
+        const errorMessage = error.message || "Failed to update student";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setError, setLoading],
+  );
 
-  const deleteStudent = async (id: string) => {
-    setLoading(true);
-    setError(null);
+  const deleteStudent = useCallback(
+    async (id: string) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      await StudentService.deleteStudent(id);
+      try {
+        await StudentService.deleteStudent(id);
 
-      setState((prev) => ({
-        ...prev,
-        students: prev.students.filter((student) => student.id !== id),
-        total: prev.total - 1,
-        currentStudent: prev.currentStudent?.id === id ? null : prev.currentStudent,
-        loading: false,
-      }));
+        setState((prev) => ({
+          ...prev,
+          students: prev.students.filter((student) => student.id !== id),
+          total: prev.total - 1,
+          currentStudent: prev.currentStudent?.id === id ? null : prev.currentStudent,
+          loading: false,
+        }));
 
-      return { message: "Student deleted successfully" };
-    } catch (error: any) {
-      const errorMessage = error.message || "Failed to delete student";
-      setError(errorMessage);
-      setLoading(false);
-      throw error;
-    }
-  };
+        return { message: "Student deleted successfully" };
+      } catch (error: any) {
+        const errorMessage = error.message || "Failed to delete student";
+        setError(errorMessage);
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setError, setLoading],
+  );
 
-  const refreshStudents = async (params?: QueryParams) => {
-    return await fetchStudents(params);
-  };
+  const refreshStudents = useCallback(
+    async (params?: QueryParams) => {
+      return await fetchStudents(params);
+    },
+    [fetchStudents],
+  );
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     setState({
       students: [],
       currentStudent: null,
@@ -171,7 +189,7 @@ export const useStudents = () => {
       page: 1,
       totalPages: 0,
     });
-  };
+  }, []);
 
   return {
     // State

@@ -30,3 +30,6 @@ export { ProfilePage } from "./ProfilePage";
 export { NotificationsPage } from "./NotificationsPage";
 export { InventoryInsightsPage } from "./InventoryInsightsPage";
 export { StudentConsultationRecordsPage } from "./StudentConsultationRecordsPage";
+export { ArchiveStudentsPage } from "./ArchiveStudentsPage";
+export { SimplifiedInsightsPage } from "./SimplifiedInsightsPage";
+export { AuditLogsPage } from "./AuditLogsPage";

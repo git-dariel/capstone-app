@@ -55,12 +55,13 @@ export class GuidanceDashboardService {
   // Get overall student progress insights for guidance dashboard
   static async getStudentProgressOverview(
     page: number = 1,
-    limit: number = 10
+    limit: number = 10,
+    query?: string,
   ): Promise<StudentProgressOverview> {
     try {
       const response = await MetricsService.fetchGuidanceDashboardMetrics(
         ["studentProgressOverview"],
-        { page, limit }
+        { page, limit, ...(query ? { query } : {}) },
       );
 
       // Handle different possible response structures
@@ -207,7 +208,7 @@ export class GuidanceDashboardService {
 
   // Get detailed progress insights for a specific student
   static async getStudentProgressInsights(
-    studentId: string
+    studentId: string,
   ): Promise<StudentProgressInsight | null> {
     try {
       // For now, we'll get the first page and search through it
@@ -223,12 +224,12 @@ export class GuidanceDashboardService {
   // Get detailed assessment data by ID and type
   static async getAssessmentDetails(
     assessmentId: string,
-    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist"
+    assessmentType: "anxiety" | "depression" | "stress" | "suicide" | "checklist",
   ): Promise<any> {
     try {
       const response = await MetricsService.fetchGuidanceDashboardMetrics(
         ["getAssessmentDetails"],
-        { assessmentId, assessmentType }
+        { assessmentId, assessmentType },
       );
 
       if (response.data && Array.isArray(response.data) && response.data.length > 0) {

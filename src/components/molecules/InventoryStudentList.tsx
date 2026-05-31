@@ -52,7 +52,7 @@ export const InventoryStudentList: React.FC<InventoryStudentListProps> = ({
   const handleStudentRowClick = async (studentDetails: (typeof students)[0]) => {
     try {
       // Try to get student ID - prefer studentId field, fallback to searching by studentNumber
-      let studentId = studentDetails.studentId;
+      const studentId = studentDetails.studentId;
 
       if (!studentId && studentDetails.studentNumber) {
         // If we don't have studentId, we'll need to search for the student

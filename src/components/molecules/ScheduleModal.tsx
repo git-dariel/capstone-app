@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Modal, DateTimePicker } from "@/components/atoms";
+import { Modal } from "@/components/atoms";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Schedule } from "@/services";
 
 interface ScheduleModalProps {
@@ -8,12 +19,15 @@ interface ScheduleModalProps {
   onSave: (scheduleData: Partial<Schedule>) => Promise<void>;
   schedule?: Schedule | null;
   loading?: boolean;
+  initialDate?: Date | null; // Pre-fill date from calendar
 }
 
 interface FormData {
   title: string;
   description: string;
+  startDate: string;
   startTime: string;
+  endDate: string;
   endTime: string;
   isRecurring: boolean;
   recurringType: "none" | "daily" | "weekly" | "monthly";
@@ -26,8 +40,10 @@ interface FormData {
 const initialFormData: FormData = {
   title: "",
   description: "",
-  startTime: "",
-  endTime: "",
+  startDate: "",
+  startTime: "09:00",
+  endDate: "",
+  endTime: "10:00",
   isRecurring: false,
   recurringType: "none",
   maxSlots: 1,
@@ -36,12 +52,38 @@ const initialFormData: FormData = {
   notes: "",
 };
 
+// Character limits for fields
+const CHAR_LIMITS = {
+  title: 100,
+  description: 500,
+  location: 100,
+  notes: 1000,
+};
+
+// Validation helper functions
+const validateSpecialCharacters = (value: string): boolean => {
+  // Allow letters, numbers, spaces, common punctuation, and basic accented characters
+  // Disallow potentially harmful characters like <, >, &, script tags, etc.
+  const allowedPattern = /^[a-zA-Z0-9\s.,!?;:()\]{}'"\-–—\n\r\u00C0-\u017F]*$/;
+  return allowedPattern.test(value);
+};
+
+const sanitizeInput = (value: string): string => {
+  // Remove potentially harmful characters
+  return value.replace(/[<>&]/g, "");
+};
+
+const getRemainingChars = (value: string, limit: number): number => {
+  return limit - value.length;
+};
+
 export const ScheduleModal: React.FC<ScheduleModalProps> = ({
   isOpen,
   onClose,
   onSave,
   schedule,
   loading = false,
+  initialDate = null,
 }) => {
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -54,10 +96,18 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
         setFormData({
           title: schedule.title || "",
           description: schedule.description || "",
-          startTime: schedule.startTime
-            ? new Date(schedule.startTime).toISOString().slice(0, 16)
+          startDate: schedule.startTime
+            ? new Date(schedule.startTime).toISOString().slice(0, 10)
             : "",
-          endTime: schedule.endTime ? new Date(schedule.endTime).toISOString().slice(0, 16) : "",
+          startTime: schedule.startTime
+            ? new Date(schedule.startTime).toTimeString().slice(0, 5)
+            : "09:00",
+          endDate: schedule.endTime
+            ? new Date(schedule.endTime).toISOString().slice(0, 10)
+            : "",
+          endTime: schedule.endTime
+            ? new Date(schedule.endTime).toTimeString().slice(0, 5)
+            : "10:00",
           isRecurring: schedule.isRecurring || false,
           recurringType: schedule.recurringType || "none",
           maxSlots: schedule.maxSlots || 1,
@@ -66,37 +116,95 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
           notes: schedule.notes || "",
         });
       } else {
-        setFormData(initialFormData);
+        // Pre-fill with initialDate from calendar if available
+        const dateString = initialDate
+          ? new Date(initialDate).toISOString().slice(0, 10)
+          : "";
+        setFormData({
+          ...initialFormData,
+          startDate: dateString,
+          endDate: dateString,
+        });
       }
       setErrors({});
     }
-  }, [isOpen, schedule]);
+  }, [isOpen, schedule, initialDate]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
 
+    // Title validation
     if (!formData.title.trim()) {
       newErrors.title = "Schedule title is required";
+    } else if (formData.title.length > CHAR_LIMITS.title) {
+      newErrors.title = `Title must not exceed ${CHAR_LIMITS.title} characters`;
+    } else if (!validateSpecialCharacters(formData.title)) {
+      newErrors.title =
+        "Title contains invalid characters (< > & are not allowed)";
+    }
+
+    // Description validation
+    if (
+      formData.description &&
+      formData.description.length > CHAR_LIMITS.description
+    ) {
+      newErrors.description = `Description must not exceed ${CHAR_LIMITS.description} characters`;
+    } else if (
+      formData.description &&
+      !validateSpecialCharacters(formData.description)
+    ) {
+      newErrors.description =
+        "Description contains invalid characters (< > & are not allowed)";
+    }
+
+    // Location validation
+    if (formData.location && formData.location.length > CHAR_LIMITS.location) {
+      newErrors.location = `Location must not exceed ${CHAR_LIMITS.location} characters`;
+    } else if (
+      formData.location &&
+      !validateSpecialCharacters(formData.location)
+    ) {
+      newErrors.location =
+        "Location contains invalid characters (< > & are not allowed)";
+    }
+
+    // Notes validation
+    if (formData.notes && formData.notes.length > CHAR_LIMITS.notes) {
+      newErrors.notes = `Notes must not exceed ${CHAR_LIMITS.notes} characters`;
+    } else if (formData.notes && !validateSpecialCharacters(formData.notes)) {
+      newErrors.notes =
+        "Notes contains invalid characters (< > & are not allowed)";
+    }
+
+    if (!formData.startDate) {
+      newErrors.startDate = "Start date is required";
     }
 
     if (!formData.startTime) {
       newErrors.startTime = "Start time is required";
     }
 
+    if (!formData.endDate) {
+      newErrors.endDate = "End date is required";
+    }
+
     if (!formData.endTime) {
       newErrors.endTime = "End time is required";
     }
 
-    if (formData.startTime && formData.endTime) {
-      const start = new Date(formData.startTime);
-      const end = new Date(formData.endTime);
-      if (start >= end) {
+    if (
+      formData.startDate &&
+      formData.startTime &&
+      formData.endDate &&
+      formData.endTime
+    ) {
+      const startDateTime = new Date(
+        `${formData.startDate}T${formData.startTime}`,
+      );
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+      if (startDateTime >= endDateTime) {
         newErrors.endTime = "End time must be after start time";
       }
-    }
-
-    if (formData.maxSlots < 1) {
-      newErrors.maxSlots = "Max slots must be at least 1";
     }
 
     setErrors(newErrors);
@@ -110,22 +218,39 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      const startDateTime = new Date(
+        `${formData.startDate}T${formData.startTime}`,
+      );
+      const endDateTime = new Date(`${formData.endDate}T${formData.endTime}`);
+
       const scheduleData: Partial<Schedule> = {
-        ...formData,
-        startTime: new Date(formData.startTime).toISOString(),
-        endTime: new Date(formData.endTime).toISOString(),
+        title: formData.title,
+        description: formData.description,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        isRecurring: formData.isRecurring,
+        recurringType: formData.recurringType,
+        maxSlots: formData.maxSlots,
+        status: formData.status,
+        location: formData.location,
+        notes: formData.notes,
       };
 
       await onSave(scheduleData);
       onClose();
     } catch (error) {
       console.error("Failed to save schedule:", error);
+      // Re-throw error to allow parent component to handle it and show toast
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleInputChange = (field: keyof FormData, value: string | number | boolean) => {
+  const handleInputChange = (
+    field: keyof FormData,
+    value: string | number | boolean,
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -148,62 +273,208 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Schedule Title *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Schedule Title *
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              ({getRemainingChars(formData.title, CHAR_LIMITS.title)} characters
+              remaining)
+            </span>
+          </label>
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.title) {
+                handleInputChange("title", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.title}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             placeholder="Enter schedule title"
           />
-          {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+          )}
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Description
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              (
+              {getRemainingChars(formData.description, CHAR_LIMITS.description)}{" "}
+              characters remaining)
+            </span>
+          </label>
           <textarea
             rows={3}
             value={formData.description}
-            onChange={(e) => handleInputChange("description", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.description) {
+                handleInputChange("description", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.description}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             placeholder="Enter schedule description"
           />
-          {errors.description && <p className="mt-1 text-sm text-red-600">{errors.description}</p>}
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+          )}
         </div>
 
-        {/* Time Range */}
+        {/* Start Date & Time */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <DateTimePicker
-              id="startTime"
-              label="Start Time"
-              value={formData.startTime}
-              onChange={(value) => handleInputChange("startTime", value)}
-              required
-              minDate={new Date().toISOString().slice(0, 16)}
-              error={errors.startTime}
-              placeholder="Select start date and time"
-              restrictTimeRange={true}
-              minTime="08:00"
-              maxTime="20:00"
-            />
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Start Date <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.startDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.startDate ? (
+                    format(new Date(formData.startDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={
+                    formData.startDate
+                      ? new Date(formData.startDate)
+                      : undefined
+                  }
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("startDate", `${year}-${month}-${day}`);
+                    }
+                  }}
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.startDate && (
+              <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
+            )}
           </div>
 
           <div>
-            <DateTimePicker
-              id="endTime"
-              label="End Time"
-              value={formData.endTime}
-              onChange={(value) => handleInputChange("endTime", value)}
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Start Time <span className="text-red-500">*</span>
+            </Label>
+            <input
+              type="time"
+              value={formData.startTime}
+              onChange={(e) => handleInputChange("startTime", e.target.value)}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading}
               required
-              minDate={formData.startTime || new Date().toISOString().slice(0, 16)}
-              error={errors.endTime}
-              placeholder="Select end date and time"
-              restrictTimeRange={true}
-              minTime="08:00"
-              maxTime="20:00"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
             />
+            {errors.startTime && (
+              <p className="mt-1 text-sm text-red-600">{errors.startTime}</p>
+            )}
+          </div>
+        </div>
+
+        {/* End Date & Time */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              End Date <span className="text-red-500">*</span>
+            </Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={loading}
+                  className={cn(
+                    "w-full justify-start text-left font-normal",
+                    !formData.endDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {formData.endDate ? (
+                    format(new Date(formData.endDate), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <Calendar
+                  mode="single"
+                  selected={
+                    formData.endDate ? new Date(formData.endDate) : undefined
+                  }
+                  onSelect={(date) => {
+                    if (date) {
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                      );
+                      const day = String(date.getDate()).padStart(2, "0");
+                      handleInputChange("endDate", `${year}-${month}-${day}`);
+                    }
+                  }}
+                  disabled={(date) =>
+                    date < new Date(new Date().setHours(0, 0, 0, 0))
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {errors.endDate && (
+              <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
+            )}
+          </div>
+
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              End Time <span className="text-red-500">*</span>
+            </Label>
+            <input
+              type="time"
+              value={formData.endTime}
+              onChange={(e) => handleInputChange("endTime", e.target.value)}
+              min="08:00"
+              max="20:00"
+              step="900"
+              disabled={loading}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:bg-gray-50"
+            />
+            {errors.endTime && (
+              <p className="mt-1 text-sm text-red-600">{errors.endTime}</p>
+            )}
           </div>
         </div>
 
@@ -214,21 +485,31 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
               type="checkbox"
               id="isRecurring"
               checked={formData.isRecurring}
-              onChange={(e) => handleInputChange("isRecurring", e.target.checked)}
+              onChange={(e) =>
+                handleInputChange("isRecurring", e.target.checked)
+              }
               className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
             />
-            <label htmlFor="isRecurring" className="text-sm font-medium text-gray-700">
+            <label
+              htmlFor="isRecurring"
+              className="text-sm font-medium text-gray-700"
+            >
               Recurring Schedule
             </label>
           </div>
 
           {formData.isRecurring && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Recurring Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Recurring Type
+              </label>
               <select
                 value={formData.recurringType}
                 onChange={(e) =>
-                  handleInputChange("recurringType", e.target.value as FormData["recurringType"])
+                  handleInputChange(
+                    "recurringType",
+                    e.target.value as FormData["recurringType"],
+                  )
                 }
                 className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
               >
@@ -244,22 +525,41 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
         {/* Settings Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Max Slots *</label>
-            <input
-              type="number"
-              min="1"
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Max Slots *
+            </label>
+            <select
               value={formData.maxSlots}
-              onChange={(e) => handleInputChange("maxSlots", parseInt(e.target.value) || 1)}
+              onChange={(e) =>
+                handleInputChange("maxSlots", parseInt(e.target.value))
+              }
               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
-            />
-            {errors.maxSlots && <p className="mt-1 text-sm text-red-600">{errors.maxSlots}</p>}
+            >
+              <option value="1">1 slot - Individual/Exclusive Session</option>
+              <option value="2">2 slots - Pair Counseling</option>
+              <option value="3">3 slots - Small Group</option>
+              <option value="5">5 slots - Medium Group</option>
+              <option value="10">10 slots - Large Group/Workshop</option>
+              <option value="15">15 slots - Seminar</option>
+              <option value="20">20 slots - Large Event/Orientation</option>
+            </select>
+            {errors.maxSlots && (
+              <p className="mt-1 text-sm text-red-600">{errors.maxSlots}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Status
+            </label>
             <select
               value={formData.status}
-              onChange={(e) => handleInputChange("status", e.target.value as FormData["status"])}
+              onChange={(e) =>
+                handleInputChange(
+                  "status",
+                  e.target.value as FormData["status"],
+                )
+              }
               className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             >
               <option value="available">Available</option>
@@ -272,30 +572,58 @@ export const ScheduleModal: React.FC<ScheduleModalProps> = ({
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Location
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              ({getRemainingChars(formData.location, CHAR_LIMITS.location)}{" "}
+              characters remaining)
+            </span>
+          </label>
           <input
             type="text"
             value={formData.location}
-            onChange={(e) => handleInputChange("location", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.location) {
+                handleInputChange("location", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.location}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             placeholder="Enter location (e.g., Room 101, Online)"
           />
-          {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location}</p>}
+          {errors.location && (
+            <p className="mt-1 text-sm text-red-600">{errors.location}</p>
+          )}
         </div>
 
         {/* Counselor is inferred from the logged-in user; no manual selection needed */}
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Notes
+            <span className="text-xs text-gray-500 font-normal ml-2">
+              ({getRemainingChars(formData.notes, CHAR_LIMITS.notes)} characters
+              remaining)
+            </span>
+          </label>
           <textarea
             rows={3}
             value={formData.notes}
-            onChange={(e) => handleInputChange("notes", e.target.value)}
+            onChange={(e) => {
+              const sanitized = sanitizeInput(e.target.value);
+              if (sanitized.length <= CHAR_LIMITS.notes) {
+                handleInputChange("notes", sanitized);
+              }
+            }}
+            maxLength={CHAR_LIMITS.notes}
             className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400"
             placeholder="Additional notes or instructions"
           />
-          {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes}</p>}
+          {errors.notes && (
+            <p className="mt-1 text-sm text-red-600">{errors.notes}</p>
+          )}
         </div>
 
         {/* Action Buttons */}

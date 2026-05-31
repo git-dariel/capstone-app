@@ -1,4 +1,5 @@
 import { HttpClient } from "./api.config";
+import type { InventoryReminderInfo } from "@/utils/inventoryReminder";
 
 // Types for inventory
 export interface InventoryFormData {
@@ -6,6 +7,7 @@ export interface InventoryFormData {
   height: string;
   weight: string;
   coplexion: string;
+  showMlPredictionsToStudent?: boolean;
   person_to_be_contacted_in_case_of_accident_or_illness: {
     firstName: string;
     lastName: string;
@@ -194,7 +196,7 @@ export interface InventoryFormData {
       if_yes_please_specify?: string; // Optional in schema
     };
     psychological: {
-      consulted: "psychiatrist" | "psychologist" | "councelor";
+      consulted: "none" | "psychiatrist" | "psychologist" | "councelor";
       status: "yes" | "no";
       when?: string | null; // ISO DateTime string, optional in schema
       for_what?: string; // Optional in schema
@@ -246,8 +248,86 @@ export interface MentalHealthPrediction {
     assessmentSummary: string;
     disclaimer: string;
   };
+  // NEW: Focused mental health predictions
+  mentalHealthPredictions?: {
+    primaryConcern?: "anxiety" | "depression" | "stress" | "suicide";
+    priority?: "Low" | "Moderate" | "High" | "Critical";
+    anxiety?: SpecificMentalHealthRisk;
+    depression?: SpecificMentalHealthRisk;
+    stress?: SpecificMentalHealthRisk;
+    suicide?: SpecificMentalHealthRisk;
+    allAssessments?: any; // Complete assessment data for internal use
+  };
+  primaryMentalHealthConcern?: "anxiety" | "depression" | "stress" | "suicide";
+  priority?: "Low" | "Moderate" | "High" | "Critical";
   inputData: any;
   recommendations: string[];
+}
+
+export interface SpecificMentalHealthRisk {
+  riskLevel: "low" | "moderate" | "high" | "critical";
+  riskScore: number;
+  maxScore: number;
+  riskPercentage: number;
+  isProne: boolean;
+  riskFactors: string[];
+  protectiveFactors: string[];
+  explanation: string;
+  recommendations: string[];
+  warningSignsToWatch: string[];
+  immediateAction?: string;
+}
+
+export interface MLPredictionResult {
+  riskLevel: string;
+  riskScore?: number;
+  riskPercentage?: string;
+  confidence?: number;
+  prediction: string;
+  explanation: string;
+  modelBasis: string;
+  riskFactors: string[];
+  recommendations: string[];
+  immediateAction?: string;
+}
+
+export interface MLPredictions {
+  // Standard structure when individual conditions are present
+  anxiety?: MLPredictionResult;
+  depression?: MLPredictionResult;
+  stress?: MLPredictionResult;
+  // Formatted structure from formatMLPredictions (all low risk case)
+  message?: string;
+  status?: "all_low_risk" | "initializing";
+  modelAccuracy:
+    | {
+        anxiety: number | string;
+        depression: number | string;
+        stress: number | string;
+      }
+    | {
+        anxiety?: number | string;
+        depression?: number | string;
+        stress?: number | string;
+      };
+  trainingDataSize?: number;
+  lastTrainingDate?: string;
+}
+
+export interface MentalHealthRiskAssessment {
+  type: "anxiety" | "depression" | "stress" | "suicide";
+  priority: "Low" | "Moderate" | "High" | "Critical";
+  reason: string;
+  riskLevel: "low" | "moderate" | "high" | "critical";
+  riskPercentage: string;
+  isProne: boolean;
+  riskScore: string;
+  explanation: string;
+  riskFactors: string[];
+  protectiveFactors: string[];
+  recommendations: string[];
+  warningSignsToWatch: string[];
+  immediateAction?: string;
 }
 
 export interface InventoryResponse {
@@ -280,6 +360,10 @@ export interface InventoryResponse {
       };
     };
   };
+  // NEW: Focused mental health risk assessment
+  mentalHealthRiskAssessment?: MentalHealthRiskAssessment;
+  primaryMentalHealthConcern?: string;
+  // Legacy support
   mentalHealthPrediction?: MentalHealthPrediction;
 }
 
@@ -293,6 +377,7 @@ export interface GetInventoryResponse {
   updatedAt: string;
   predictionGenerated?: boolean;
   predictionUpdatedAt?: string;
+  showMlPredictionsToStudent?: boolean;
   // Person to be contacted
   person_to_be_contacted_in_case_of_accident_or_illness?: {
     firstName: string;
@@ -440,6 +525,18 @@ export interface GetInventoryResponse {
       assessmentSummary: string;
       disclaimer: string;
     };
+    // NEW: Specific mental health predictions structure
+    mentalHealthPredictions?: {
+      primaryConcern?: "anxiety" | "depression" | "stress" | "suicide";
+      priority?: "Low" | "Moderate" | "High" | "Critical";
+      anxiety?: SpecificMentalHealthRisk;
+      depression?: SpecificMentalHealthRisk;
+      stress?: SpecificMentalHealthRisk;
+      suicide?: SpecificMentalHealthRisk;
+      allAssessments?: any; // Complete assessment data for internal use
+    };
+    // NEW: Machine Learning predictions from actual outcome data
+    mlPredictions?: MLPredictions;
     inputData: any;
     recommendations: string[];
     predictionDate: string;
@@ -509,7 +606,7 @@ export class InventoryService {
    * Get all inventories with pagination and filtering (for guidance users)
    */
   static async getAllInventories(
-    filters: InventoryFilters = {}
+    filters: InventoryFilters = {},
   ): Promise<GetAllInventoriesResponse> {
     const searchParams = new URLSearchParams();
 
@@ -521,12 +618,12 @@ export class InventoryService {
 
     try {
       const response = await HttpClient.get<GetAllInventoriesResponse>(
-        `/inventory?${searchParams.toString()}`
+        `/inventory?${searchParams.toString()}`,
       );
       return response;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to fetch inventories"
+        error.response?.data?.error || error.message || "Failed to fetch inventories",
       );
     }
   }
@@ -548,17 +645,10 @@ export class InventoryService {
    */
   static async getInventoryByStudentId(studentId: string): Promise<GetInventoryResponse | null> {
     try {
-      // Include all inventory fields and student/person/user data for comprehensive display
-      const fields =
-        "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,significantNotes," +
-        "person_to_be_contacted_in_case_of_accident_or_illness,educational_background,nature_of_schooling," +
-        "home_and_family_background,health,interest_and_hobbies,test_results,student_signature," +
-        "student.id,student.studentNumber,student.program,student.year,student.status," +
-        "student.person.id,student.person.firstName,student.person.lastName,student.person.middleName,student.person.email," +
-        "student.person.contactNumber,student.person.gender,student.person.birthDate,student.person.users.id,student.person.users.avatar";
-
+      // Don't use fields parameter - we need all nested data including mlPredictions
+      // The backend will use include which properly includes all nested fields
       const response = await HttpClient.get<GetInventoryResponse>(
-        `/inventory/student/${studentId}?fields=${encodeURIComponent(fields)}`
+        `/inventory/student/${studentId}`,
       );
       return response;
     } catch (error: any) {
@@ -587,12 +677,12 @@ export class InventoryService {
    */
   static async updateInventory(
     inventoryId: string,
-    data: Partial<InventoryFormData>
+    data: Partial<InventoryFormData>,
   ): Promise<GetInventoryResponse> {
     try {
       const response = await HttpClient.patch<GetInventoryResponse>(
         `/inventory/${inventoryId}`,
-        data
+        data,
       );
       return response;
     } catch (error: any) {
@@ -624,17 +714,17 @@ export class InventoryService {
       leastFavoriteSubject?: string;
       academicOrganizations?: string;
       organizationPosition?: string;
-    }
+    },
   ): Promise<MentalHealthPrediction> {
     try {
       const response = await HttpClient.post<{ prediction: MentalHealthPrediction }>(
         `/inventory/${studentId}/predict`,
-        overrideData || {}
+        overrideData || {},
       );
       return response.prediction;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to get mental health prediction"
+        error.response?.data?.error || error.message || "Failed to get mental health prediction",
       );
     }
   }
@@ -656,7 +746,33 @@ export class InventoryService {
       return response;
     } catch (error: any) {
       throw new Error(
-        error.response?.data?.error || error.message || "Failed to get stored prediction"
+        error.response?.data?.error || error.message || "Failed to get stored prediction",
+      );
+    }
+  }
+
+  /**
+   * Get inventory reminder information for a student
+   */
+  static async getReminderInfo(studentId: string): Promise<{
+    reminderInfo: InventoryReminderInfo;
+    message: string;
+    severity: "low" | "medium" | "high" | "critical";
+    timeRemaining: string;
+    studentId: string;
+  }> {
+    try {
+      const response = await HttpClient.get<{
+        reminderInfo: InventoryReminderInfo;
+        message: string;
+        severity: "low" | "medium" | "high" | "critical";
+        timeRemaining: string;
+        studentId: string;
+      }>(`/inventory/student/${studentId}/reminder`);
+      return response;
+    } catch (error: any) {
+      throw new Error(
+        error.response?.data?.error || error.message || "Failed to get reminder information",
       );
     }
   }

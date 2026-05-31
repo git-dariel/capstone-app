@@ -101,7 +101,7 @@ export const useInventoryInsights = () => {
       const currentLevel = state.insights.currentLevel;
       const filters = state.insights.filters;
       let nextLevel: InventoryDrilldownLevel;
-      let newFilters = { ...filters };
+      const newFilters = { ...filters };
 
       // Create filter for API call
       const metricFilter: MetricFilter = {};
@@ -275,7 +275,7 @@ export const useInventoryInsights = () => {
     const previousLevel = newHistory[newHistory.length - 1];
 
     // Clear filters based on level
-    let newFilters = { ...state.insights?.filters };
+    const newFilters = { ...state.insights?.filters };
     if (previousLevel.level === "program") {
       delete newFilters.yearLevel;
       delete newFilters.gender;

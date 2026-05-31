@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui";
-import { Send, Paperclip } from "lucide-react";
+import { Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface MessageInputProps {
@@ -61,7 +61,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
             "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500",
             "disabled:bg-gray-50 disabled:text-gray-400",
             "placeholder:text-gray-400",
-            "max-h-32 min-h-[48px]"
+            "max-h-32 min-h-[48px]",
           )}
           style={{
             height: "auto",
@@ -83,11 +83,11 @@ export const MessageInput: React.FC<MessageInputProps> = ({
           className={cn(
             "absolute right-3 top-1/2 transform -translate-y-1/2",
             "p-1 rounded-full hover:bg-gray-100 transition-colors",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
+            "disabled:opacity-50 disabled:cursor-not-allowed",
           )}
           title="Attach file (coming soon)"
         >
-          <Paperclip className="w-5 h-5 text-gray-400" />
+          {/*<Paperclip className="w-5 h-5 text-gray-400" />*/}
         </button>
       </div>
 
@@ -101,7 +101,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({
         variant="primary"
         className={cn(
           "px-4 py-3 rounded-2xl flex-shrink-0",
-          "transition-all duration-200"
+          "transition-all duration-200",
         )}
       >
         <Send className="w-5 h-5" />

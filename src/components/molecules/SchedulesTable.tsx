@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Eye, Pencil, Trash2, Calendar, Search } from "lucide-react";
 import type { Schedule, Appointment } from "@/services";
 import { ConfirmationModal } from "./ConfirmationModal";
 
@@ -14,6 +15,11 @@ interface SchedulesTableProps {
   userType?: "student" | "guidance";
   hasActiveAppointmentForSchedule?: (scheduleId: string) => boolean;
   getExistingAppointmentForSchedule?: (scheduleId: string) => Appointment | null;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onSearch?: (query: string) => void;
+  onPageChange?: (page: number) => void;
 }
 
 export const SchedulesTable: React.FC<SchedulesTableProps> = ({
@@ -27,20 +33,55 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
   searchable = true,
   userType = "student",
   hasActiveAppointmentForSchedule,
+  total,
+  page = 1,
+  totalPages = 0,
+  onSearch,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [scheduleToDelete, setScheduleToDelete] = useState<Schedule | null>(null);
 
-  const filteredSchedules = searchable
-    ? schedules.filter(
-        (schedule) =>
-          schedule.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.counselor?.person?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.counselor?.person?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          schedule.location?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : schedules;
+  const filteredSchedules = !searchable
+    ? schedules
+    : onSearch
+      ? schedules
+      : schedules.filter(
+          (schedule) =>
+            schedule.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            schedule.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            schedule.counselor?.person?.firstName
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            schedule.counselor?.person?.lastName
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            schedule.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+        );
+
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    const query = searchTerm.trim();
+    setSearchQuery(query);
+    onSearch(query);
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      setSearchQuery("");
+      onSearch("");
+    }
+  };
 
   const handleDeleteClick = (schedule: Schedule) => {
     setScheduleToDelete(schedule);
@@ -76,7 +117,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
     return (
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 text-gray-400 mb-4">📅</div>
+          <div className="mx-auto h-12 w-12 text-gray-400 mb-4 flex items-center justify-center">
+            <Calendar className="h-12 w-12" />
+          </div>
           <h3 className="mt-2 text-sm font-medium text-gray-900 mb-1">No schedules found</h3>
           <p className="text-sm text-gray-500">
             {searchable && searchTerm
@@ -98,10 +141,23 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
               type="text"
               placeholder="Search schedules..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
               className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
             />
-            <div className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">🔍</div>
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search className="h-4 w-4" />
+            </div>
+            {onSearch && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                disabled={loading}
+              >
+                Search
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -110,7 +166,9 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
       <div className="block md:hidden">
         {filteredSchedules.length === 0 ? (
           <div className="p-6 text-center text-gray-500">
-            {searchTerm ? "No schedules match your search." : "No schedules found."}
+            {(onSearch ? searchQuery : searchTerm)
+              ? "No schedules match your search."
+              : "No schedules found."}
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -146,10 +204,10 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         schedule.status === "available"
                           ? "bg-green-100 text-green-800"
                           : schedule.status === "booked"
-                          ? "bg-blue-100 text-blue-800"
-                          : schedule.status === "unavailable"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-red-100 text-red-800"
+                            ? "bg-blue-100 text-blue-800"
+                            : schedule.status === "unavailable"
+                              ? "bg-gray-100 text-gray-800"
+                              : "bg-red-100 text-red-800"
                       }`}
                     >
                       {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
@@ -194,13 +252,13 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                               schedule.bookedSlots >= schedule.maxSlots
                                 ? "bg-red-500"
                                 : schedule.bookedSlots >= schedule.maxSlots * 0.8
-                                ? "bg-yellow-500"
-                                : "bg-green-500"
+                                  ? "bg-yellow-500"
+                                  : "bg-green-500"
                             }`}
                             style={{
                               width: `${Math.min(
                                 (schedule.bookedSlots / schedule.maxSlots) * 100,
-                                100
+                                100,
                               )}%`,
                             }}
                           ></div>
@@ -226,7 +284,8 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                             }`}
                             disabled={isDisabled}
                           >
-                            📅 {hasExistingAppointment ? "Booked" : "Book"}
+                            <Calendar className="h-4 w-4 inline mr-1" />
+                            {hasExistingAppointment ? "Booked" : "Book"}
                           </button>
                           {hasExistingAppointment && (
                             <span className="px-2 py-1 text-xs text-orange-600 bg-orange-50 rounded-md">
@@ -353,10 +412,10 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                       schedule.status === "available"
                         ? "bg-green-100 text-green-800"
                         : schedule.status === "booked"
-                        ? "bg-blue-100 text-blue-800"
-                        : schedule.status === "unavailable"
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-red-100 text-red-800"
+                          ? "bg-blue-100 text-blue-800"
+                          : schedule.status === "unavailable"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-red-100 text-red-800"
                     }`}
                   >
                     {schedule.status.charAt(0).toUpperCase() + schedule.status.slice(1)}
@@ -374,13 +433,13 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                         schedule.bookedSlots >= schedule.maxSlots
                           ? "bg-red-500"
                           : schedule.bookedSlots >= schedule.maxSlots * 0.8
-                          ? "bg-yellow-500"
-                          : "bg-green-500"
+                            ? "bg-yellow-500"
+                            : "bg-green-500"
                       }`}
                       style={{
                         width: `${Math.min(
                           (schedule.bookedSlots / schedule.maxSlots) * 100,
-                          100
+                          100,
                         )}%`,
                       }}
                     ></div>
@@ -413,12 +472,13 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                                   hasExistingAppointment
                                     ? "You already have an appointment for this schedule"
                                     : isFullyBooked
-                                    ? "This schedule is fully booked"
-                                    : "Book Appointment"
+                                      ? "This schedule is fully booked"
+                                      : "Book Appointment"
                                 }
                                 disabled={isDisabled}
                               >
-                                📅 {hasExistingAppointment ? "Booked" : "Book"}
+                                <Calendar className="h-4 w-4 inline mr-1" />
+                                {hasExistingAppointment ? "Booked" : "Book"}
                               </button>
                               {hasExistingAppointment && (
                                 <span className="text-xs text-orange-600 font-medium">
@@ -434,7 +494,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-primary-600 hover:text-primary-900 transition-colors"
                           title="View Schedule"
                         >
-                          👁️
+                          <Eye className="h-4 w-4" />
                         </button>
                       )}
                       {userType === "guidance" && onEdit && (
@@ -443,7 +503,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-blue-600 hover:text-blue-900 transition-colors"
                           title="Edit Schedule"
                         >
-                          ✏️
+                          <Pencil className="h-4 w-4" />
                         </button>
                       )}
                       {userType === "guidance" && onDelete && (
@@ -452,7 +512,7 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
                           className="text-red-600 hover:text-red-900 transition-colors"
                           title="Delete Schedule"
                         >
-                          🗑️
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
@@ -467,12 +527,40 @@ export const SchedulesTable: React.FC<SchedulesTableProps> = ({
       {/* Results Summary */}
       <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
         <div className="text-sm text-gray-700">
-          Showing {filteredSchedules.length} of {schedules.length} schedules
-          {searchable && searchTerm && (
-            <span className="text-gray-500"> (filtered by "{searchTerm}")</span>
+          Showing {filteredSchedules.length} of {onSearch ? total || 0 : schedules.length} schedules
+          {searchable && (onSearch ? searchQuery : searchTerm) && (
+            <span className="text-gray-500">
+              {` (filtered by "${onSearch ? searchQuery : searchTerm}")`}
+            </span>
           )}
         </div>
       </div>
+
+      {onPageChange && totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+          <div className="text-xs sm:text-sm text-gray-600">
+            Page {page} of {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.max(1, page - 1))}
+              disabled={loading || page <= 1}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+              disabled={loading || page >= totalPages}
+              className="px-3 py-1 text-xs sm:text-sm border rounded-md hover:bg-gray-100 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       <ConfirmationModal

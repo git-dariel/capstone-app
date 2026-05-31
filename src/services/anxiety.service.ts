@@ -28,10 +28,11 @@ export interface AnxietyAssessment {
   id: string;
   userId: string;
   totalScore: number;
-  severityLevel: "minimal" | "mild" | "moderate" | "severe";
+  severityLevel: "minimal" | "mild" | "moderate" | "severe" | null;
   assessmentDate: string;
   responses: Record<string, number>;
   cooldownActive?: boolean;
+  showResultToStudent?: boolean;
   analysis: {
     totalScore: number;
     severityLevel: string;
@@ -69,6 +70,7 @@ export interface CreateAnxietyAssessmentRequest {
 
 export interface UpdateAnxietyAssessmentRequest {
   responses?: Record<string, number>;
+  showResultToStudent?: boolean;
 }
 
 export class AnxietyService {
@@ -109,7 +111,7 @@ export class AnxietyService {
     try {
       // Get the most recent assessment for the user
       const response = await HttpClient.get<any>(
-        `/anxiety?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`
+        `/anxiety?userId=${userId}&limit=1&order=desc&fields=id,assessmentDate,severityLevel,cooldownActive`,
       );
 
       if (response.assessments && response.assessments.length > 0) {
@@ -129,7 +131,7 @@ export class AnxietyService {
 
           if (isActive) {
             const daysRemaining = Math.ceil(
-              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+              (nextAvailableDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
             );
 
             return {
@@ -172,7 +174,7 @@ export class AnxietyService {
   // Helper function to create assessment request from responses
   static createAssessmentRequest(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): CreateAnxietyAssessmentRequest {
     const request: CreateAnxietyAssessmentRequest = {
       userId,
@@ -194,7 +196,7 @@ export class AnxietyService {
   }
 
   static async getAllAssessments(
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<PaginatedResponse<AnxietyAssessment>> {
     try {
       const response = await HttpClient.get<any>("/anxiety", params);
@@ -241,7 +243,7 @@ export class AnxietyService {
   // Convenience method to create assessment from numeric responses
   static async createAssessmentFromResponses(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): Promise<AnxietyAssessment> {
     try {
       const assessmentData = this.createAssessmentRequest(userId, responses);
@@ -256,7 +258,7 @@ export class AnxietyService {
 
   static async updateAssessment(
     id: string,
-    data: UpdateAnxietyAssessmentRequest
+    data: UpdateAnxietyAssessmentRequest,
   ): Promise<AnxietyAssessment> {
     try {
       const response = await HttpClient.patch<AnxietyAssessment>(`/anxiety/${id}`, data);

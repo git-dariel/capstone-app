@@ -23,3 +23,7 @@ export { ProfileContent } from "./ProfileContent";
 export { NotificationsContent } from "./NotificationsContent";
 export { InventoryInsightsContent } from "./InventoryInsightsContent";
 export { StudentConsultationRecordsContent } from "./StudentConsultationRecordsContent";
+export { ArchiveStudentsContent } from "./ArchiveStudentsContent";
+export { SimplifiedInsightsContent } from "./SimplifiedInsightsContent";
+export { SimplifiedInventoryInsightsContent } from "./SimplifiedInventoryInsightsContent";
+export { AuditLogsContent } from "./AuditLogsContent";

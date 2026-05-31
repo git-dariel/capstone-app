@@ -11,9 +11,10 @@ export interface SuicideAssessment {
   started_worked_out_details_how_kill?: "yes" | "no" | null;
   done_anything_started_prepared_end_life?: "yes" | "no" | null;
   behavior_timeframe?: "past_three_months" | "lifetime_but_not_recent" | "never" | null;
-  riskLevel: "low" | "moderate" | "high";
-  requires_immediate_intervention: boolean;
+  riskLevel: "low" | "moderate" | "high" | null;
+  requires_immediate_intervention: boolean | null;
   assessmentDate: string;
+  showResultToStudent?: boolean;
   analysis: {
     riskLevel: string;
     requiresImmediateIntervention: boolean;
@@ -56,6 +57,7 @@ export interface UpdateSuicideAssessmentRequest {
   started_worked_out_details_how_kill?: "yes" | "no";
   done_anything_started_prepared_end_life?: "yes" | "no";
   behavior_timeframe?: "past_three_months" | "lifetime_but_not_recent" | "never";
+  showResultToStudent?: boolean;
 }
 
 export class SuicideService {
@@ -66,7 +68,7 @@ export class SuicideService {
 
   // Helper function to convert numeric response to timeframe enum
   private static convertToBehaviorTimeframe(
-    value: number
+    value: number,
   ): "past_three_months" | "lifetime_but_not_recent" | "never" {
     switch (value) {
       case 0:
@@ -83,7 +85,7 @@ export class SuicideService {
   // Helper function to create assessment request from responses
   static createAssessmentRequest(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): CreateSuicideAssessmentRequest {
     const request: CreateSuicideAssessmentRequest = {
       userId,
@@ -105,7 +107,7 @@ export class SuicideService {
       }
       if (responses[5] !== undefined) {
         request.done_anything_started_prepared_end_life = this.convertToSuicideResponse(
-          responses[5]
+          responses[5],
         );
       }
 
@@ -119,7 +121,7 @@ export class SuicideService {
   }
 
   static async getAllAssessments(
-    params?: QueryParams
+    params?: QueryParams,
   ): Promise<PaginatedResponse<SuicideAssessment>> {
     try {
       const response = await HttpClient.get<any>("/suicide", params);
@@ -159,7 +161,7 @@ export class SuicideService {
   // Convenience method to create assessment from numeric responses
   static async createAssessmentFromResponses(
     userId: string,
-    responses: Record<number, number>
+    responses: Record<number, number>,
   ): Promise<SuicideAssessment> {
     const assessmentData = this.createAssessmentRequest(userId, responses);
     return this.createAssessment(assessmentData);
@@ -167,7 +169,7 @@ export class SuicideService {
 
   static async updateAssessment(
     id: string,
-    data: UpdateSuicideAssessmentRequest
+    data: UpdateSuicideAssessmentRequest,
   ): Promise<SuicideAssessment> {
     try {
       const response = await HttpClient.patch<SuicideAssessment>(`/suicide/${id}`, data);

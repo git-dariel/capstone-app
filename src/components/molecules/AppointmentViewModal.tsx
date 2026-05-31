@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Modal } from "@/components/atoms";
 import { Button } from "@/components/ui";
 import {
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Appointment } from "@/services";
+import { ConfirmationModal } from "./ConfirmationModal";
 
 interface AppointmentViewModalProps {
   isOpen: boolean;
@@ -42,7 +43,20 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
   loading = false,
   userType = "student",
 }) => {
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   if (!appointment) return null;
+
+  const handleCancelClick = () => {
+    setShowCancelConfirm(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (onCancel) {
+      onCancel(appointment);
+    }
+    setShowCancelConfirm(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -125,9 +139,12 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
     }
   };
 
-  const canCancel = appointment.status === "confirmed" || appointment.status === "pending";
-  const canComplete = appointment.status === "confirmed" && userType === "guidance";
-  const canReschedule = appointment.status !== "completed" && appointment.status !== "cancelled";
+  const canCancel =
+    appointment.status === "confirmed" || appointment.status === "pending";
+  const canComplete =
+    appointment.status === "confirmed" && userType === "guidance";
+  const canReschedule =
+    appointment.status !== "completed" && appointment.status !== "cancelled";
   const canEdit = userType === "guidance" || appointment.status === "pending";
 
   return (
@@ -137,26 +154,30 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
         <div className="border-b border-gray-200 pb-6">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">{appointment.title}</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+                {appointment.title}
+              </h2>
               <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={cn(
                     "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border",
-                    getStatusColor(appointment.status)
+                    getStatusColor(appointment.status),
                   )}
                 >
                   {getStatusIcon(appointment.status)}
                   <span className="ml-1">
-                    {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                    {appointment.status.charAt(0).toUpperCase() +
+                      appointment.status.slice(1)}
                   </span>
                 </span>
                 <span
                   className={cn(
                     "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border",
-                    getPriorityColor(appointment.priority)
+                    getPriorityColor(appointment.priority),
                   )}
                 >
-                  {appointment.priority.charAt(0).toUpperCase() + appointment.priority.slice(1)}{" "}
+                  {appointment.priority.charAt(0).toUpperCase() +
+                    appointment.priority.slice(1)}{" "}
                   Priority
                 </span>
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
@@ -179,11 +200,14 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
               </h3>
               <div className="space-y-2">
                 <p className="text-sm text-gray-700">
-                  <span className="font-medium">{formatDate(appointment.requestedDate)}</span>
+                  <span className="font-medium">
+                    {formatDate(appointment.requestedDate)}
+                  </span>
                 </p>
                 <p className="text-sm text-gray-700 flex items-center">
                   <Clock className="w-4 h-4 mr-2 text-gray-500" />
-                  {formatTime(appointment.requestedDate)} ({appointment.duration} minutes)
+                  {formatTime(appointment.requestedDate)} (
+                  {appointment.duration} minutes)
                 </p>
               </div>
             </div>
@@ -202,7 +226,9 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
             {/* Description */}
             {appointment.description && (
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Description</h3>
+                <h3 className="text-sm font-medium text-gray-900 mb-3">
+                  Description
+                </h3>
                 <p className="text-sm text-gray-700 whitespace-pre-wrap">
                   {appointment.description}
                 </p>
@@ -212,34 +238,89 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
 
           {/* Right Column - Participants & Actions */}
           <div className="space-y-6">
-            {/* Student Information */}
-            {appointment.student && (
+            {/* Student Information - Support both single student and multiple students (group sessions) */}
+            {(appointment as any).students &&
+            (appointment as any).students.length > 0 ? (
               <div className="bg-gray-50 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                   <User className="w-4 h-4 mr-2 text-gray-500" />
-                  Student
+                  {(appointment as any).students.length > 1
+                    ? `Students (${(appointment as any).students.length})`
+                    : "Student"}
                 </h3>
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-gray-900">
-                    {appointment.student.person?.firstName} {appointment.student.person?.lastName}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Student ID: {appointment.student.studentNumber}
-                  </p>
-                  {appointment.student.person?.email && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.student.person.email}
-                    </p>
-                  )}
-                  {appointment.student.person?.contactNumber && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.student.person.contactNumber}
-                    </p>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {(appointment as any).students.map(
+                    (student: any, index: number) => (
+                      <div
+                        key={student.id || index}
+                        className={
+                          index > 0 ? "pt-4 border-t border-gray-200" : ""
+                        }
+                      >
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium text-gray-900">
+                            {student.person?.firstName}{" "}
+                            {student.person?.lastName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Student ID: {student.studentNumber}
+                          </p>
+                          {student.person?.email && (
+                            <p className="text-sm text-gray-700 flex items-start">
+                              <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                              <span className="break-all">
+                                {student.person.email}
+                              </span>
+                            </p>
+                          )}
+                          {student.person?.contactNumber && (
+                            <p className="text-sm text-gray-700 flex items-start">
+                              <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                              <span className="break-all">
+                                {student.person.contactNumber}
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ),
                   )}
                 </div>
               </div>
+            ) : (
+              appointment.student && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                    <User className="w-4 h-4 mr-2 text-gray-500" />
+                    Student
+                  </h3>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-900">
+                      {appointment.student.person?.firstName}{" "}
+                      {appointment.student.person?.lastName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Student ID: {appointment.student.studentNumber}
+                    </p>
+                    {appointment.student.person?.email && (
+                      <p className="text-sm text-gray-700 flex items-start">
+                        <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <span className="break-all">
+                          {appointment.student.person.email}
+                        </span>
+                      </p>
+                    )}
+                    {appointment.student.person?.contactNumber && (
+                      <p className="text-sm text-gray-700 flex items-start">
+                        <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <span className="break-all">
+                          {appointment.student.person.contactNumber}
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )
             )}
 
             {/* Counselor Information */}
@@ -255,15 +336,19 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
                     {appointment.counselor.person?.lastName}
                   </p>
                   {appointment.counselor.person?.email && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.counselor.person.email}
+                    <p className="text-sm text-gray-700 flex items-start">
+                      <Mail className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-all">
+                        {appointment.counselor.person.email}
+                      </span>
                     </p>
                   )}
                   {appointment.counselor.person?.contactNumber && (
-                    <p className="text-sm text-gray-700 flex items-center">
-                      <Phone className="w-4 h-4 mr-2 text-gray-500" />
-                      {appointment.counselor.person.contactNumber}
+                    <p className="text-sm text-gray-700 flex items-start">
+                      <Phone className="w-4 h-4 mr-2 text-gray-500 flex-shrink-0 mt-0.5" />
+                      <span className="break-all">
+                        {appointment.counselor.person.contactNumber}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -271,33 +356,39 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
             )}
 
             {/* Cancellation Reason */}
-            {appointment.status === "cancelled" && appointment.cancellationReason && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-red-900 mb-2 flex items-center">
-                  <XCircle className="w-4 h-4 mr-2 text-red-600" />
-                  Cancellation Reason
-                </h3>
-                <p className="text-sm text-red-700">{appointment.cancellationReason}</p>
-              </div>
-            )}
+            {appointment.status === "cancelled" &&
+              appointment.cancellationReason && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-red-900 mb-2 flex items-center">
+                    <XCircle className="w-4 h-4 mr-2 text-red-600" />
+                    Cancellation Reason
+                  </h3>
+                  <p className="text-sm text-red-700">
+                    {appointment.cancellationReason}
+                  </p>
+                </div>
+              )}
 
             {/* Completion Notes */}
-            {appointment.status === "completed" && appointment.completionNotes && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-green-900 mb-2 flex items-center">
-                  <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
-                  Session Notes
-                </h3>
-                <p className="text-sm text-green-700 whitespace-pre-wrap">
-                  {appointment.completionNotes}
-                </p>
-              </div>
-            )}
+            {appointment.status === "completed" &&
+              appointment.completionNotes && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-green-900 mb-2 flex items-center">
+                    <CheckCircle2 className="w-4 h-4 mr-2 text-green-600" />
+                    Session Notes
+                  </h3>
+                  <p className="text-sm text-green-700 whitespace-pre-wrap">
+                    {appointment.completionNotes}
+                  </p>
+                </div>
+              )}
 
             {/* Follow-up Information */}
             {appointment.followUpRequired && appointment.followUpDate && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">Follow-up Required</h3>
+                <h3 className="text-sm font-medium text-blue-900 mb-2">
+                  Follow-up Required
+                </h3>
                 <p className="text-sm text-blue-700">
                   Scheduled for: {formatDate(appointment.followUpDate)} at{" "}
                   {formatTime(appointment.followUpDate)}
@@ -364,7 +455,7 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onCancel(appointment)}
+                onClick={handleCancelClick}
                 disabled={loading}
                 className="text-red-600 border-red-300 hover:bg-red-50"
               >
@@ -372,12 +463,28 @@ export const AppointmentViewModal: React.FC<AppointmentViewModalProps> = ({
               </Button>
             )}
 
-            <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onClose}
+              disabled={loading}
+            >
               Close
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        onConfirm={handleCancelConfirm}
+        title="Cancel Appointment"
+        message={`Are you sure you want to cancel the appointment "${appointment?.title}"? This action cannot be undone.`}
+        confirmText="Cancel Appointment"
+        isDestructive={true}
+      />
     </Modal>
   );
 };

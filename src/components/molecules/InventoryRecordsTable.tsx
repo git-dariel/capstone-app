@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Search,
   AlertCircle,
@@ -40,6 +40,11 @@ interface InventoryRecordsTableProps {
   loading?: boolean;
   error?: string | null;
   onView?: (inventory: GetInventoryResponse) => void;
+  onSearch?: (query: string) => void;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
 }
 
 export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
@@ -47,10 +52,13 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
   loading: propLoading,
   error: propError,
   onView,
+  onSearch,
+  total,
+  page,
+  totalPages,
+  onPageChange,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [displayCount, setDisplayCount] = useState(10);
-  const tableRef = useRef<HTMLDivElement>(null);
 
   // Use prop data if provided, otherwise fall back to hook
   const {
@@ -70,10 +78,98 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
       fetchInventories({
         limit: 100,
         fields:
-          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
+          "id,height,weight,coplexion,createdAt,updatedAt,predictionGenerated,predictionUpdatedAt,mentalHealthPredictions.mlPredictions,student.studentNumber,student.program,student.year,student.person.firstName,student.person.lastName,student.person.email,student.person.gender,student.person.users.avatar",
       }).catch(console.error);
     }
   }, [propInventories, fetchInventories]);
+
+  // Helper function to extract risk level from ML predictions using count-based prioritization
+  const getMLRiskLevel = (mlPredictions: any): "low" | "moderate" | "high" | undefined => {
+    if (!mlPredictions || !mlPredictions.anxiety) {
+      return undefined;
+    }
+
+    // Check if it's the positive message format (all low risk)
+    if (
+      "message" in mlPredictions &&
+      "status" in mlPredictions &&
+      mlPredictions.status === "all_low_risk"
+    ) {
+      return "low";
+    }
+
+    // Helper function to check if a condition is High Risk (case-insensitive)
+    const isConditionHighRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return riskLevel.includes("high") || prediction.includes("high");
+    };
+
+    // Helper function to check if a condition is Moderate Risk (case-insensitive)
+    const isConditionModerateRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return (
+        (riskLevel.includes("moderate") || prediction.includes("moderate")) &&
+        !isConditionHighRisk(condition)
+      );
+    };
+
+    // Helper function to check if a condition is Low Risk (case-insensitive)
+    const isConditionLowRisk = (condition: any): boolean => {
+      if (!condition) return false;
+      const riskLevel = condition.riskLevel?.toLowerCase() || "";
+      const prediction = condition.prediction?.toLowerCase() || "";
+      return (
+        (riskLevel.includes("low") || prediction.includes("low")) &&
+        !isConditionHighRisk(condition) &&
+        !isConditionModerateRisk(condition)
+      );
+    };
+
+    // Categorize all conditions
+    const conditions = [
+      { name: "depression", data: mlPredictions.depression },
+      { name: "anxiety", data: mlPredictions.anxiety },
+      { name: "stress", data: mlPredictions.stress },
+    ].filter((c) => !!c.data);
+
+    const highRiskConditions = conditions.filter((c) => isConditionHighRisk(c.data));
+    const moderateRiskConditions = conditions.filter((c) => isConditionModerateRisk(c.data));
+    const lowRiskConditions = conditions.filter((c) => isConditionLowRisk(c.data));
+
+    // Prioritize category with more conditions
+    if (
+      highRiskConditions.length >= moderateRiskConditions.length &&
+      highRiskConditions.length >= lowRiskConditions.length &&
+      highRiskConditions.length > 0
+    ) {
+      // Pick from High Risk (Depression > Anxiety > Stress)
+      const selectedCondition =
+        highRiskConditions.find((c) => c.name === "depression") ||
+        highRiskConditions.find((c) => c.name === "anxiety") ||
+        highRiskConditions.find((c) => c.name === "stress");
+      return selectedCondition ? "high" : undefined;
+    } else if (
+      moderateRiskConditions.length > highRiskConditions.length &&
+      moderateRiskConditions.length >= lowRiskConditions.length &&
+      moderateRiskConditions.length > 0
+    ) {
+      // Pick from Moderate Risk (Depression > Anxiety > Stress)
+      const selectedCondition =
+        moderateRiskConditions.find((c) => c.name === "depression") ||
+        moderateRiskConditions.find((c) => c.name === "anxiety") ||
+        moderateRiskConditions.find((c) => c.name === "stress");
+      return selectedCondition ? "moderate" : undefined;
+    } else if (lowRiskConditions.length > 0) {
+      // Pick from Low Risk (Depression > Anxiety > Stress)
+      return "low";
+    }
+
+    return undefined;
+  };
 
   // Transform API data to table format
   const tableData: InventoryTableData[] = useMemo(() => {
@@ -85,6 +181,28 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
       }`.trim();
       // Get the latest prediction from the array (first element since they're ordered by createdAt desc)
       const latestPrediction = inventory.mentalHealthPredictions?.[0];
+
+      // Extract risk level from ML predictions
+      const mlRiskLevel = latestPrediction?.mlPredictions
+        ? getMLRiskLevel(latestPrediction.mlPredictions)
+        : undefined;
+
+      // Extract needsAttention from ML predictions (check if any condition has immediateAction)
+      const needsAttention = latestPrediction?.mlPredictions
+        ? (() => {
+            const ml = latestPrediction.mlPredictions;
+            // Check if it's the all_low_risk format
+            if ("message" in ml && "status" in ml && ml.status === "all_low_risk") {
+              return false;
+            }
+            // Check if any condition has immediateAction
+            return !!(
+              ml.anxiety?.immediateAction ||
+              ml.depression?.immediateAction ||
+              ml.stress?.immediateAction
+            );
+          })()
+        : undefined;
 
       return {
         id: inventory.id,
@@ -103,14 +221,15 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         predictionUpdatedAt: inventory.predictionUpdatedAt,
         academicPerformanceOutlook: latestPrediction?.academicPerformanceOutlook,
         confidence: latestPrediction?.confidence,
-        riskLevel: latestPrediction?.mentalHealthRisk?.level,
-        needsAttention: latestPrediction?.mentalHealthRisk?.needsAttention,
+        riskLevel: mlRiskLevel,
+        needsAttention: needsAttention,
       };
     });
   }, [apiInventories]);
 
   // Filter and search logic
   const filteredData = useMemo(() => {
+    if (onSearch) return tableData;
     if (!searchTerm) return tableData;
 
     const searchLower = searchTerm.toLowerCase();
@@ -122,14 +241,11 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         inventory.email.toLowerCase().includes(searchLower) ||
         inventory.height.toLowerCase().includes(searchLower) ||
         inventory.weight.toLowerCase().includes(searchLower) ||
-        inventory.complexion.toLowerCase().includes(searchLower)
+        inventory.complexion.toLowerCase().includes(searchLower),
     );
   }, [tableData, searchTerm]);
 
-  // Pagination logic
-  const paginatedData = useMemo(() => {
-    return filteredData.slice(0, displayCount);
-  }, [filteredData, displayCount]);
+  const paginatedData = filteredData;
 
   const getPerformanceIcon = (outlook?: "improved" | "same" | "declined") => {
     switch (outlook) {
@@ -172,20 +288,25 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
     }
   };
 
-  // Infinite scroll handler
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 5) {
-      if (displayCount < filteredData.length) {
-        setDisplayCount((prev) => Math.min(prev + 10, filteredData.length));
-      }
+  const handleSearchSubmit = () => {
+    if (!onSearch) return;
+    onSearch(searchTerm.trim());
+  };
+
+  const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      handleSearchSubmit();
     }
   };
 
-  // Reset display count when search term changes
-  useEffect(() => {
-    setDisplayCount(10);
-  }, [searchTerm]);
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    if (onSearch && value.trim() === "") {
+      onSearch("");
+    }
+  };
 
   const handleView = (inventoryData: InventoryTableData) => {
     const originalInventory = apiInventories.find((inv) => inv.id === inventoryData.id);
@@ -213,7 +334,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
           {getPerformanceIcon(inventory.academicPerformanceOutlook)}
           <span
             className={`ml-2 text-xs font-medium capitalize ${getPerformanceColor(
-              inventory.academicPerformanceOutlook
+              inventory.academicPerformanceOutlook,
             )}`}
           >
             {inventory.academicPerformanceOutlook || "N/A"}
@@ -221,7 +342,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
         </div>
         <span
           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
-            inventory.riskLevel
+            inventory.riskLevel,
           )}`}
         >
           {inventory.riskLevel || "N/A"}
@@ -243,7 +364,9 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
               <p className="text-sm text-gray-500">
                 {loading
                   ? "Loading inventory records..."
-                  : `Showing ${paginatedData.length} of ${filteredData.length} inventory records`}
+                  : `Showing ${paginatedData.length} of ${
+                      total ?? filteredData.length
+                    } inventory records`}
               </p>
             </div>
           </div>
@@ -255,18 +378,25 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
               type="text"
               placeholder="Search by name, program, year, email, or physical info..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              className="w-full rounded-lg border border-gray-200 bg-white pl-10 pr-20 py-2 text-sm focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-400 touch-manipulation"
               disabled={loading}
             />
+            {onSearch && (
+              <button
+                type="button"
+                onClick={handleSearchSubmit}
+                disabled={loading}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-primary-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+              >
+                Search
+              </button>
+            )}
           </div>
         </div>
 
-        <div
-          ref={tableRef}
-          className="overflow-x-auto max-h-96 overflow-y-auto"
-          onScroll={handleScroll}
-        >
+        <div className="overflow-x-auto max-h-96 overflow-y-auto">
           {error ? (
             <div className="flex items-center justify-center py-8">
               <div className="flex items-center space-x-2 text-red-600">
@@ -452,7 +582,7 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span
                             className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full capitalize ${getRiskLevelColor(
-                              inventory.riskLevel
+                              inventory.riskLevel,
                             )}`}
                           >
                             {inventory.riskLevel || "N/A"}
@@ -489,6 +619,31 @@ export const InventoryRecordsTable: React.FC<InventoryRecordsTableProps> = ({
             </>
           )}
         </div>
+        {totalPages && totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 md:px-6 py-3 border-t border-gray-200 bg-gray-50">
+            <div className="text-xs sm:text-sm text-gray-600">
+              Page {page ?? 1} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) <= 1}
+                onClick={() => onPageChange?.((page ?? 1) - 1)}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={loading || (page ?? 1) >= totalPages}
+                onClick={() => onPageChange?.((page ?? 1) + 1)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
