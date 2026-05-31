@@ -28,13 +28,13 @@ export const PersonalInfoStep: React.FC<PersonalInfoStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Personal Information</h2>
-        <p className="text-sm text-gray-600">Let's start with your basic information</p>
+    <div className="space-y-3">
+      <div className="text-center mb-4">
+        <h2 className="text-lg xl:text-xl font-semibold text-gray-900 mb-1">Personal Information</h2>
+        <p className="text-xs sm:text-sm text-gray-600">Let's start with your basic information</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <FormField
           id="firstName"
           label="First name"

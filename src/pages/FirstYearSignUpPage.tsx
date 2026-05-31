@@ -4,7 +4,7 @@ import landingImage from "@/assets/landing-img.png";
 
 export const FirstYearSignUpPage: React.FC = () => {
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row lg:overflow-hidden">
+    <div className="min-h-screen lg:h-screen flex flex-col lg:flex-row bg-white lg:overflow-hidden">
       {/* Illustration - Hidden on mobile, half width on desktop */}
       <div className="hidden lg:block lg:w-1/2 bg-white">
         <div className="h-full border border-gray-100">
@@ -17,8 +17,8 @@ export const FirstYearSignUpPage: React.FC = () => {
       </div>
 
       {/* Form section */}
-      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-3 lg:px-8 min-h-screen lg:min-h-0">
-        <div className="w-full max-w-4xl py-4 lg:py-0">
+      <div className="w-full lg:w-1/2 bg-white flex justify-center px-4 sm:px-6 lg:px-7 min-h-screen lg:h-screen lg:min-h-0 lg:overflow-y-auto scrollbar-thin">
+        <div className="w-full max-w-4xl py-5 lg:py-4 xl:py-5">
           <FirstYearSignUpCard />
         </div>
       </div>

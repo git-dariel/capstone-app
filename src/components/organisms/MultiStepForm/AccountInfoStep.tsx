@@ -20,10 +20,10 @@ export const AccountInfoStep: React.FC<AccountInfoStepProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      <div className="text-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Information</h2>
-        <p className="text-sm text-gray-600">Create your login credentials</p>
+    <div className="space-y-3">
+      <div className="text-center mb-4">
+        <h2 className="text-lg xl:text-xl font-semibold text-gray-900 mb-1">Account Information</h2>
+        <p className="text-xs sm:text-sm text-gray-600">Create your login credentials</p>
       </div>
 
       <FormField
